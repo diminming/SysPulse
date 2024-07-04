@@ -1,4 +1,4 @@
-module insight/tracker/linux
+module syspulse/tracker/linux
 
 go 1.21.5
 

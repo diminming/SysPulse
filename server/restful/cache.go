@@ -3,10 +3,10 @@ package restful
 import (
 	"encoding/json"
 	"fmt"
-	"insight/model"
 	"io"
 	"net/http"
 	"strconv"
+	"syspulse/model"
 	"time"
 
 	"github.com/gin-gonic/gin"

@@ -3,13 +3,13 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"insight/tracker/linux/common"
-	"insight/tracker/linux/task"
-	"insight/tracker/linux/task/kernel"
 	"io"
 	"log"
 	"net/http"
 	"strings"
+	"syspulse/tracker/linux/common"
+	"syspulse/tracker/linux/task"
+	"syspulse/tracker/linux/task/kernel"
 
 	"github.com/gin-gonic/gin"
 	"github.com/shirou/gopsutil/v3/process"
@@ -150,7 +150,7 @@ func FinishJob(jobId int64, data []*task.EBPFProfilingData) {
 		return
 	}
 
-	if 200 != resp.StatusCode {
+	if resp.StatusCode != 200 {
 		log.Default().Printf("Error updating job status: %d, %s", resp.StatusCode, string(respBody))
 	}
 }
@@ -184,7 +184,7 @@ func UpdateJobStatus(jobId int64, status int32) {
 		return
 	}
 
-	if 200 != resp.StatusCode {
+	if resp.StatusCode != 200 {
 		log.Default().Printf("Error updating job status: %d, %s", resp.StatusCode, string(body))
 	}
 }

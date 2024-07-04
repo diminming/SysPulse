@@ -2,9 +2,9 @@ package restful
 
 import (
 	"fmt"
-	"insight/common"
-	"insight/model"
 	"net/http"
+	"syspulse/common"
+	"syspulse/model"
 	"time"
 
 	"github.com/gin-gonic/gin"

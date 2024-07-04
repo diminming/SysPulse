@@ -1,4 +1,4 @@
-module insight
+module syspulse
 
 go 1.21.5
 

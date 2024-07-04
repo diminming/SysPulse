@@ -1,13 +1,13 @@
 package main
 
 import (
-	"insight/tracker/linux/client"
-	"insight/tracker/linux/common"
-	"insight/tracker/linux/task/perf"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"syspulse/tracker/linux/client"
+	"syspulse/tracker/linux/common"
+	"syspulse/tracker/linux/task/perf"
 )
 
 func main() {

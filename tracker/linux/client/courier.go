@@ -2,9 +2,9 @@ package client
 
 import (
 	"fmt"
-	"insight/tracker/linux/common"
 	"log"
 	"net"
+	"syspulse/tracker/linux/common"
 	"time"
 )
 

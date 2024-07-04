@@ -13,8 +13,8 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/shirou/gopsutil/v3/net"
 
-	"insight/tracker/linux/client"
-	"insight/tracker/linux/common"
+	"syspulse/tracker/linux/client"
+	"syspulse/tracker/linux/common"
 )
 
 func init() {

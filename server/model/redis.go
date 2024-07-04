@@ -3,8 +3,8 @@ package model
 import (
 	"context"
 	"fmt"
-	"insight/common"
 	"log"
+	"syspulse/common"
 	"time"
 
 	redis "github.com/go-redis/redis/v8"

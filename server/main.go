@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"insight/component"
-	"insight/restful"
 	"log"
 	_ "net/http/pprof"
 	"sync"
+	"syspulse/component"
+	"syspulse/restful"
 
 	"github.com/panjf2000/gnet/v2"
 )

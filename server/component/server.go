@@ -14,8 +14,8 @@ import (
 
 	"github.com/panjf2000/gnet/v2"
 
-	"insight/common"
-	"insight/model"
+	"syspulse/common"
+	"syspulse/model"
 )
 
 func init() {

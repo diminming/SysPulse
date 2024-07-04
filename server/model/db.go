@@ -3,8 +3,8 @@ package model
 import (
 	"database/sql"
 	"fmt"
-	"insight/common"
 	"log"
+	"syspulse/common"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"

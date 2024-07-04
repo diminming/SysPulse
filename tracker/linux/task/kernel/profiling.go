@@ -6,7 +6,6 @@ import (
 	"debug/elf"
 	"encoding/json"
 	"fmt"
-	"insight/tracker/linux/task"
 	"log"
 	"math"
 	"os"
@@ -16,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syspulse/tracker/linux/task"
 	"time"
 
 	"github.com/cilium/ebpf"

@@ -2,8 +2,8 @@ package net
 
 import (
 	"fmt"
-	"insight/tracker/linux/client"
 	"log"
+	"syspulse/tracker/linux/client"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"

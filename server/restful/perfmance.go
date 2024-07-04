@@ -1,9 +1,9 @@
 package restful
 
 import (
-	"insight/model"
 	"net/http"
 	"strconv"
+	"syspulse/model"
 
 	"github.com/gin-gonic/gin"
 )
@@ -347,10 +347,7 @@ func (ws *WebServer) MappingRequest4Perfmance() {
 			return
 		}
 		linuxId := query.Get("linuxId")
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number..."})
-			return
-		}
+
 		lst := GetPerfSwap(linuxId, start, end)
 		ctx.JSON(http.StatusOK, JsonResponse{Data: lst, Msg: "success", Status: http.StatusOK})
 	})
