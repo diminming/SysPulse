@@ -450,7 +450,7 @@ export class Linux {
         let jsonResp = new JsonResponse(resp.data, resp.msg, resp.status);
         let userData: any = [], systemData: any = [], idleData: any = [], iowaitData: any = [], stealData: any = [], niceData: any = [], irqData: any = [], softirqData: any = [], guestData: any = [], guestniceData: any = []
         jsonResp.Data.forEach((item: any) => {
-          let timestamp: Date = new Date(item.timestamp / 1000)
+          let timestamp: Date = new Date(item.timestamp)
           userData.push([timestamp, CaclUsage(item.user, item)])
           systemData.push([timestamp, CaclUsage(item.system, item)])
           idleData.push([timestamp, CaclUsage(item.idle, item)])
@@ -552,7 +552,7 @@ export class Linux {
         let jsonResp = new JsonResponse(resp.data, resp.msg, resp.status);
         let totalData: any = [], availableData: any = [], freeData: any = []
         jsonResp.Data.forEach((item: any) => {
-          let timestamp: Date = new Date(item.timestamp / 1000)
+          let timestamp: Date = new Date(item.timestamp)
           totalData.push([timestamp, item.total])
           availableData.push([timestamp, item.available])
           freeData.push([timestamp, item.free])
@@ -605,7 +605,7 @@ export class Linux {
           load5Data: any = [],
           load15Data: any = []
         jsonResp.Data.forEach((item: any) => {
-          let timestamp: Date = new Date(item.timestamp / 1000)
+          let timestamp: Date = new Date(item.timestamp)
           load1Data.push([timestamp, item.load1])
           load5Data.push([timestamp, item.load5])
           load15Data.push([timestamp, item.load15])
@@ -782,7 +782,7 @@ export class Linux {
 const RenderNetIOPerf = (resp: JsonResponse) => {
   let mapping = new Map<string, Array<any>>()
   resp.Data.forEach((item: any) => {
-    let timestamp: Date = new Date(item.timestamp / 1000),
+    let timestamp: Date = new Date(item.timestamp),
       name: string = item.name
     Object.keys(item).forEach((key: string) => {
       if (key === "name" || key === "timestamp" || key === "id" || key === "bytessent" || key === "bytesrecv")
@@ -815,7 +815,7 @@ const RenderNetIOPerf = (resp: JsonResponse) => {
 const RenderNetThroughputPerf = (resp: JsonResponse) => {
   let mapping = new Map<string, Array<any>>()
   resp.Data.forEach((item: any) => {
-    let timestamp: Date = new Date(item.timestamp / 1000),
+    let timestamp: Date = new Date(item.timestamp),
       key1 = item.name + " - Sent", key2 = item.name + " - Recive"
     if (mapping.has(key1)) {
       mapping.get(key1)?.push([timestamp, item["bytessent"]])
@@ -848,7 +848,7 @@ const RenderNetThroughputPerf = (resp: JsonResponse) => {
 const RenderDiskIOPerf = (resp: JsonResponse) => {
   let mapping = new Map<string, Array<any>>()
   resp.Data.forEach((item: any) => {
-    let timestamp: Date = new Date(item.timestamp / 1000),
+    let timestamp: Date = new Date(item.timestamp),
       name: string = item.name
     Object.keys(item).forEach((key: string) => {
       if (key === "name" || key === "timestamp" || key === "id" || key === "readbytes" || key === "writebytes")
@@ -881,7 +881,7 @@ const RenderDiskIOPerf = (resp: JsonResponse) => {
 const RenderDiskThroughputPerf = (resp: JsonResponse) => {
   let mapping = new Map<string, Array<any>>()
   resp.Data.forEach((item: any) => {
-    let timestamp: Date = new Date(item.timestamp / 1000),
+    let timestamp: Date = new Date(item.timestamp),
       key1 = item.name + " - Read", key2 = item.name + " - Write"
     if (mapping.has(key1)) {
       mapping.get(key1)?.push([timestamp, item["readbytes"]])
@@ -914,7 +914,7 @@ const RenderDiskThroughputPerf = (resp: JsonResponse) => {
 const RenderInodePerf = (resp: JsonResponse) => {
   let mapping = new Map<string, Array<any>>()
   resp.Data.forEach((item: any) => {
-    let timestamp: Date = new Date(item.timestamp / 1000),
+    let timestamp: Date = new Date(item.timestamp),
       path = item.path
     if (mapping.has(path)) {
       mapping.get(path)?.push([timestamp, item["inodesused"]])
@@ -944,7 +944,7 @@ const RenderInodePerf = (resp: JsonResponse) => {
 const RenderFSPerf = (resp: JsonResponse) => {
   let mapping = new Map<string, Array<any>>()
   resp.Data.forEach((item: any) => {
-    let timestamp: Date = new Date(item.timestamp / 1000),
+    let timestamp: Date = new Date(item.timestamp),
       path = item.path
     if (mapping.has(path)) {
       mapping.get(path)?.push([timestamp, item["used"]])
@@ -974,7 +974,7 @@ const RenderFSPerf = (resp: JsonResponse) => {
 const RenderSwapPerf = (resp: JsonResponse) => {
   let totalData: any = [], usedData: any = [], freeData: any = []
   resp.Data.forEach((item: any) => {
-    let timestamp: Date = new Date(item.timestamp / 1000)
+    let timestamp: Date = new Date(item.timestamp)
     totalData.push([timestamp, item.total])
     usedData.push([timestamp, item.used])
     freeData.push([timestamp, item.free])
@@ -1006,7 +1006,7 @@ const RenderSwapPerf = (resp: JsonResponse) => {
 const RenderSwapExchangePerf = (resp: JsonResponse) => {
   let sinData: any = [], soutData: any = []
   resp.Data.forEach((item: any) => {
-    let timestamp: Date = new Date(item.timestamp / 1000)
+    let timestamp: Date = new Date(item.timestamp)
     sinData.push([timestamp, item.sin])
     soutData.push([timestamp, item.sout])
   })
@@ -1032,7 +1032,7 @@ const RenderMemoryExchangePerf = (resp: JsonResponse) => {
   let pginData: any = [], pgoutData: any = [], pgfaultData: any = []
   resp.Data.forEach((item: any) => {
     // debugger
-    let timestamp: Date = new Date(item.timestamp / 1000)
+    let timestamp: Date = new Date(item.timestamp)
     pginData.push([timestamp, item.pgin])
     pgoutData.push([timestamp, item.pgout])
     pgfaultData.push([timestamp, item.pgfault])
@@ -1431,7 +1431,7 @@ export default {
   RenderFsUsagePerf: (resp: JsonResponse) => {
     let pginData: any = [], pgoutData: any = [], pgfaultData: any = []
     resp.Data.forEach((item: any) => {
-      let timestamp: Date = new Date(item.timestamp / 1000)
+      let timestamp: Date = new Date(item.timestamp)
       pginData.push([timestamp, item.pgin])
       pgoutData.push([timestamp, item.pgout])
       pgfaultData.push([timestamp, item.pgfault])

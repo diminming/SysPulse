@@ -206,7 +206,7 @@ const autoRefresh = (value: string, _: any) => {
 onMounted(() => {
     let route = useRoute()
     linuxId.value = parseInt(route.query.linuxId as string)
-    render(dateTimeRange.value[0].valueOf() * 1000, dateTimeRange.value[1].valueOf() * 1000)
+    render(dateTimeRange.value[0].valueOf(), dateTimeRange.value[1].valueOf())
 })
 
 const render = (start: number, end: number) => {
