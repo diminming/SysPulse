@@ -27,3 +27,5 @@ facade/.env.prod
 /facade/node_modules/*
 *.sql
 !init_db.sql
+
+*.log
