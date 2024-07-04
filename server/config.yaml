@@ -1,0 +1,22 @@
+server:
+  hub:
+    addr: "0.0.0.0:24160"
+  restful:
+    addr: "0.0.0.0:24162"
+    base_path: "/api"
+    base_path_callback: "/callback"
+session:
+  expiration: 30
+storage:
+  db:
+    host: "localhost"
+    port: 3306
+    database: "perf_data"
+    user: "admin"
+    password: "123456"
+  file:
+    path: "/tmp"
+cache:
+  host: "localhost"
+  port: 6379
+  index: 0

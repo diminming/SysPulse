@@ -1,0 +1,34 @@
+identity: "dev.env"
+restful:
+  addr: "0.0.0.0:24161"
+  base_path: "/api"
+server:
+  hub:
+    host: "localhost"
+    port: 24160
+  restful:
+    host: "localhost"
+    port: 24162
+    bash_path: "/callback"
+heartbeat:
+  host: "localhost"
+  port: 24164
+  bash_path: "/api"
+order:
+  listening_addr: ""
+monitor:
+  enable: true
+  frequency:
+    cfg_host: 120
+    cfg_cpu: 120
+    cfg_if: 120
+    rt_proc: 60
+    rt_net_conn: 60
+    static: 120
+    cpu: 3
+    load: 3
+    memory: 3
+    disk_io: 3
+    net_interface: 3
+    file_system: 120
+    
