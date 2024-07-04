@@ -1,9 +1,9 @@
 <template>
   <div class="headerLeft">
-    <img class="headerImg" :src="src" />
+    <img class="headerImg" :src="ICON_PATH" />
     <a-menu class="headerLeft" v-model:selectedKeys="selectedKeys1" theme="dark" mode="horizontal"
       :style="{ lineHeight: '64px' }">
-      <a-menu-item class="headerLeftName"> Insight </a-menu-item>
+      <a-menu-item class="headerLeftName"> {{ APP_NAME }} </a-menu-item>
       <a-menu-item v-for="(item, index) in titleList" :key="index" style="font-weight: bold">
         <RouterLink :to="item.href">{{ item.title }}</RouterLink>
       </a-menu-item>
@@ -22,7 +22,8 @@
 <script lang="ts" setup>
 import { ref, reactive, onMounted } from "vue";
 import { UserOutlined } from "@ant-design/icons-vue";
-const src = import.meta.env.VITE_ICON_PATH
+const APP_NAME = import.meta.env.VITE_APP_NAME
+const ICON_PATH = import.meta.env.VITE_ICON_PATH
 let username = ref("")
 
 onMounted(() => {

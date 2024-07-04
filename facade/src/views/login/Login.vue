@@ -2,8 +2,8 @@
   <div class="loginPage">
 
     <div class="loginTitle">
-     <img class="loginImg" :src="src" />
-      <p>Insight</p>
+     <img class="loginImg" :src="ICON_PATH" />
+      <p>{{ APP_NAME }}</p>
     </div>
 
     <div class="loginBox">
@@ -55,7 +55,8 @@ import {Modal} from 'ant-design-vue';
 import {useRouter} from "vue-router";
 
 const router = useRouter();
-const src = import.meta.env.VITE_ICON_PATH
+const APP_NAME = import.meta.env.VITE_APP_NAME
+const ICON_PATH = import.meta.env.VITE_ICON_PATH
 
 interface FormState {
   username: string;

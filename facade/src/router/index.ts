@@ -16,7 +16,7 @@ const router = createRouter({
       name: "Main",
       redirect: "/main",
       meta: {
-        text: "Insight",
+        text: import.meta.env.VITE_APP_NAME,
       },
       component: () => import("@/layout/MainLayout.vue"),
       children: [
