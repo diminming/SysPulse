@@ -30,3 +30,4 @@ facade/.env.prod
 
 *.log
 .vscode
+**/__debug_*
