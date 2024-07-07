@@ -10,6 +10,7 @@ import (
 	"syspulse/tracker/linux/common"
 	"syspulse/tracker/linux/task"
 	"syspulse/tracker/linux/task/kernel"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/shirou/gopsutil/v3/process"
@@ -85,7 +86,7 @@ func (ws *Executor) Close() {
 
 func (ws *Executor) mapping() {
 	ws.Get("/proc/lst", func(ctx *gin.Context) {
-		procLst := make([]map[string]interface{}, 0)
+		procLst := []map[string]interface{}{}
 		processes, err := process.Processes()
 		if err != nil {
 			log.Default().Println("Error getting process list: ", err)
@@ -99,7 +100,10 @@ func (ws *Executor) mapping() {
 			proc["exec"], _ = item.Exe()
 			procLst = append(procLst, proc)
 		}
-		ctx.JSON(http.StatusOK, JsonResponse{Data: procLst, Status: http.StatusOK, Msg: "ok"})
+		ctx.JSON(http.StatusOK, JsonResponse{Data: map[string]interface{}{
+			"timestamp": time.Now().UnixMilli(),
+			"procLst":   procLst,
+		}, Status: http.StatusOK, Msg: "ok"})
 	})
 
 	ws.Post("/job", func(ctx *gin.Context) {

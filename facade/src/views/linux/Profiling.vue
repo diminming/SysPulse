@@ -4,7 +4,8 @@
             <a-row :gutter="[8, 8]">
                 <a-card title="进程列表" size="small" style="width: 100%;">
                     <template #extra>
-                        <a-button type="link" @click="getProcessLst">刷新</a-button>
+                        <span style="font-size: x-small;">最后刷新时间：{{ updateTimestamp }}</span>
+                        <a-button type="link" @click="refreshProcessLst">刷新</a-button>
                     </template>
                     <a-table :dataSource="procData" :columns="ProcColumnLst" size="small">
                         <template
@@ -19,10 +20,10 @@
                                     <template #icon>
                                         <SearchOutlined />
                                     </template>
-                                    Search
+                                    检索
                                 </a-button>
                                 <a-button size="small" style="width: 90px" @click="handleReset(clearFilters)">
-                                    Reset
+                                    重置
                                 </a-button>
                             </div>
                         </template>
@@ -110,7 +111,7 @@ import { useRoute } from 'vue-router';
 import { Linux, Job } from '@/views/linux/linux'
 import type { SelectProps } from 'ant-design-vue/es/vc-select/Select';
 import { SearchOutlined } from '@ant-design/icons-vue';
-import { Dayjs } from 'dayjs';
+import dayjs, { type Dayjs }  from 'dayjs';
 
 const linux = ref<Linux>(new Linux(-1)),
     job = ref<Job>(new Job(-1)),
@@ -177,7 +178,8 @@ const linux = ref<Linux>(new Linux(-1)),
         dataIndex: 'exec',
         key: 'exec',
     }],
-    selectProc = ref<SelectProps['options']>();
+    selectProc = ref<SelectProps['options']>(),
+    updateTimestamp = ref<String>("");
 
 const getJobResult = (record: any) => {
     const job = new Job(record.id)
@@ -213,10 +215,10 @@ function onCreateJob() {
         job.value.createJob().then(resp => {
             confirmLoading.value = false
             showCreateJobDialog.value = false
-            if(resp['status'] === 200) {
+            if (resp['status'] === 200) {
                 debugger
-                if(selectProc.value && selectProc.value.length > 0)
-                    getJobLst({"pid": selectProc.value[0]["value"]})
+                if (selectProc.value && selectProc.value.length > 0)
+                    getJobLst({ "pid": selectProc.value[0]["value"] })
             }
         })
     } else {
@@ -233,7 +235,7 @@ function chooseProccess(record: any) {
 }
 
 function refreshJobLst() {
-    if(selectProc.value) {
+    if (selectProc.value) {
         const record = {
             pid: selectProc.value[0]["value"]
         }
@@ -263,11 +265,33 @@ function getJobLst(record: any) {
     })
 }
 
+function refreshProcessLst() {
+    linux.value.RefreshProcessLst().then(resp => {
+        const data = resp.data
+        const procLst = data['procLst']
+        const timestamp = data["timestamp"]
+        let tblData: any = []
+        Object.entries(procLst).forEach(([k, v]) => {
+            if(k !== "timestamp")
+                tblData.push(v)
+        });
+        tblData.reverse()
+        updateTimestamp.value = dayjs(timestamp).format("YYYY/MM/DD HH:mm:ss")
+        procData.value = tblData
+    })
+}
+
 function getProcessLst() {
     linux.value.GetProcessLst().then((resp => {
         const data = resp.data
-        data.reverse()
-        procData.value = data
+        let procLst: any = []
+        Object.entries(data).forEach(([k, v]) => {
+            if(k !== "timestamp")
+                procLst.push(JSON.parse(String(v)))
+        });
+        procLst.reverse()
+        updateTimestamp.value = dayjs(parseInt(data['timestamp'])).format("YYYY/MM/DD HH:mm:ss")
+        procData.value = procLst
     }))
 }
 

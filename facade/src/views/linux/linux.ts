@@ -425,6 +425,12 @@ export class Linux {
       method: "get"
     })
   }
+  RefreshProcessLst() {
+    return request({
+      url: `/linux/${this.id}/procLst?refresh=true`,
+      method: "get"
+    })
+  }
   GetAnalyzationJobLst(pid: number) {
     return request({
       url: `/linux/${this.id}/proc/${pid}/analyze`,

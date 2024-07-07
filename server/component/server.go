@@ -3,7 +3,9 @@ package component
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -11,6 +13,7 @@ import (
 	"github.com/shirou/gopsutil/v3/load"
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/shirou/gopsutil/v3/net"
+	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/panjf2000/gnet/v2"
 
@@ -32,9 +35,10 @@ func init() {
 	gob.Register(net.InterfaceStat{})
 	gob.Register([]net.ConnectionStat{})
 	gob.Register(net.InterfaceStatList{})
+	gob.Register([]*process.Process{})
 }
 
-type PerformanceData struct {
+type Document struct {
 	Identity  string
 	Timestamp int64
 	Data      interface{}
@@ -162,34 +166,59 @@ func saveNetConnection(linuxId int64, connLst []net.ConnectionStat, timestamp in
 	}
 }
 
-func (hub *HubServer) saveData(data *PerformanceData) {
-	perfData := *data
+func saveProcess(linuxId int64, procLst []*process.Process, timestamp int64) {
+
+	key := fmt.Sprintf("proc_%d", linuxId)
+
+	entryLst := map[string]interface{}{}
+	for _, proc := range procLst {
+		procInfo := make(map[string]interface{})
+
+		procInfo["pid"] = proc.Pid
+		procInfo["name"], _ = proc.Name()
+		procInfo["ppid"], _ = proc.Ppid()
+		procInfo["create_time"], _ = proc.CreateTime()
+		procInfo["exec"], _ = proc.Exe()
+
+		entryLst[strconv.FormatInt(int64(proc.Pid), 10)] = common.ToString(procInfo)
+	}
+
+	entryLst["timestamp"] = strconv.FormatInt(timestamp, 10)
+
+	model.CacheHMSet(key, entryLst)
+
+}
+
+func (hub *HubServer) saveData(doc *Document) {
+	perfData := *doc
 	values := perfData.Data
 	identity := perfData.Identity
 	linux := model.GetLinuxById(identity)
 	switch val := values.(type) {
 	case []cpu.TimesStat:
-		saveCPUPerf(linux.Id, val, data.Timestamp)
+		saveCPUPerf(linux.Id, val, doc.Timestamp)
 	case load.AvgStat:
-		saveLoadPerf(linux.Id, &val, data.Timestamp)
+		saveLoadPerf(linux.Id, &val, doc.Timestamp)
 	case mem.VirtualMemoryStat:
-		saveMemoryPerf(linux.Id, &val, data.Timestamp)
+		saveMemoryPerf(linux.Id, &val, doc.Timestamp)
 	case mem.SwapMemoryStat:
-		saveSwapPerf(linux.Id, &val, data.Timestamp)
+		saveSwapPerf(linux.Id, &val, doc.Timestamp)
 	case []disk.UsageStat:
-		saveFsUsage(linux.Id, val, data.Timestamp)
+		saveFsUsage(linux.Id, val, doc.Timestamp)
 	case map[string]disk.IOCountersStat:
-		saveDiskIOStat(linux.Id, val, data.Timestamp)
+		saveDiskIOStat(linux.Id, val, doc.Timestamp)
 	case []net.IOCountersStat:
-		saveIfIOStat(linux.Id, val, data.Timestamp)
+		saveIfIOStat(linux.Id, val, doc.Timestamp)
 	case host.InfoStat:
-		saveHostInfo(linux.Id, val, data.Timestamp)
+		saveHostInfo(linux.Id, val, doc.Timestamp)
 	case []cpu.InfoStat:
-		saveCPUInfo(linux.Id, val, data.Timestamp)
+		saveCPUInfo(linux.Id, val, doc.Timestamp)
 	case net.InterfaceStatList:
-		saveInterfaceInfo(linux.Id, val, data.Timestamp)
+		saveInterfaceInfo(linux.Id, val, doc.Timestamp)
 	case []net.ConnectionStat:
-		saveNetConnection(linux.Id, val, data.Timestamp)
+		saveNetConnection(linux.Id, val, doc.Timestamp)
+	case []*process.Process:
+		saveProcess(linux.Id, val, doc.Timestamp)
 	}
 }
 
@@ -198,7 +227,7 @@ func (hub *HubServer) unpack() {
 		buff := <-hub.buffChan
 
 		buffer := bytes.NewBuffer(buff)
-		data := new(PerformanceData)
+		data := new(Document)
 		decoder := gob.NewDecoder(buffer)
 		err := decoder.Decode(data)
 		if err != nil {
@@ -214,6 +243,5 @@ func (hub *HubServer) OnTraffic(c gnet.Conn) gnet.Action {
 	buf := make([]byte, len(buf0))
 	copy(buf, buf0)
 	hub.buffChan <- buf
-	log.Default().Printf("length of hub.buffChan: %d", len(hub.buffChan))
 	return gnet.None
 }

@@ -47,6 +47,29 @@ func CacheGet(key string) string {
 func CacheExpire(key string, expiration time.Duration) {
 	err := client.Expire(context.Background(), key, expiration).Err()
 	if err != nil {
-		log.Println("Failed to set key:", err)
+		panic(err)
 	}
+}
+
+func CacheAdd2Set(key string, member ...interface{}) {
+	client.SAdd(context.Background(), key, member...)
+}
+
+func CacheAdd2HSet(key string, field string, value string) {
+	client.HSetNX(context.Background(), key, field, value)
+}
+
+func CacheHMSet(key string, entry map[string]interface{}) {
+	err := client.HMSet(context.Background(), key, entry).Err()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func CacheHGetAll(key string) map[string]string {
+	result, err := client.HGetAll(context.Background(), key).Result()
+	if err != nil {
+		panic(err)
+	}
+	return result
 }

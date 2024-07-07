@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"syspulse/common"
 	"syspulse/model"
 	"time"
 
@@ -187,9 +188,26 @@ func (ws *WebServer) MappingHandler4Linux() {
 			ctx.JSON(http.StatusBadRequest, JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
 			return
 		}
-		resp := GetProcLst(int64(idOfLinux))
-		procLst := resp["data"]
-		ctx.JSON(http.StatusOK, JsonResponse{Status: http.StatusOK, Data: procLst, Msg: "success"})
+		refresh, _ := strconv.ParseBool(ctx.Query("refresh"))
+
+		if refresh {
+			procLst, timestamp := GetProcLst(idOfLinux)
+			UpdateProcCache(idOfLinux, procLst, timestamp)
+			ctx.JSON(http.StatusOK, JsonResponse{
+				Status: http.StatusOK,
+				Data: map[string]interface{}{
+					"procLst":   procLst,
+					"timestmap": timestamp,
+				},
+				Msg: "success"},
+			)
+		} else {
+			ctx.JSON(http.StatusOK, JsonResponse{
+				Status: http.StatusOK,
+				Data:   LoadProcLst(idOfLinux),
+				Msg:    "success"},
+			)
+		}
 	})
 
 	ws.Get("/linux/:id/proc/:pid/analyze", func(ctx *gin.Context) {
@@ -230,29 +248,46 @@ func AnalyzeProcInLinux(linuxId int64, pid int64) map[string]interface{} {
 	return nil
 }
 
-func GetProcLst(id int64) map[string]interface{} {
+func LoadProcLst(id int64) map[string]string {
+	return model.CacheHGetAll(fmt.Sprintf("proc_%d", id))
+}
+
+func GetProcLst(id int64) ([]interface{}, int64) {
 
 	linux := GetLinuxById(id)
 	agentConn := linux.AgentConn
 
 	resp, err := http.Get(fmt.Sprintf("http://%s/api/proc/lst", agentConn))
 	if err != nil {
-		log.Default().Print("Error sending request: ", err)
-		return nil
+		panic(err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Default().Print("Error reading response: ", err)
-		return nil
+		panic(err)
 	}
-	if 200 != resp.StatusCode {
+	if resp.StatusCode != 200 {
 		panic(fmt.Sprintf("Error getting process list: %d, %s", resp.StatusCode, string(body)))
 	}
-	procLst := make(map[string]interface{}, 0)
+	result := map[string]interface{}{}
 
-	json.Unmarshal(body, &procLst)
+	json.Unmarshal(body, &result)
 
-	return procLst
+	data := result["data"].(map[string]interface{})
+
+	return data["procLst"].([]interface{}), int64(data["timestamp"].(float64))
+}
+
+func UpdateProcCache(id int64, procLst []interface{}, timestamp int64) {
+	key := fmt.Sprintf("proc_%d", id)
+
+	entryLst := map[string]interface{}{}
+	for _, procInfo := range procLst {
+		proc := procInfo.(map[string]interface{})
+		entryLst[strconv.FormatInt(int64(proc["pid"].(float64)), 10)] = common.ToString(procInfo)
+	}
+	entryLst["timestamp"] = strconv.FormatInt(timestamp, 10)
+
+	model.CacheHMSet(key, entryLst)
 }

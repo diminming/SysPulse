@@ -31,7 +31,7 @@ func GetLinuxTotal() int64 {
 func GetLinuxById(id string) *Linux {
 
 	linuxId := CacheGet(id)
-	if linuxId == "0" {
+	if linuxId == "0" || linuxId == "" {
 		sql := "select id from linux where linux_id = ?"
 		// var row *sql.Row
 		linux := new(Linux)
