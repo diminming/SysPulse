@@ -15,6 +15,8 @@ import (
 
 	"syspulse/tracker/linux/client"
 	"syspulse/tracker/linux/common"
+
+	"github.com/shirou/gopsutil/v3/process"
 )
 
 func init() {
@@ -31,11 +33,12 @@ func init() {
 	gob.Register(net.InterfaceStat{})
 	gob.Register([]net.ConnectionStat{})
 	gob.Register(net.InterfaceStatList{})
+	gob.Register([]*process.Process{})
 }
 
 type Callback func()
 
-type PerformanceData struct {
+type Document struct {
 	Identity  string
 	Timestamp int64
 	Data      interface{}
@@ -58,7 +61,7 @@ func NewMonitor(client *client.Courier, cb Callback) (*Monitor, error) {
 func (m *Monitor) Send(data interface{}) {
 	buffer := new(bytes.Buffer)
 	encoder := gob.NewEncoder(buffer)
-	p := PerformanceData{
+	p := Document{
 		Identity:  common.SysArgs.Identity,
 		Timestamp: time.Now().UnixMilli(),
 		Data:      data,
@@ -70,88 +73,69 @@ func (m *Monitor) Send(data interface{}) {
 	m.client.Send(buffer.Bytes())
 }
 
-func (m *Monitor) collect_info() {
-	hostInfo, _ := host.Info()
-	m.Send(hostInfo)
-	infoStat, _ := cpu.Info()
-	m.Send(infoStat)
-	ifStatLst, _ := net.Interfaces()
-	m.Send(ifStatLst)
-}
-
-func (m *Monitor) stat_cpu() {
-
-	timeStat1, _ := cpu.Times(false)
-	timeStat2, _ := cpu.Times(true)
-
-	m.Send(timeStat1)
-	m.Send(timeStat2)
-}
-
-func (m *Monitor) stat_mem() {
-	memStat, _ := mem.VirtualMemory()
-	swapStat, _ := mem.SwapMemory()
-
-	m.Send(memStat)
-	m.Send(swapStat)
-}
-
-func (m *Monitor) stat_load() {
-	loadStat, _ := load.Avg()
-	m.Send(loadStat)
-}
-
-func (m *Monitor) stat_fs() {
-	fsUsage := make([]disk.UsageStat, 3)
-	partitionStatLst, _ := disk.Partitions(true)
-	for _, partition := range partitionStatLst {
-		usageStat, _ := disk.Usage(partition.Mountpoint)
-		fsUsage = append(fsUsage, *usageStat)
-	}
-	m.Send(fsUsage)
-}
-
-func (m *Monitor) stat_disk_io() {
-	ioStatMap, _ := disk.IOCounters()
-	m.Send(ioStatMap)
-}
-
-func (m *Monitor) stat_if() {
-	statLst, _ := net.IOCounters(true)
-	m.Send(statLst)
-	connLst, _ := net.Connections("all")
-	m.Send(connLst)
-}
-
 func (m *Monitor) Run() {
 
 	monitor := common.SysArgs.Monitor
 
-	tickerStatic := time.NewTicker(time.Duration(monitor.Frequency.Static) * time.Second)
-	tickerCpu := time.NewTicker(time.Duration(monitor.Frequency.Cpu) * time.Second)
-	tickerLoad := time.NewTicker(time.Duration(monitor.Frequency.Load) * time.Second)
-	tickerMemory := time.NewTicker(time.Duration(monitor.Frequency.Memory) * time.Second)
-	tickerDiskIO := time.NewTicker(time.Duration(monitor.Frequency.DiskIO) * time.Second)
-	tickerNetIf := time.NewTicker(time.Duration(monitor.Frequency.NetInterface) * time.Second)
-	tickerFs := time.NewTicker(time.Duration(monitor.Frequency.FileSystem) * time.Second)
+	tickerCFGHost := time.NewTicker(time.Duration(monitor.Frequency.CFGHost) * time.Second)
+	tickerCFGCpu := time.NewTicker(time.Duration(monitor.Frequency.CFGCpu) * time.Second)
+	tickerCFGIf := time.NewTicker(time.Duration(monitor.Frequency.CFGIf) * time.Second)
+
+	tickerRTNetConn := time.NewTicker(time.Duration(monitor.Frequency.RTNetConn) * time.Second)
+	tickerRTProc := time.NewTicker(time.Duration(monitor.Frequency.RTProc) * time.Second)
+
+	tickerPerfCpu := time.NewTicker(time.Duration(monitor.Frequency.PerfCpu) * time.Second)
+	tickerPerfLoad := time.NewTicker(time.Duration(monitor.Frequency.PerfLoad) * time.Second)
+	tickerPerfMemory := time.NewTicker(time.Duration(monitor.Frequency.PerfMemory) * time.Second)
+	tickerPerfNetInterface := time.NewTicker(time.Duration(monitor.Frequency.PerfNetInterface) * time.Second)
+	tickerPerfDisk := time.NewTicker(time.Duration(monitor.Frequency.PerfDisk) * time.Second)
+	tickerPerfFileSystem := time.NewTicker(time.Duration(monitor.Frequency.PerfFileSystem) * time.Second)
 	for {
 		select {
-		case <-m.stopChan:
-			return
-		case <-tickerStatic.C:
-			m.collect_info()
-		case <-tickerCpu.C:
-			m.stat_cpu()
-		case <-tickerLoad.C:
-			m.stat_load()
-		case <-tickerMemory.C:
-			m.stat_mem()
-		case <-tickerDiskIO.C:
-			m.stat_disk_io()
-		case <-tickerNetIf.C:
-			m.stat_if()
-		case <-tickerFs.C:
-			m.stat_fs()
+		case <-tickerCFGHost.C:
+			hostInfo, _ := host.Info()
+			m.Send(hostInfo)
+		case <-tickerCFGCpu.C:
+			infoStat, _ := cpu.Info()
+			m.Send(infoStat)
+		case <-tickerCFGIf.C:
+			ifStatLst, _ := net.Interfaces()
+			m.Send(ifStatLst)
+		case <-tickerRTNetConn.C:
+			connLst, _ := net.Connections("all")
+			m.Send(connLst)
+		case <-tickerRTProc.C:
+			procLst, _ := process.Processes()
+			m.Send(procLst)
+		case <-tickerPerfCpu.C:
+			timeStat1, _ := cpu.Times(false)
+			timeStat2, _ := cpu.Times(true)
+
+			m.Send(timeStat1)
+			m.Send(timeStat2)
+		case <-tickerPerfLoad.C:
+			loadStat, _ := load.Avg()
+			m.Send(loadStat)
+		case <-tickerPerfMemory.C:
+			memStat, _ := mem.VirtualMemory()
+			swapStat, _ := mem.SwapMemory()
+
+			m.Send(memStat)
+			m.Send(swapStat)
+		case <-tickerPerfNetInterface.C:
+			statLst, _ := net.IOCounters(true)
+			m.Send(statLst)
+		case <-tickerPerfDisk.C:
+			ioStatMap, _ := disk.IOCounters()
+			m.Send(ioStatMap)
+		case <-tickerPerfFileSystem.C:
+			fsUsage := make([]disk.UsageStat, 3)
+			partitionStatLst, _ := disk.Partitions(true)
+			for _, partition := range partitionStatLst {
+				usageStat, _ := disk.Usage(partition.Mountpoint)
+				fsUsage = append(fsUsage, *usageStat)
+			}
+			m.Send(fsUsage)
 		}
 	}
 }
