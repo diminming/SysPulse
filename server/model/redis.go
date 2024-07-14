@@ -59,7 +59,7 @@ func CacheAdd2HSet(key string, field string, value string) {
 	client.HSetNX(context.Background(), key, field, value)
 }
 
-func CacheHMSet(key string, entry map[string]interface{}) {
+func CacheHMSet(key string, entry interface{}) {
 	err := client.HMSet(context.Background(), key, entry).Err()
 	if err != nil {
 		panic(err)
@@ -70,6 +70,15 @@ func CacheHGetAll(key string) map[string]string {
 	result, err := client.HGetAll(context.Background(), key).Result()
 	if err != nil {
 		panic(err)
+	}
+	return result
+}
+
+func CacheHGet(key string, field string) string {
+	result, err := client.HGet(context.Background(), key, field).Result()
+	if err != nil {
+		log.Default().Println(err)
+		log.Default().Printf("key %s, field %s\n", key, field)
 	}
 	return result
 }

@@ -63,18 +63,6 @@ func NewHubServer() *HubServer {
 
 }
 
-func (hub *HubServer) OnBoot(eng gnet.Engine) gnet.Action {
-	hub.eng = eng
-	log.Printf("echo server with multi-core=%t is listening on %s\n", hub.Multicore, hub.Addr)
-	goroutine_total := 5
-	for idx := 0; idx < goroutine_total; idx++ {
-		go func() {
-			hub.unpack()
-		}()
-	}
-	return gnet.None
-}
-
 func saveCPUPerf(linuxId int64, lst []cpu.TimesStat, timestamp int64) {
 	values := make([][]interface{}, 0, 1)
 	for _, stat := range lst {
@@ -126,48 +114,120 @@ func saveIfIOStat(linuxId int64, statLst []net.IOCountersStat, timestamp int64) 
 }
 
 func saveHostInfo(linuxId int64, info host.InfoStat, timestamp int64) {
-	// model.DBInsert(
-	// 	"insert into cfg_host(`linux_id`,`hostname`,`uptime`,`boottime`,`procs`,`os`,`platform`,`platformfamily`,`platformversion`,`kernelversion`,`kernelarch`,`virtualizationsystem`,`virtualizationrole`,`hostid`,`timestamp`) value(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-	// 	linuxId, info.Hostname, info.Uptime, info.BootTime, info.Procs, info.OS, info.Platform, info.PlatformFamily, info.PlatformVersion, info.KernelVersion, info.KernelArch, info.VirtualizationSystem, info.VirtualizationRole, info.HostID, timestamp,
-	// )
-	model.CreateDocument("host", map[string]interface{}{
-		"host_identity": linuxId,
-		"info":          info,
-		"timestamp":     timestamp,
-	})
+
+	for {
+		err := model.UpsertHost(map[string]interface{}{
+			"host_identity": linuxId,
+			"info":          info,
+			"timestamp":     timestamp,
+		})
+		if err == nil {
+			break
+		}
+	}
+
 }
 
 func saveCPUInfo(linuxId int64, infoLst []cpu.InfoStat, timestamp int64) {
-	// values := make([][]interface{}, 0, 1)
-	// for _, info := range infoLst {
-	// 	values = append(values, []interface{}{linuxId, info.CPU, info.VendorID, info.Family, info.Model, info.Stepping, info.PhysicalID, info.CoreID, info.Cores, info.ModelName, info.Mhz, info.CacheSize, info.Microcode, timestamp})
-	// }
-	// model.BulkInsert("insert into cfg_cpu(`linux_id`, `cpu`, `vendorid`, `family`, `model`, `stepping`, `physicalid`, `coreid`, `cores`, `modelname`, `mhz`, `cachesize`, `microcode`, `timestamp`) value(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-	// 	values)
-	model.CreateDocument("cpu", map[string]interface{}{"host_identity": linuxId, "cpu_lst": infoLst, "timestamp": timestamp})
+	for {
+		err := model.UpdateCPUInfo(map[string]interface{}{"host_identity": linuxId, "cpu_lst": infoLst, "timestamp": timestamp})
+		if err == nil {
+			break
+		}
+	}
 }
 
 func saveInterfaceInfo(linuxId int64, infoLst net.InterfaceStatList, timestamp int64) {
-	// values := make([][]interface{}, 0, 1)
-	// for _, info := range infoLst {
-	// 	for _, addr := range info.Addrs {
-	// 		values = append(values, []interface{}{linuxId, info.Index, info.Name, addr.Addr, info.HardwareAddr, info.MTU, strings.Join(info.Flags, ", "), timestamp})
-	// 	}
-	// 	// values = append(values, []interface{}{linuxId, info.Addrs[0].Addr, info., info.Family, info.Model, info.Stepping, info.PhysicalID, info.CoreID, info.Cores, info.ModelName, info.Mhz, info.CacheSize, info.Microcode, timestamp})
-	// }
-	for _, ifObj := range infoLst {
-		model.CreateDocument("net_if", map[string]interface{}{"host_identity": linuxId, "if": ifObj, "timestamp": timestamp})
+	for {
+		err := model.UpdateInterface(map[string]interface{}{
+			"host_identity": linuxId,
+			"interface":     infoLst,
+			"timestamp":     timestamp,
+		})
+		if err == nil {
+			break
+		}
+	}
+}
+
+func CacheLinuxPort(linuxId int64, connLst []net.ConnectionStat) map[uint32]int32 {
+	key := fmt.Sprintf("port_%d", linuxId)
+	mapping := make(map[uint32]int32)
+	for _, conn := range connLst {
+		mapping[conn.Laddr.Port] = conn.Pid
+	}
+
+	entry := map[string]interface{}{}
+	for key, value := range mapping {
+		entry[strconv.FormatInt(int64(key), 10)] = value
+	}
+
+	model.CacheHMSet(key, entry)
+	return mapping
+}
+
+func GetRemotePid(linuxId int64, port uint32) int32 {
+
+	key := fmt.Sprintf("port_%d", linuxId)
+	field := strconv.FormatUint(uint64(port), 10)
+	value := model.CacheHGet(key, field)
+
+	if value != "" {
+		remotePid, _ := strconv.ParseInt(value, 10, 32)
+		return int32(remotePid)
+	}
+
+	return -1
+}
+
+func isLocalIP(ip string) bool {
+	return ip == "127.0.0.1"
+}
+
+func GetLinuxIdByIp(ip string) int64 {
+	lst, _ := model.GetLinuxIdByIP(ip)
+	if len(lst) != 1 {
+		panic(fmt.Sprintf("got error when search linux id by ip: %s", ip))
+	}
+	return lst[0]
+}
+
+func saveConnRelation(localLinuxId int64, localPorts map[uint32]int32, connLst []net.ConnectionStat, timestamp int64) {
+	for _, conn := range connLst {
+		localPid := conn.Pid
+
+		rIp := conn.Raddr.IP
+
+		var remoteLinuxId int64
+		var remotePid int32
+
+		if isLocalIP(rIp) {
+			remoteLinuxId = localLinuxId
+			remotePid = localPorts[conn.Raddr.Port]
+		} else {
+			remoteLinuxId = GetLinuxIdByIp(rIp)
+			remotePid = GetRemotePid(remoteLinuxId, conn.Raddr.Port)
+		}
+
+		if remotePid <= 0 || localPid <= 0 {
+			continue
+		}
+		model.UpsertConnRelation(localLinuxId, localPid, remoteLinuxId, remotePid, timestamp)
 	}
 }
 
 func saveNetConnection(linuxId int64, connLst []net.ConnectionStat, timestamp int64) {
+	establishedLst := make([]net.ConnectionStat, 0)
 	for _, conn := range connLst {
-		log.Default().Printf("Linux<%d> [%s:%d -> %s:%d]\n", linuxId, conn.Laddr.IP, conn.Laddr.Port, conn.Raddr.IP, conn.Raddr.Port)
+		if conn.Status == "ESTABLISHED" {
+			establishedLst = append(establishedLst, conn)
+		}
 	}
+	lPortMapping := CacheLinuxPort(linuxId, establishedLst)
+	saveConnRelation(linuxId, lPortMapping, establishedLst, timestamp)
 }
 
-func saveProcess(linuxId int64, procLst []*process.Process, timestamp int64) {
-
+func saveProc2Cache(linuxId int64, procLst []*process.Process, timestamp int64) {
 	key := fmt.Sprintf("proc_%d", linuxId)
 
 	entryLst := map[string]interface{}{}
@@ -186,6 +246,52 @@ func saveProcess(linuxId int64, procLst []*process.Process, timestamp int64) {
 	entryLst["timestamp"] = strconv.FormatInt(timestamp, 10)
 
 	model.CacheHMSet(key, entryLst)
+}
+
+func saveProc2GraphDB(linuxId int64, procLst []*process.Process, timestamp int64) []string {
+	targetLst := make([]string, 0)
+	for _, proc := range procLst {
+		pid := proc.Pid
+		name, _ := proc.Name()
+		ppid, _ := proc.Ppid()
+		create_time, _ := proc.CreateTime()
+		exec, _ := proc.Exe()
+
+		keyLst, _ := model.UpsertProcess(map[string]interface{}{
+			"host_identity": linuxId,
+			"pid":           pid,
+			"info": map[string]interface{}{
+				"name":        name,
+				"ppid":        ppid,
+				"create_time": create_time,
+				"exec":        exec,
+			},
+			"timestamp": timestamp,
+		})
+
+		if len(keyLst) != 1 {
+			log.Default().Printf("error at upsert processes, len(keyLst) = %d", len(keyLst))
+			continue
+		}
+
+		targetLst = append(targetLst, keyLst[0])
+	}
+	return targetLst
+}
+
+func saveDeploymentRelation(linuxId int64, procKeyLst []string, timestamp int64) {
+	model.UpsertDeploymentRelation(map[string]interface{}{
+		"timestamp":     timestamp,
+		"host_identity": linuxId,
+		"procLst":       procKeyLst,
+	})
+}
+
+func saveProcess(linuxId int64, procLst []*process.Process, timestamp int64) {
+
+	saveProc2Cache(linuxId, procLst, timestamp)
+	targetLst := saveProc2GraphDB(linuxId, procLst, timestamp)
+	saveDeploymentRelation(linuxId, targetLst, timestamp)
 
 }
 
@@ -236,6 +342,18 @@ func (hub *HubServer) unpack() {
 		hub.saveData(data)
 		// hub.mongoClient.Insert("perf_data", data)
 	}
+}
+
+func (hub *HubServer) OnBoot(eng gnet.Engine) gnet.Action {
+	hub.eng = eng
+	log.Printf("echo server with multi-core=%t is listening on %s\n", hub.Multicore, hub.Addr)
+	goroutine_total := 5
+	for idx := 0; idx < goroutine_total; idx++ {
+		go func() {
+			hub.unpack()
+		}()
+	}
+	return gnet.None
 }
 
 func (hub *HubServer) OnTraffic(c gnet.Conn) gnet.Action {
