@@ -782,6 +782,16 @@ export class Linux {
       }
     })
   }
+  RenderTopological() {
+    const dom = document.querySelector("div.topo"),
+      option = {},
+      chart = echarts.getInstanceByDom(dom as HTMLElement) || echarts.init(dom as HTMLElement)
+    chart.showLoading();
+    setTimeout(function(){
+      chart.hideLoading();
+      chart.setOption(option)
+    }, 3000)
+  }
 }
 
 
