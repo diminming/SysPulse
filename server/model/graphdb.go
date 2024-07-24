@@ -179,7 +179,7 @@ for h in host
 	return keyLst, nil
 }
 
-func UpsertConnRelation(localLinuxId int64, localPid int32, remoteLinuxId int64, remotePid int32, timestamp int64) {
+func UpsertConnRelation(localLinuxId int64, localPid int32, remoteLinuxId int64, remotePid int32, timestamp int64) error {
 	aql := `
 LET _from = (
   FOR p IN process
@@ -218,7 +218,62 @@ IN conn_tcp
 		"timestamp": timestamp,
 	})
 	if err != nil {
-		log.Default().Printf("Failed to execute transaction: %v", err)
+		return err
 	}
 	defer cur.Close()
+	return nil
+}
+
+func DeleteTimeoutTopo(timestamp int64) {
+	DeleteTimeoutHostRecord(timestamp)
+	DeleteTimeoutProcessRecord(timestamp)
+	DeleteTimeoutTCPRecord(timestamp)
+	DeleteTimeoutDeploymentRecord(timestamp)
+}
+
+func DeleteTimeoutHostRecord(timestamp int64) {
+	aql := `
+FOR t IN host
+	FILTER t.timestamp < @timestamp
+	REMOVE { _key: t._key } IN host
+`
+	ctx := context.Background()
+	GraphDB.Query(ctx, aql, map[string]interface{}{
+		"timestamp": timestamp,
+	})
+}
+
+func DeleteTimeoutProcessRecord(timestamp int64) {
+	aql := `
+FOR t IN process
+	FILTER t.timestamp < @timestamp
+	REMOVE { _key: t._key } IN process
+`
+	ctx := context.Background()
+	GraphDB.Query(ctx, aql, map[string]interface{}{
+		"timestamp": timestamp,
+	})
+}
+
+func DeleteTimeoutTCPRecord(timestamp int64) {
+	aql := `
+FOR t IN conn_tcp
+	FILTER t.timestamp < @timestamp
+	REMOVE { _key: t._key } IN conn_tcp
+`
+	ctx := context.Background()
+	GraphDB.Query(ctx, aql, map[string]interface{}{
+		"timestamp": timestamp,
+	})
+}
+func DeleteTimeoutDeploymentRecord(timestamp int64) {
+	aql := `
+FOR t IN deployment
+	FILTER t.timestamp < @timestamp
+	REMOVE { _key: t._key } IN deployment
+`
+	ctx := context.Background()
+	GraphDB.Query(ctx, aql, map[string]interface{}{
+		"timestamp": timestamp,
+	})
 }

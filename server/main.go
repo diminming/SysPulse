@@ -6,6 +6,7 @@ import (
 	_ "net/http/pprof"
 	"sync"
 	"syspulse/component"
+	"syspulse/housekeeper"
 	rest "syspulse/restful/server"
 
 	"github.com/panjf2000/gnet/v2"
@@ -33,6 +34,13 @@ func main() {
 		defer wg.Done()
 		srv := component.NewHubServer()
 		log.Fatal(gnet.Run(srv, srv.Addr, gnet.WithMulticore(srv.Multicore)))
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		housekeeper := housekeeper.NewHouseKeeper()
+		housekeeper.Run()
 	}()
 
 	wg.Wait()
