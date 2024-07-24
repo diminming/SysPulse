@@ -6,7 +6,7 @@ import (
 	_ "net/http/pprof"
 	"sync"
 	"syspulse/component"
-	"syspulse/restful"
+	rest "syspulse/restful/server"
 
 	"github.com/panjf2000/gnet/v2"
 )
@@ -17,16 +17,17 @@ func init() {
 
 func main() {
 	var wg sync.WaitGroup
-	wg.Add(1)
 
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		webServer, err := restful.NewRestfulServer()
+		webServer, err := rest.NewRestfulServer()
 		if err != nil {
 			fmt.Println()
 		}
 		webServer.Startup()
 	}()
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()

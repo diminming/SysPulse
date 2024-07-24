@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
+	"runtime"
 	"strconv"
 
 	"github.com/shirou/gopsutil/host"
@@ -212,7 +213,10 @@ func saveConnRelation(localLinuxId int64, localPorts map[uint32]int32, connLst [
 		if remotePid <= 0 || localPid <= 0 {
 			continue
 		}
-		model.UpsertConnRelation(localLinuxId, localPid, remoteLinuxId, remotePid, timestamp)
+		err := model.UpsertConnRelation(localLinuxId, localPid, remoteLinuxId, remotePid, timestamp)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to execute UpsertConnRelation: %v", err))
+		}
 	}
 }
 
@@ -296,6 +300,18 @@ func saveProcess(linuxId int64, procLst []*process.Process, timestamp int64) {
 }
 
 func (hub *HubServer) saveData(doc *Document) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Default().Println(err)
+			for i := 2; ; i++ {
+				_, file, line, ok := runtime.Caller(i)
+				if !ok {
+					break
+				}
+				log.Default().Println(file, line)
+			}
+		}
+	}()
 	perfData := *doc
 	values := perfData.Data
 	identity := perfData.Identity
@@ -338,6 +354,7 @@ func (hub *HubServer) unpack() {
 		err := decoder.Decode(data)
 		if err != nil {
 			log.Default().Println(err)
+			continue
 		}
 		hub.saveData(data)
 		// hub.mongoClient.Insert("perf_data", data)

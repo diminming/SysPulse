@@ -1,4 +1,4 @@
-package restful
+package handler
 
 import (
 	"encoding/json"
@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"syspulse/common"
 	"syspulse/model"
+	"syspulse/restful/server/response"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -102,128 +103,127 @@ func GetLinuxById(id int64) *model.Linux {
 	return linux
 }
 
-func (ws *WebServer) MappingHandler4Linux() {
-	ws.Get("/linux/:id", func(ctx *gin.Context) {
-		idOfLinux, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
-		}
-		linux := GetLinuxById(int64(idOfLinux))
-		ctx.JSON(http.StatusOK, JsonResponse{Status: http.StatusOK, Data: linux, Msg: "success"})
-	})
-	ws.Get("/linux/page", func(ctx *gin.Context) {
-		values := ctx.Request.URL.Query()
-		page, err := strconv.Atoi(values.Get("page"))
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, JsonResponse{Status: http.StatusBadRequest, Msg: "page is not a number."})
-			return
-		}
-		pageSize, err := strconv.Atoi(values.Get("pageSize"))
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, JsonResponse{Status: http.StatusBadRequest, Msg: "pageSize is not a number."})
-			return
-		}
-		lst := GetLinuxByPage(page, pageSize)
-		total := GetLinuxTotal()
-		ctx.JSON(http.StatusOK, JsonResponse{Status: http.StatusOK, Data: map[string]interface{}{
-			"lst":   lst,
-			"total": total,
-		}, Msg: "success"})
-	})
+func GetLinuxInfoById(ctx *gin.Context) {
+	idOfLinux, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
+	}
+	linux := GetLinuxById(int64(idOfLinux))
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: linux, Msg: "success"})
+}
 
-	ws.Post("/linux", func(ctx *gin.Context) {
-		body, err := io.ReadAll(ctx.Request.Body)
-		if err != nil {
-			log.Default().Println(err)
-			return
-		}
-		var linux = model.Linux{}
-		err = json.Unmarshal(body, &linux)
-		if err != nil {
-			log.Default().Println(err)
-			return
-		}
-		linux.CreateTimestamp = time.Now().Unix()
-		linux.UpdateTimestamp = time.Now().Unix()
-		CreateLinux(&linux)
-		ctx.JSON(http.StatusOK, JsonResponse{Status: http.StatusOK, Data: &linux, Msg: "success"})
-	})
+func GetLinuxLstByPage(ctx *gin.Context) {
+	values := ctx.Request.URL.Query()
+	page, err := strconv.Atoi(values.Get("page"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "page is not a number."})
+		return
+	}
+	pageSize, err := strconv.Atoi(values.Get("pageSize"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "pageSize is not a number."})
+		return
+	}
+	lst := GetLinuxByPage(page, pageSize)
+	total := GetLinuxTotal()
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: map[string]interface{}{
+		"lst":   lst,
+		"total": total,
+	}, Msg: "success"})
+}
 
-	ws.Put("/linux/:id", func(ctx *gin.Context) {
-		idOfLinux, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
-		}
-		body, err := io.ReadAll(ctx.Request.Body)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		var linux = new(model.Linux)
-		err = json.Unmarshal(body, linux)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+func NewLinuxRecord(ctx *gin.Context) {
+	body, err := io.ReadAll(ctx.Request.Body)
+	if err != nil {
+		log.Default().Println(err)
+		return
+	}
+	var linux = model.Linux{}
+	err = json.Unmarshal(body, &linux)
+	if err != nil {
+		log.Default().Println(err)
+		return
+	}
+	linux.CreateTimestamp = time.Now().Unix()
+	linux.UpdateTimestamp = time.Now().Unix()
+	CreateLinux(&linux)
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: &linux, Msg: "success"})
+}
 
-		linux.UpdateTimestamp = time.Now().Unix()
-		UpdateLinux(linux, idOfLinux)
-		ctx.JSON(http.StatusOK, JsonResponse{Status: http.StatusOK, Data: &linux, Msg: "success"})
-	})
+func UpdateLinuxRecord(ctx *gin.Context) {
+	idOfLinux, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
+	}
+	body, err := io.ReadAll(ctx.Request.Body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	var linux = new(model.Linux)
+	err = json.Unmarshal(body, linux)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	ws.Delete("/linux", func(ctx *gin.Context) {
-		values := ctx.Request.URL.Query()
-		linuxId, err := strconv.Atoi(values.Get("linux_id"))
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, JsonResponse{Status: http.StatusBadRequest, Msg: "page is not a number."})
-			return
-		}
-		DeleteLinux(linuxId)
-		ctx.JSON(http.StatusOK, JsonResponse{Status: http.StatusOK, Msg: "success"})
-	})
+	linux.UpdateTimestamp = time.Now().Unix()
+	UpdateLinux(linux, idOfLinux)
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: &linux, Msg: "success"})
+}
 
-	ws.Get("/linux/:id/procLst", func(ctx *gin.Context) {
-		idOfLinux, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
-			return
-		}
-		refresh, _ := strconv.ParseBool(ctx.Query("refresh"))
+func DeleteLinuxRecord(ctx *gin.Context) {
+	values := ctx.Request.URL.Query()
+	linuxId, err := strconv.Atoi(values.Get("linux_id"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "page is not a number."})
+		return
+	}
+	DeleteLinux(linuxId)
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "success"})
+}
 
-		if refresh {
-			procLst, timestamp := GetProcLst(idOfLinux)
-			UpdateProcCache(idOfLinux, procLst, timestamp)
-			ctx.JSON(http.StatusOK, JsonResponse{
-				Status: http.StatusOK,
-				Data: map[string]interface{}{
-					"procLst":   procLst,
-					"timestmap": timestamp,
-				},
-				Msg: "success"},
-			)
-		} else {
-			ctx.JSON(http.StatusOK, JsonResponse{
-				Status: http.StatusOK,
-				Data:   LoadProcLst(idOfLinux),
-				Msg:    "success"},
-			)
-		}
-	})
+func GetProcessLst(ctx *gin.Context) {
+	idOfLinux, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
+		return
+	}
+	refresh, _ := strconv.ParseBool(ctx.Query("refresh"))
 
-	ws.Get("/linux/:id/proc/:pid/analyze", func(ctx *gin.Context) {
-		idOfLinux, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
-			return
-		}
-		pid, err := strconv.ParseInt(ctx.Param("pid"), 10, 64)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, JsonResponse{Status: http.StatusBadRequest, Msg: "process id is not a number."})
-			return
-		}
-		jobLst := GetAnalyzationJobLst(int64(idOfLinux), pid)
-		ctx.JSON(http.StatusOK, JsonResponse{Status: http.StatusOK, Data: jobLst, Msg: "success"})
-	})
+	if refresh {
+		procLst, timestamp := GetProcLst(idOfLinux)
+		UpdateProcCache(idOfLinux, procLst, timestamp)
+		ctx.JSON(http.StatusOK, response.JsonResponse{
+			Status: http.StatusOK,
+			Data: map[string]interface{}{
+				"procLst":   procLst,
+				"timestmap": timestamp,
+			},
+			Msg: "success"},
+		)
+	} else {
+		ctx.JSON(http.StatusOK, response.JsonResponse{
+			Status: http.StatusOK,
+			Data:   LoadProcLst(idOfLinux),
+			Msg:    "success"},
+		)
+	}
+}
+
+func GetProcAnalJobLst(ctx *gin.Context) {
+	idOfLinux, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
+		return
+	}
+	pid, err := strconv.ParseInt(ctx.Param("pid"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "process id is not a number."})
+		return
+	}
+	jobLst := GetAnalyzationJobLst(int64(idOfLinux), pid)
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: jobLst, Msg: "success"})
 }
 
 func GetAnalyzationJobLst(linuxId int64, pid int64) []map[string]interface{} {

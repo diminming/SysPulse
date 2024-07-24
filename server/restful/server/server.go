@@ -1,26 +1,15 @@
-package restful
+package server
 
 import (
 	"fmt"
 	"net/http"
 	"syspulse/common"
 	"syspulse/model"
+	"syspulse/restful/server/response"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
-
-type JsonResponse struct {
-	Status int         `json:"status"`
-	Data   interface{} `json:"data"`
-	Msg    string      `json:"msg"`
-}
-
-type WebServer struct {
-	router      *gin.Engine
-	ApiGroup    *gin.RouterGroup
-	CallbackGrp *gin.RouterGroup
-}
 
 func NewRestfulServer() (*WebServer, error) {
 	router := gin.Default()
@@ -33,7 +22,7 @@ func NewRestfulServer() (*WebServer, error) {
 		token := c.Request.Header.Get("token")
 
 		if (len(token) < 1 || len(model.CacheGet(token)) < 1) && path != fmt.Sprintf("%s/login", common.SysArgs.Server.Restful.BasePath) {
-			c.JSON(http.StatusForbidden, JsonResponse{Status: http.StatusForbidden, Msg: "non-logging"})
+			c.JSON(http.StatusForbidden, response.JsonResponse{Status: http.StatusForbidden, Msg: "non-logging"})
 			c.Abort()
 			return
 		} else {
@@ -48,6 +37,12 @@ func NewRestfulServer() (*WebServer, error) {
 		ApiGroup:    apiGrp,
 		CallbackGrp: callbackGrp,
 	}, nil
+}
+
+type WebServer struct {
+	router      *gin.Engine
+	ApiGroup    *gin.RouterGroup
+	CallbackGrp *gin.RouterGroup
 }
 
 func (ws *WebServer) Post(url string, handler gin.HandlerFunc) {
@@ -74,17 +69,37 @@ func (ws *WebServer) Delete(url string, handler gin.HandlerFunc) {
 	ws.ApiGroup.DELETE(url, handler)
 }
 
-func (ws *WebServer) Mapping() {
-	ws.MappingHandler4User()
-	ws.MappingHandler4Biz()
-	ws.MappingHandler4Linux()
-	ws.MappingHandler4Database()
-	ws.MappingHandler4Cache()
-	ws.MappingRequest4Perfmance()
-	ws.MappingHandler4Job()
+func (ws *WebServer) Startup() {
+	ws.SetupRoutes()
+	ws.router.Run(common.SysArgs.Server.Restful.Addr)
 }
 
-func (ws *WebServer) Startup() {
-	ws.Mapping()
-	ws.router.Run(common.SysArgs.Server.Restful.Addr)
+func (ws *WebServer) Register4Api(method string, url string, handler gin.HandlerFunc) {
+	switch method {
+	case http.MethodGet:
+		ws.ApiGroup.GET(url, handler)
+	case http.MethodPost:
+		ws.ApiGroup.POST(url, handler)
+	case http.MethodPut:
+		ws.ApiGroup.PUT(url, handler)
+	case http.MethodPatch:
+		ws.ApiGroup.PATCH(url, handler)
+	case http.MethodDelete:
+		ws.ApiGroup.DELETE(url, handler)
+	}
+}
+
+func (ws *WebServer) Register4Callback(method string, url string, handler gin.HandlerFunc) {
+	switch method {
+	case http.MethodGet:
+		ws.CallbackGrp.GET(url, handler)
+	case http.MethodPost:
+		ws.CallbackGrp.POST(url, handler)
+	case http.MethodPut:
+		ws.CallbackGrp.PUT(url, handler)
+	case http.MethodPatch:
+		ws.CallbackGrp.PATCH(url, handler)
+	case http.MethodDelete:
+		ws.CallbackGrp.DELETE(url, handler)
+	}
 }

@@ -1,4 +1,4 @@
-package restful
+package handler
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"syspulse/common"
 	"syspulse/model"
+	"syspulse/restful/server/response"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -36,26 +37,24 @@ func login(username string, passwd string) (string, *model.User, error) {
 	return token, &user, nil
 }
 
-func (ws *WebServer) MappingHandler4User() {
-	ws.Post("/login", func(c *gin.Context) {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Println("Recovered from: ", r)
-				common.PrintStackTrace()
-			}
-		}()
-
-		username := c.Query("username")
-		passwd := c.Query("passwd")
-		token, user, err := login(username, passwd)
-
-		if err != nil {
-			c.JSON(http.StatusOK, JsonResponse{Status: http.StatusUnauthorized, Msg: err.Error()})
-		} else {
-			c.JSON(http.StatusOK, JsonResponse{Status: http.StatusOK, Data: map[string]interface{}{
-				"token": token,
-				"user":  user,
-			}, Msg: "success"})
+func UserLogin(c *gin.Context) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered from: ", r)
+			common.PrintStackTrace()
 		}
-	})
+	}()
+
+	username := c.Query("username")
+	passwd := c.Query("passwd")
+	token, user, err := login(username, passwd)
+
+	if err != nil {
+		c.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusUnauthorized, Msg: err.Error()})
+	} else {
+		c.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: map[string]interface{}{
+			"token": token,
+			"user":  user,
+		}, Msg: "success"})
+	}
 }
