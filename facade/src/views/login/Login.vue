@@ -2,7 +2,7 @@
   <div class="loginPage">
 
     <div class="loginTitle">
-     <img class="loginImg" :src="ICON_PATH" />
+      <img class="loginImg" :src="ICON_PATH" />
       <p>{{ APP_NAME }}</p>
     </div>
 
@@ -11,12 +11,12 @@
       <!--        <a-tab-pane key="1" tab="账户密码登录">-->
       <!--      <p>账户密码登录</p>-->
       <a-form :model="formState" name="normal_login" class="login-form" @finish="onFinish"
-              @finishFailed="onFinishFailed">
+        @finishFailed="onFinishFailed">
 
         <a-form-item label="账号" name="username" :rules="[{ required: true, message: '请输入用户名!' }]">
           <a-input v-model:value="formState.username" placeholder="请输入用户名">
             <template #prefix>
-              <UserOutlined class="site-form-item-icon"/>
+              <UserOutlined class="site-form-item-icon" />
             </template>
           </a-input>
         </a-form-item>
@@ -24,7 +24,7 @@
         <a-form-item label="密码" name="password" :rules="[{ required: true, message: '请输入密码!' }]">
           <a-input-password v-model:value="formState.password" placeholder="请输入密码">
             <template #prefix>
-              <LockOutlined class="site-form-item-icon"/>
+              <LockOutlined class="site-form-item-icon" />
             </template>
           </a-input-password>
         </a-form-item>
@@ -45,14 +45,15 @@
 </template>
 
 <script setup lang="ts">
-import type {CSSProperties} from 'vue';
-import {reactive, computed, h} from 'vue';
-import {UserOutlined, LockOutlined, ExclamationCircleOutlined} from '@ant-design/icons-vue';
-import {ref} from 'vue';
+import type { CSSProperties } from 'vue';
+import { reactive, computed, h } from 'vue';
+import { UserOutlined, LockOutlined, ExclamationCircleOutlined } from '@ant-design/icons-vue';
+import { ref } from 'vue';
 
+import { lock403Store } from "@/stores/lock403"
 import request from "@/utils/request"
-import {Modal} from 'ant-design-vue';
-import {useRouter} from "vue-router";
+import { Modal } from 'ant-design-vue';
+import { useRouter } from "vue-router";
 
 const router = useRouter();
 const APP_NAME = import.meta.env.VITE_APP_NAME
@@ -64,12 +65,13 @@ interface FormState {
   remember: boolean;
 }
 
-const activeKey = ref('1');
-const formState = reactive<FormState>({
-  username: '',
-  password: '',
-  remember: true,
-});
+const activeKey = ref('1'),
+  lock403 = lock403Store(),
+  formState = reactive<FormState>({
+    username: '',
+    password: '',
+    remember: true,
+  });
 const onFinish = (values: any) => {
   let params = {
     "username": values.username,
@@ -90,7 +92,8 @@ const onFinish = (values: any) => {
       let data = resp['data'], token = data['token'], user = data['user']
       localStorage.setItem("token", token)
       localStorage.setItem("curr_user", JSON.stringify(user))
-
+      lock403.unlock()
+      
       router.push("/")
 
     }
@@ -149,7 +152,7 @@ const imgStyle: CSSProperties = {
   object-fit: cover;
 }
 
-.loginTitle p{
+.loginTitle p {
   margin-bottom: 0
 }
 

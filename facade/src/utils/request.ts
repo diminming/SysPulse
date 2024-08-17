@@ -2,6 +2,7 @@ import axios from 'axios'
 import { notification, Modal } from 'ant-design-vue';
 import { AlertOutlined, ExclamationCircleOutlined } from "@ant-design/icons-vue";
 import { h } from 'vue';
+import { lock403Store } from "@/stores/lock403"
 
 const BASE_URL = import.meta.env.VITE_BASE_URL
 
@@ -10,7 +11,8 @@ const service = axios.create({
   baseURL: BASE_URL, // url = base url + request url
   // withCredentials: true, // send cookies when cross-domain requests
   timeout: import.meta.env.VITE_REQUEST_TIMEOUT * 1000 // request timeout, unit is seconds.
-})
+}),
+  lock403 = lock403Store()
 
 // request interceptor
 service.interceptors.request.use(
@@ -49,15 +51,18 @@ service.interceptors.response.use(
     const status = error.response.status
     const data = error.response.data
     if (status === 403) {
-      Modal.confirm({
+      
+      if(lock403.isLocked()) return
+
+      lock403.lock()
+      Modal.warning({
         title: '登录信息错误',
         icon: h(ExclamationCircleOutlined, {}),
         content: "您尚未登录或登陆信息已过期，请您重新登陆。",
         onOk() {
-          location.href = import.meta.env.VITE_LOGIN_PAGE
-        },
-        onCancel() {
-          console.log('Cancel');
+          setTimeout(()=>{
+            location.href = import.meta.env.VITE_LOGIN_PAGE
+          }, 500)
         },
         class: 'test',
       });
