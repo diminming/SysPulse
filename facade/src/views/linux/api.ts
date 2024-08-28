@@ -1,5 +1,5 @@
 import echarts from '@/utils/echarts';
-import { CustomChart } from 'echarts/charts';
+import { CustomChart, GraphChart } from 'echarts/charts';
 
 import { JsonResponse } from "@/utils/common";
 import request from "@/utils/request"
@@ -9,7 +9,7 @@ import { _cf } from 'ant-design-vue/es/_util/cssinjs/hooks/useStyleRegister';
 import { v4 as uuidv4 } from 'uuid';
 
 
-echarts.use([CustomChart]);
+echarts.use([CustomChart, GraphChart]);
 
 class Node {
   id: string
@@ -53,20 +53,78 @@ JOB_TYPE_MAPPING.set("offcpu", "Off CPU")
 export class Job {
 
   id: number;
+  category: string;
   job_name?: string;
-  category?: string;
-  type?: string;
-  status?: number;
-  startup_time?: number;
   linux_id?: number;
+  status?: number;
+  create_timestamp?: number;
+
+  constructor(id: number, category: string) {
+    this.id = id;
+    this.category = category
+  }
+
+  getJobStatusTxt() {
+    if (this.status) {
+      const txt = JOB_STATUS_MAPPING.get(this.status)
+      if (txt) {
+        return txt
+      }
+    }
+    return "Invaild Value..."
+  }
+
+  createJob() {
+    return request({
+      url: "/job",
+      method: "POST",
+      data: this
+    })
+  }
+
+  getResult() {
+    return request({
+      url: `/job/${this.id}/result`,
+      method: "GET",
+    })
+  }
+}
+
+export class TrafficAnalyzationJob extends Job {
+  identity?: string;
+  ifName?: string;
+  ipAddr?: string;
+  direction?: [];
+  count?: Number;
+  port?: Number;
+
+  constructor(id: number) {
+    super(id, "traffic")
+  }
+}
+
+export function GetTrafficJobLst(page: Number, pageSize: Number, linuxId: Number) {
+  return request({
+    url: "/job/traffic/page",
+    method: "get",
+    params: {
+      "page": page,
+      "pageSize": pageSize,
+      "linuxId": linuxId
+    }
+  })
+}
+
+export class ProfilingJob extends Job {
+
+  type?: string;
+  startup_time?: number;
   pid?: number;
   duration?: string;
-  create_timestamp?: number;
-  update_timestamp?: number;
   immediately?: boolean;
 
   constructor(id: number) {
-    this.id = id;
+    super(id, "profiling")
   }
 
   getImmediatelyTxt() {
@@ -100,30 +158,12 @@ export class Job {
     }
   }
 
-  getStatusTxt() {
-    if (this.status) {
-      const txt = JOB_STATUS_MAPPING.get(this.status)
-      if (txt) {
-        return txt
-      }
-    }
-    return "Invaild Value..."
-  }
-
-  createJob() {
-    return request({
-      url: "/job",
-      method: "POST",
-      data: this
-    })
-  }
-
   RenderStackTraceChart() {
     const dom = document.querySelector(".graph.flame") as HTMLElement;
     const chart = echarts.init(dom);
     chart.showLoading()
     request({
-      url: `/job/${this.id}`,
+      url: `/job/${this.id}/result`,
       method: "GET",
     }).then(resp => {
       const data = resp.data, root: Node = new Node(uuidv4(), "root", 0, [])
@@ -434,6 +474,12 @@ export class Linux {
   GetAnalyzationJobLst(pid: number) {
     return request({
       url: `/linux/${this.id}/proc/${pid}/analyze`,
+      method: "get"
+    })
+  }
+  GetInterfaceLst() {
+    return request({
+      url: `/linux/${this.id}/if/lst`,
       method: "get"
     })
   }
@@ -782,15 +828,136 @@ export class Linux {
       }
     })
   }
-  RenderTopological() {
+  RenderTopoGraph(chart: any, nodes: any, links: any) {
+    let option = {
+      legend: [
+        {
+          data: ["Linux", "Process"]
+        }
+      ],
+      series: [
+        {
+          type: 'graph',
+          layout: 'force',
+          animation: true,
+          emphasis: {
+            focus: 'adjacency',
+            label: {
+              position: 'right',
+              show: true
+            }
+          },
+          edgeSymbol: ['circle', 'arrow'],
+          edgeSymbolSize: [4, 8],
+          roam: true,
+          label: {
+            show: true,
+            position: 'right',
+            formatter: '{b}'
+          },
+          labelLayout: {
+            hideOverlap: true
+          },
+          draggable: true,
+          data: nodes,
+          categories: [{
+            "name": "Linux",
+            "base": "Linux",
+            "keyword": {}
+          }, {
+            "name": "Process",
+            "base": "Process",
+            "keyword": {}
+          }],
+          force: {
+            edgeLength: 200,
+            repulsion: 800,
+            gravity: 0.1
+          },
+          lineStyle: {
+            width: 0.8,
+            curveness: 0.3,
+            opacity: 0.7
+          },
+          edges: links
+        }
+      ]
+    }
+    chart.setOption(option)
+  }
+  RenderTopological(callback: any) {
     const dom = document.querySelector("div.topo"),
-      option = {},
       chart = echarts.getInstanceByDom(dom as HTMLElement) || echarts.init(dom as HTMLElement)
     chart.showLoading();
-    setTimeout(function(){
-      chart.hideLoading();
-      chart.setOption(option)
-    }, 3000)
+    request({
+      url: `/linux/${this.id}/topo`,
+      method: "get",
+    }).then((resp: any) => {
+
+      chart.hideLoading()
+
+      const verteies = new Map()
+      const links: any[] = []
+      const infoLst = resp["data"]
+
+      infoLst.forEach((item: any) => {
+
+        item['vertices'].forEach((v: any) => {
+          const key = v['_id']
+
+          if (!verteies.has(key)) {
+            let category = -1, name = "", symbolSize = 5
+            if (v["_id"].startsWith("process/")) {
+              category = 1
+              symbolSize = 20
+              name = `${v["pid"]}:${v['info']['name']}`
+            } else if (v["_id"].startsWith("host/")) {
+              category = 0
+              symbolSize = 30
+              name = v['info']['hostname']
+            }
+            verteies.set(key, {
+              "name": name,
+              "symbolSize": symbolSize,
+              "_detail": {
+                "_id": v["_id"],
+                "pid": v["pid"],
+                "name": v['info']['name'],
+                "exec": v["info"]['exec'],
+                "timestamp": v['info']['create_time']
+              },
+              "category": category
+            })
+          }
+        })
+
+        item['edges'].forEach((e: any) => {
+          let color = "", type = ""
+          if (e["_id"].startsWith("deployment/")) {
+            color = "#1E90FF"
+            type = "depl"
+          } else if (e["_id"].startsWith("conn_tcp/")) {
+            color = "#FF4500"
+            type = "conn_tcp"
+          }
+          links.push({
+            "source": verteies.get(e['_from'])["name"],
+            "target": verteies.get(e['_to'])["name"],
+            "lineStyle": {
+              "color": color
+            },
+            "_detail": {
+              "type": type
+            }
+          })
+        })
+
+      })
+
+      if (callback)
+        callback(chart, verteies, links)
+
+    })
   }
 }
 

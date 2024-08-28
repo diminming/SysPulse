@@ -1,6 +1,16 @@
 package task
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"strings"
+	"syspulse/tracker/linux/client"
+	"syspulse/tracker/linux/common"
+	"time"
+
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
@@ -11,6 +21,26 @@ const (
 	JOB_STATUS_RUNNING                          int32 = 2
 	JOB_STATUS_FINISHED                         int32 = 3
 )
+
+type Job struct {
+	Id              int64    `json:"id"`
+	JobName         string   `json:"job_name"`
+	Category        string   `json:"category"`
+	Type            string   `json:"type"`
+	Status          int      `json:"status"`
+	StartupTime     int64    `json:"startup_time"`
+	LinuxId         int64    `json:"linux_id"`
+	Pid             int32    `json:"pid"`
+	Duration        int32    `json:"duration"`
+	Immediately     bool     `json:"immediately"`
+	IfName          string   `json:"ifName"`
+	IpAddr          string   `json:"ipAddr"`
+	Port            int32    `json:"port"`
+	Direction       []string `json:"direction"`
+	Count           int64    `json:"count"`
+	CreateTimestamp int64    `json:"create_timestamp"`
+	UpdateTimestamp int64    `json:"update_timestamp"`
+}
 
 type RunningSuccessNotify func()
 
@@ -78,3 +108,74 @@ type EBPFProfilingData_OnCPU struct {
 }
 
 func (*EBPFProfilingData_OnCPU) isEBPFProfilingData_Profiling() {}
+
+func UpdateJobStatus(jobId int64, status int32) {
+	srvCfg := common.SysArgs.Server.Restful
+	url := fmt.Sprintf("http://%s:%d%s/job/updateStatus", srvCfg.Host, srvCfg.Port, srvCfg.BasePath)
+	payload, err := json.Marshal(map[string]interface{}{
+		"jobId":  jobId,
+		"status": status,
+	})
+	if err != nil {
+		log.Default().Println(err)
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, url, strings.NewReader(string(payload)))
+	if err != nil {
+		log.Default().Println(err)
+		return
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Default().Println(err)
+		return
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Default().Println("Error reading response: ", err)
+		return
+	}
+
+	if resp.StatusCode != 200 {
+		log.Default().Printf("Error updating job status: %d, %s", resp.StatusCode, string(body))
+	}
+}
+
+func UploadOutcome(fPath string) (string, string) {
+	objName := fmt.Sprintf("%s_%s", common.SysArgs.Identity, time.Now().Format("20060102_1504"))
+	client.Upload2FileServer("syspulse", objName, fPath, "application/octet-stream")
+	return "syspulse", objName
+}
+
+func SendResult(jobId int64, data interface{}) {
+	srvCfg := common.SysArgs.Server.Restful
+	url := fmt.Sprintf("http://%s:%d%s/job/%d/onFinish", srvCfg.Host, srvCfg.Port, srvCfg.BasePath, jobId)
+	payload, err := json.Marshal(data)
+	if err != nil {
+		log.Default().Println(err)
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, url, strings.NewReader(string(payload)))
+	if err != nil {
+		log.Default().Println(err)
+		return
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Default().Println(err)
+		return
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Default().Println("Error reading response: ", err)
+		return
+	}
+
+	if resp.StatusCode != 200 {
+		log.Default().Printf("Error updating job status: %d, %s", resp.StatusCode, string(respBody))
+	}
+}

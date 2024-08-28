@@ -29,7 +29,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { message } from 'ant-design-vue';
 
-import { Linux } from "@/views/linux/linux"
+import { Linux } from "@/views/linux/api"
 
 
 const linux = ref<Linux>(new Linux(-1))

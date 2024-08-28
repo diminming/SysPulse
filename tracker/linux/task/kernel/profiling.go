@@ -752,9 +752,9 @@ func DoProfiling(pid int32, cmdPath string, duration time.Duration, successNotif
 	onFinish(dataLst)
 }
 
-func CreateProfilingTask(jobInfo map[string]interface{}, callback task.RunningSuccessNotify, onFinish func(data []*task.EBPFProfilingData)) {
-	pid := int32(jobInfo["pid"].(float64))
-	duration := int32(jobInfo["duration"].(float64))
+func CreateProfilingTask(jobInfo task.Job, callback task.RunningSuccessNotify, onFinish func(data []*task.EBPFProfilingData)) {
+	pid := int32(jobInfo.Pid)
+	duration := int32(jobInfo.Duration)
 	process, _ := process.NewProcess(pid)
 	cmdPath, _ := process.Exe()
 	go func() {

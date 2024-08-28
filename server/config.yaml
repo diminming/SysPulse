@@ -1,6 +1,6 @@
 server:
   hub:
-    addr: "0.0.0.0:24160"
+    addr: "tcp://0.0.0.0:24160"
   restful:
     addr: "0.0.0.0:24162"
     base_path: "/api"
@@ -14,6 +14,11 @@ storage:
     database: "perf_data"
     user: "admin"
     password: "123456"
+  file_server:
+    endpoint: "localhost:9000"
+    access_key: "cDoXKjZh2YJldhpTHoED"
+    secret_key: "jHXn5JDCRAVRLM1LQabigy9watpFQviyIPWC5myf"
+    useSSL: false
   file:
     path: "/tmp"
 cache:

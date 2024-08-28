@@ -16,6 +16,13 @@ heartbeat:
   bash_path: "/api"
 order:
   listening_addr: ""
+storage:
+  file_server:
+    endpoint: "localhost:9000"
+    access_key: "cDoXKjZh2YJldhpTHoED"
+    secret_key: "jHXn5JDCRAVRLM1LQabigy9watpFQviyIPWC5myf"
+    useSSL: false
+  temp_dir: "/tmp"
 monitor:
   enable: true
   frequency:

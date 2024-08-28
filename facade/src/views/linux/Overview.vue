@@ -114,7 +114,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import dayjs, { Dayjs } from 'dayjs';
 
-import LinuxAPI, { CaclUsage, Linux } from "@/views/linux/linux"
+import LinuxAPI, { CaclUsage, Linux } from "@/views/linux/api"
 import { JsonResponse } from '@/utils/common';
 
 type RangeValue = [Dayjs, Dayjs];
@@ -205,7 +205,7 @@ const autoRefresh = (value: string, _: any) => {
 
 onMounted(() => {
     let route = useRoute()
-    linuxId.value = parseInt(route.query.linuxId as string)
+    linuxId.value = parseInt(route.params.linuxId as string)
     render(dateTimeRange.value[0].valueOf(), dateTimeRange.value[1].valueOf())
 })
 

@@ -277,3 +277,32 @@ FOR t IN deployment
 		"timestamp": timestamp,
 	})
 }
+
+func QueryLinuxTopo(linuxId int64) ([]map[string]interface{}, error) {
+	aql := `
+for h in host
+  filter h.host_identity == @linuxId
+  for v, e, p in 2..2 any h graph graph_demployment
+  return p
+`
+	ctx := context.Background()
+	cur, err := GraphDB.Query(ctx, aql, map[string]interface{}{
+		"linuxId": linuxId,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close()
+	result := make([]map[string]interface{}, 0, 10)
+	for {
+		info := make(map[string]interface{})
+		_, err := cur.ReadDocument(context.Background(), &info)
+		if driver.IsNoMoreDocuments(err) {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+		result = append(result, info)
+	}
+	return result, nil
+}

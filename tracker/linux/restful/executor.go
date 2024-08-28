@@ -1,22 +1,22 @@
-package client
+package restful
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"strings"
+	"syspulse/tracker/linux/client"
 	"syspulse/tracker/linux/common"
 	"syspulse/tracker/linux/task"
 	"syspulse/tracker/linux/task/kernel"
+	"syspulse/tracker/linux/task/network"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/shirou/gopsutil/v3/process"
 )
 
-func NewExecutor(client *Courier) (*Executor, error) {
+func NewExecutor(client *client.Courier) (*Executor, error) {
 	executor := new(Executor)
 	executor.init(client)
 	executor.mapping()
@@ -32,10 +32,10 @@ type JsonResponse struct {
 type Executor struct {
 	router *gin.Engine
 	appSrv *gin.RouterGroup
-	client *Courier
+	client *client.Courier
 }
 
-func (ws *Executor) init(client *Courier) {
+func (ws *Executor) init(client *client.Courier) {
 	router := gin.Default()
 	appSrv := router.Group(common.SysArgs.Restful.BasePath)
 
@@ -76,7 +76,7 @@ func (ws *Executor) Delete(url string, handler gin.HandlerFunc) {
 	ws.appSrv.DELETE(url, handler)
 }
 
-func (ws *Executor) RunServer(client *Courier) {
+func (ws *Executor) RunServer(client *client.Courier) {
 	ws.router.Run(common.SysArgs.Restful.Addr)
 }
 
@@ -112,83 +112,25 @@ func (ws *Executor) mapping() {
 			log.Default().Println(err)
 			return
 		}
-		jobInfo := new(map[string]interface{})
-		err = json.Unmarshal(body, jobInfo)
+		job := task.Job{}
+		err = json.Unmarshal(body, &job)
 		if err != nil {
 			log.Default().Println(err)
 			return
 		}
-		jobId := int64((*jobInfo)["id"].(float64))
-		kernel.CreateProfilingTask(*jobInfo, func() {
-			UpdateJobStatus(jobId, task.JOB_STATUS_RUNNING)
-		}, func(data []*task.EBPFProfilingData) {
-			FinishJob(jobId, data)
-		})
+		jobId := job.Id
+		category := job.Category
+
+		switch category {
+		case "traffic":
+			network.CreateCollectingTask(job)
+		case "profiling":
+			kernel.CreateProfilingTask(job, func() {
+				task.UpdateJobStatus(jobId, task.JOB_STATUS_RUNNING)
+			}, func(data []*task.EBPFProfilingData) {
+				task.SendResult(jobId, data)
+			})
+		}
 		ctx.JSON(http.StatusOK, JsonResponse{Status: http.StatusOK, Msg: "ok"})
 	})
-}
-
-func FinishJob(jobId int64, data []*task.EBPFProfilingData) {
-	srvCfg := common.SysArgs.Server.Restful
-	url := fmt.Sprintf("http://%s:%d%s/job/%d/onFinish", srvCfg.Host, srvCfg.Port, srvCfg.BasePath, jobId)
-	payload, err := json.Marshal(data)
-	if err != nil {
-		log.Default().Println(err)
-	}
-
-	req, err := http.NewRequest(http.MethodPatch, url, strings.NewReader(string(payload)))
-	if err != nil {
-		log.Default().Println(err)
-		return
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Default().Println(err)
-		return
-	}
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Default().Println("Error reading response: ", err)
-		return
-	}
-
-	if resp.StatusCode != 200 {
-		log.Default().Printf("Error updating job status: %d, %s", resp.StatusCode, string(respBody))
-	}
-}
-
-func UpdateJobStatus(jobId int64, status int32) {
-	srvCfg := common.SysArgs.Server.Restful
-	url := fmt.Sprintf("http://%s:%d%s/job/updateStatus", srvCfg.Host, srvCfg.Port, srvCfg.BasePath)
-	payload, err := json.Marshal(map[string]interface{}{
-		"jobId":  jobId,
-		"status": status,
-	})
-	if err != nil {
-		log.Default().Println(err)
-	}
-
-	req, err := http.NewRequest(http.MethodPatch, url, strings.NewReader(string(payload)))
-	if err != nil {
-		log.Default().Println(err)
-		return
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Default().Println(err)
-		return
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Default().Println("Error reading response: ", err)
-		return
-	}
-
-	if resp.StatusCode != 200 {
-		log.Default().Printf("Error updating job status: %d, %s", resp.StatusCode, string(body))
-	}
 }

@@ -51,19 +51,19 @@
                                 </a>
                             </template>
                             <template v-if="column.key === 'status'">
-                                {{ (record as Job).getStatusTxt() }}
+                                {{ record.getStatusTxt() }}
                             </template>
                             <template v-if="column.key === 'startup_time'">
-                                {{ (record as Job).getStartupTimeTxt() }}
+                                {{ record.getStartupTimeTxt() }}
                             </template>
                             <template v-if="column.key === 'immediately'">
-                                {{ (record as Job).getImmediatelyTxt() }}
+                                {{ record.getImmediatelyTxt() }}
                             </template>
                             <template v-if="column.key === 'type'">
-                                {{ (record as Job).getTypeTxt() }}
+                                {{ record.getTypeTxt() }}
                             </template>
                             <template v-if="column.key === 'create_timestamp'">
-                                {{ (record as Job).getCreateTimestampTxt() }}
+                                {{ record.getCreateTimestampTxt() }}
                             </template>
                         </template>
                     </a-table>
@@ -108,13 +108,13 @@
 <script lang="ts" setup>
 import { onMounted, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { Linux, Job } from '@/views/linux/linux'
+import { Linux, Job, ProfilingJob } from '@/views/linux/api'
 import type { SelectProps } from 'ant-design-vue/es/vc-select/Select';
 import { SearchOutlined } from '@ant-design/icons-vue';
 import dayjs, { type Dayjs }  from 'dayjs';
 
 const linux = ref<Linux>(new Linux(-1)),
-    job = ref<Job>(new Job(-1)),
+    job = ref<ProfilingJob>(new ProfilingJob(-1)),
     showCreateJobDialog = ref<boolean>(false),
     confirmLoading = ref<boolean>(false),
     procData = ref([]),
@@ -182,7 +182,7 @@ const linux = ref<Linux>(new Linux(-1)),
     updateTimestamp = ref<String>("");
 
 const getJobResult = (record: any) => {
-    const job = new Job(record.id)
+    const job = new ProfilingJob(record.id)
     job.RenderStackTraceChart()
 }
 
@@ -248,7 +248,7 @@ function getJobLst(record: any) {
         const data = resp.data
         if (data !== null) {
             jobData.value = data.map((item: any) => {
-                let job = new Job(item["id"])
+                let job = new ProfilingJob(item["id"])
                 job.status = item['status']
                 job.job_name = item['job_name']
                 job.type = item['type']
@@ -297,7 +297,7 @@ function getProcessLst() {
 
 onMounted(() => {
     let route = useRoute()
-    let l = new Linux(parseInt(route.query.linuxId as string))
+    let l = new Linux(parseInt(route.params.linuxId as string))
     linux.value = l
     getProcessLst()
     job.value.immediately = true

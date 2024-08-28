@@ -14,12 +14,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 
 const breadcrumbs = ref()
 const router = useRouter(), getBreadcrumbs = () => {
-  return router.currentRoute.value.matched.map((route) => {
+  return router.currentRoute.value.matched.slice(1).map((route) => {
     return {
       isActive: route.path === router.currentRoute.value.fullPath,
       title: route.meta.text,

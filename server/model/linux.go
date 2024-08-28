@@ -1,9 +1,12 @@
 package model
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"strconv"
+
+	driver "github.com/arangodb/go-driver"
 )
 
 type Linux struct {
@@ -52,4 +55,32 @@ func GetLinuxById(id string) *Linux {
 		linux.Id = num
 		return linux
 	}
+}
+
+func GetInterfaceLst(id int64) ([]map[string]interface{}, error) {
+	aql := `for h in host
+filter h.host_identity == @host_identity
+return {
+    "if_lst": h.interface
+}`
+	ctx := context.Background()
+	cur, err := GraphDB.Query(ctx, aql, map[string]interface{}{
+		"host_identity": id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close()
+	result := make([]map[string]interface{}, 0, 10)
+	for {
+		info := make(map[string]interface{})
+		_, err := cur.ReadDocument(context.Background(), &info)
+		if driver.IsNoMoreDocuments(err) {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+		result = append(result, info)
+	}
+	return result, nil
 }

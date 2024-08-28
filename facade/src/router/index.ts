@@ -23,7 +23,7 @@ const router = createRouter({
         {
           name: "general",
           path: "/main",
-          //   redirect: "/main/dashboard",
+          redirect: "/main/dashboard",
           component: () => import("@/layout/General.vue"),
           meta: {
             text: "常规",
@@ -95,7 +95,7 @@ const router = createRouter({
               },
             },
             {
-              path: "/main/linux/detail",
+              path: "/main/linux/:linuxId/detail",
               name: "linuxDetail",
               component: () => import("../views/linux/Detail.vue"),
               meta: {

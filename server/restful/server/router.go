@@ -13,11 +13,12 @@ func (ws *WebServer) SetupRoutes() {
 	ws.Register4Api(http.MethodDelete, "/linux", handler.DeleteLinuxRecord)
 	ws.Register4Api(http.MethodGet, "/linux/:id/procLst", handler.GetProcessLst)
 	ws.Register4Api(http.MethodGet, "/linux/:id/proc/:pid/analyze", handler.GetProcAnalJobLst)
+	ws.Register4Api(http.MethodGet, "/linux/:id/topo", handler.GetLinuxTopo)
+	ws.Register4Api(http.MethodGet, "/linux/:id/if/lst", handler.GetInterfaceLst)
 
 	ws.Register4Api(http.MethodPost, "/job", handler.CreateJob)
-	ws.Register4Api(http.MethodGet, "/job/:jobId", handler.GetJobResult)
-	ws.Register4Callback(http.MethodPatch, "/job/updateStatus", handler.UpdateJobStatus)
-	ws.Register4Callback(http.MethodPatch, "/job/:jobId/onFinish", handler.OnJobFinish)
+	ws.Register4Api(http.MethodGet, "/job/:jobId/result", handler.GetJobResult)
+	ws.Register4Api(http.MethodGet, "/job/traffic/page", handler.GetTrafficJobLst)
 
 	ws.Register4Api(http.MethodPost, "/biz", handler.NewBizRecord)
 	ws.Register4Api(http.MethodPut, "/biz", handler.UpdateBizRecord)
@@ -49,4 +50,7 @@ func (ws *WebServer) SetupRoutes() {
 	ws.Register4Api(http.MethodGet, "/perf/load", handler.GetLoadPerf)
 	ws.Register4Api(http.MethodGet, "/perf/swap", handler.GetSwapPerf)
 	ws.Register4Api(http.MethodGet, "/perf/fs", handler.GetFSPerf)
+
+	ws.Register4Callback(http.MethodPatch, "/job/updateStatus", handler.UpdateJobStatus)
+	ws.Register4Callback(http.MethodPatch, "/job/:jobId/onFinish", handler.OnJobFinished)
 }

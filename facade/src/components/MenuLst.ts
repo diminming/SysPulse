@@ -23,22 +23,27 @@ export default [
         href: "/main/linux",
         icon: DesktopOutlined
     },
-    {
-        name: "Database",
-        text: "数据库",
-        href: "/main/database",
-        icon: DesktopOutlined
-    },
-    {
-        name: "Cache",
-        text: "缓存",
-        href: "/main/cache",
-        icon: DesktopOutlined
-    },
-    {
-        name: "Queue",
-        text: "队列",
-        href: "/main/queue",
+    // {
+    //     name: "Database",
+    //     text: "数据库",
+    //     href: "/main/database",
+    //     icon: DesktopOutlined
+    // },
+    // {
+    //     name: "Cache",
+    //     text: "缓存",
+    //     href: "/main/cache",
+    //     icon: DesktopOutlined
+    // },
+    // {
+    //     name: "Queue",
+    //     text: "队列",
+    //     href: "/main/queue",
+    //     icon: DesktopOutlined
+    // },
+    {    name: "Users",
+        text: "消息",
+        href: "/main/notification",
         icon: DesktopOutlined
     },
     {

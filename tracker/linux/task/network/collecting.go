@@ -1,80 +1,93 @@
-package net
+package network
 
 import (
 	"fmt"
 	"log"
-	"syspulse/tracker/linux/client"
+	"os"
+	"path"
+	"strings"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
+	"github.com/google/gopacket/pcapgo"
+	"github.com/google/uuid"
+
+	"syspulse/tracker/linux/common"
+	"syspulse/tracker/linux/task"
 )
 
-type Collector struct {
-	DeviceLst string
-	Courier   *client.Courier
-}
+func GetPacket(ifName string, limit int64, filterSetting map[string]interface{}, successNotification func(), onFinish func(fPath string)) {
+	tempDir := common.SysArgs.Storage.TempDir
+	fPath := path.Join(tempDir, uuid.NewString())
+	f, _ := os.Create(fPath)
+	// 创建一个writer对象
+	w := pcapgo.NewWriter(f)
+	// 写入文件头，必须在调用前调用
+	w.WriteFileHeader(uint32(65536), layers.LinkTypeEthernet)
+	defer f.Close()
 
-func (collector *Collector) Run() {
-
-}
-
-type Gatherer struct {
-	Device  string
-	Snaplen int32
-}
-
-func NewCollector(courier *client.Courier) *Collector {
-	collector := new(Collector)
-	collector.Courier = courier
-	return collector
-}
-
-func GetPacket() {
-	handle, err := pcap.OpenLive("wlp0s20f3", 1600, true, pcap.BlockForever)
+	handle, err := pcap.OpenLive(ifName, 65536, true, pcap.BlockForever)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer handle.Close()
+	cdtLst := make([]string, 0)
+	cdtLst = append(cdtLst, "tcp")
+	for key, val := range filterSetting {
+		if key == "port" {
+			cdtLst = append(cdtLst, fmt.Sprintf("port %d", val))
+		}
 
-	// 设置过滤条件，这里设置为捕获TCP流量
-	err = handle.SetBPFFilter("tcp")
+		if key == "direction" {
+			switch val {
+			case "in":
+				cdtLst = append(cdtLst, fmt.Sprintf("src %s", filterSetting["ip"]))
+			case "out":
+				cdtLst = append(cdtLst, fmt.Sprintf("dst %s", filterSetting["ip"]))
+			case "in,out":
+				cdtLst = append(cdtLst, fmt.Sprintf("host %s", filterSetting["ip"]))
+			}
+		}
+	}
+
+	err = handle.SetBPFFilter(strings.Join(cdtLst, " and "))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// 开始抓包
+	successNotification()
+
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
-
-	// 遍历捕获到的数据包
+	packets := int64(1)
 	for packet := range packetSource.Packets() {
-		// 解析数据包
-		ipv4Layer := packet.Layer(layers.LayerTypeIPv4)
-		if ipv4Layer != nil {
-			ipv4 := ipv4Layer.(*layers.IPv4)
-			src := ipv4.SrcIP.String()
-			dst := ipv4.DstIP.String()
-			length := ipv4.Length
-
-			transportLayer := packet.TransportLayer()
-			if transportLayer != nil {
-				// 检查传输层类型
-				switch transportLayer.(type) {
-				case *layers.TCP:
-					tcp, _ := transportLayer.(*layers.TCP)
-					// 提取TCP端口信息
-					srcPort := tcp.SrcPort.String()
-					dstPort := tcp.DstPort.String()
-					fmt.Printf("TCP { src: [%s:%s], dst: [%s:%s], len: %d }\n", src, srcPort, dst, dstPort, length)
-				case *layers.UDP:
-					udp, _ := transportLayer.(*layers.UDP)
-					// 提取UDP端口信息
-					srcPort := udp.SrcPort.String()
-					dstPort := udp.DstPort.String()
-					fmt.Printf("UDP { src: [%s:%s], dst: [%s:%s], len: %d }\n", src, srcPort, dst, dstPort, length)
-				}
-			}
-
+		w.WritePacket(packet.Metadata().CaptureInfo, packet.Data())
+		packets = packets + 1
+		if packets > limit {
+			break
 		}
 	}
+	onFinish(fPath)
+}
+
+func CreateCollectingTask(job task.Job) {
+
+	ifName := job.IfName
+	limit := job.Count
+	direction := job.Direction
+
+	go GetPacket(ifName, limit, map[string]interface{}{
+		"port":      job.Port,
+		"direction": strings.Join(direction, ","),
+		"ip":        job.IpAddr,
+	}, func() {
+		task.UpdateJobStatus(job.Id, task.JOB_STATUS_RUNNING)
+	}, func(fPath string) {
+		bkName, objName := task.UploadOutcome(fPath)
+		task.SendResult(job.Id, map[string]interface{}{
+			"bucket": bkName,
+			"object": objName,
+		})
+	})
+
 }

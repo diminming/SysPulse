@@ -7,8 +7,8 @@ import (
 
 func NewHouseKeeper() *Housekeeper {
 	housekeeper := new(Housekeeper)
-	housekeeper.topoCleaningInterval = 3600 * time.Second
-	housekeeper.topoTimeout = 12 // unit: Hour
+	housekeeper.topoCleaningInterval = 10 * time.Second
+	housekeeper.topoTimeout = 1 // unit: Hour
 	return housekeeper
 }
 

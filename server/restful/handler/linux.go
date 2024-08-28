@@ -15,92 +15,30 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetLinuxByPage(page int, pageSize int) []model.Linux {
-	first := page * pageSize
-	sql := `SELECT 
-    a.id, 
-    a.hostname, 
-    a.linux_id, 
-    a.biz_id,
-    b.biz_name, 
-    a.create_timestamp, 
-    a.update_timestamp
-FROM
-    (SELECT 
-        id,
-            hostname,
-            linux_id,
-            biz_id,
-            create_timestamp,
-            update_timestamp
-    FROM
-        linux
-    ORDER BY update_timestamp DESC , id DESC
-    LIMIT ? , ?) a
-        LEFT JOIN
-    biz b ON a.biz_id = b.id`
-	lst := model.DBSelect(sql, first, pageSize)
-	result := []model.Linux{}
-	for _, o := range lst {
-
-		var biz model.Business
-
-		if o["biz_id"].(int64) == 0 {
-			biz = model.Business{}
-		} else {
-			biz = model.Business{
-				Id:      o["biz_id"].(int64),
-				BizName: string(o["biz_name"].([]uint8)),
-			}
-		}
-
-		item := model.Linux{
-			Id:              o["id"].(int64),
-			Hostname:        string(o["hostname"].([]uint8)),
-			LinuxId:         string(o["linux_id"].([]uint8)),
-			Biz:             biz,
-			CreateTimestamp: o["create_timestamp"].(int64),
-			UpdateTimestamp: o["update_timestamp"].(int64),
-		}
-		result = append(result, item)
+func GetInterfaceLst(ctx *gin.Context) {
+	linuxId, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
 	}
-	return result
-}
-
-func GetLinuxTotal() int64 {
-	return model.GetLinuxTotal()
-}
-
-func CreateLinux(linux *model.Linux) {
-	sql := "insert into linux(`hostname`, `linux_id`, `biz_id`, `agent_conn`, create_timestamp, update_timestamp) value(?, ?, ?, ?, ?)"
-	id := model.DBInsert(sql, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, linux.CreateTimestamp, linux.UpdateTimestamp)
-	linux.Id = id
-}
-
-func UpdateLinux(linux *model.Linux, id int64) {
-	sql := "update linux set `id` = ?, `hostname`=?, `linux_id`=?, `biz_id`=?, `agent_conn`=?, `update_timestamp`=? where `id`=?"
-	model.DBUpdate(sql, linux.Id, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, linux.UpdateTimestamp, id)
-}
-
-func DeleteLinux(linuxId int) {
-	sql := "delete from linux where id = ?"
-	model.DBDelete(sql, linuxId)
-}
-
-func GetLinuxById(id int64) *model.Linux {
-	sql := "select * from linux where id = ?"
-	target := model.DBSelectRow(sql, id)
-	linux := new(model.Linux)
-	if target["agent_conn"] != nil {
-		linux.AgentConn = string(target["agent_conn"].([]uint8))
+	infoLst, err := model.GetInterfaceLst(linuxId)
+	if err != nil {
+		log.Default().Println(err)
+		ctx.JSON(http.StatusInternalServerError, response.JsonResponse{Status: http.StatusInternalServerError, Msg: err.Error()})
 	}
-	// linux.AgentConn = string(target["agent_conn"].([]uint8))
-	linux.CreateTimestamp = target["create_timestamp"].(int64)
-	linux.UpdateTimestamp = target["update_timestamp"].(int64)
-	linux.Id = target["id"].(int64)
-	linux.Hostname = string(target["hostname"].([]uint8))
-	linux.LinuxId = string(target["linux_id"].([]uint8))
-	return linux
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: infoLst, Msg: "success"})
+}
+
+func GetLinuxTopo(ctx *gin.Context) {
+	linuxId, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
+	}
+	infoLst, err := model.QueryLinuxTopo(linuxId)
+	if err != nil {
+		log.Default().Println(err)
+		ctx.JSON(http.StatusInternalServerError, response.JsonResponse{Status: http.StatusInternalServerError, Msg: err.Error()})
+	}
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: infoLst, Msg: "success"})
 }
 
 func GetLinuxInfoById(ctx *gin.Context) {
@@ -224,6 +162,94 @@ func GetProcAnalJobLst(ctx *gin.Context) {
 	}
 	jobLst := GetAnalyzationJobLst(int64(idOfLinux), pid)
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: jobLst, Msg: "success"})
+}
+
+func GetLinuxByPage(page int, pageSize int) []model.Linux {
+	first := page * pageSize
+	sql := `SELECT 
+    a.id, 
+    a.hostname, 
+    a.linux_id, 
+    a.biz_id,
+    b.biz_name, 
+    a.create_timestamp, 
+    a.update_timestamp
+FROM
+    (SELECT 
+        id,
+            hostname,
+            linux_id,
+            biz_id,
+            create_timestamp,
+            update_timestamp
+    FROM
+        linux
+    ORDER BY update_timestamp DESC , id DESC
+    LIMIT ?, ?) a
+        LEFT JOIN
+    biz b ON a.biz_id = b.id`
+	lst := model.DBSelect(sql, first, pageSize)
+	result := []model.Linux{}
+	for _, o := range lst {
+
+		var biz model.Business
+
+		if o["biz_id"].(int64) == 0 {
+			biz = model.Business{}
+		} else {
+			biz = model.Business{
+				Id:      o["biz_id"].(int64),
+				BizName: string(o["biz_name"].([]uint8)),
+			}
+		}
+
+		item := model.Linux{
+			Id:              o["id"].(int64),
+			Hostname:        string(o["hostname"].([]uint8)),
+			LinuxId:         string(o["linux_id"].([]uint8)),
+			Biz:             biz,
+			CreateTimestamp: o["create_timestamp"].(int64),
+			UpdateTimestamp: o["update_timestamp"].(int64),
+		}
+		result = append(result, item)
+	}
+	return result
+}
+
+func GetLinuxTotal() int64 {
+	return model.GetLinuxTotal()
+}
+
+func CreateLinux(linux *model.Linux) {
+	sql := "insert into linux(`hostname`, `linux_id`, `biz_id`, `agent_conn`, create_timestamp, update_timestamp) value(?, ?, ?, ?, ?)"
+	id := model.DBInsert(sql, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, linux.CreateTimestamp, linux.UpdateTimestamp)
+	linux.Id = id
+}
+
+func UpdateLinux(linux *model.Linux, id int64) {
+	sql := "update linux set `id` = ?, `hostname`=?, `linux_id`=?, `biz_id`=?, `agent_conn`=?, `update_timestamp`=? where `id`=?"
+	model.DBUpdate(sql, linux.Id, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, linux.UpdateTimestamp, id)
+}
+
+func DeleteLinux(linuxId int) {
+	sql := "delete from linux where id = ?"
+	model.DBDelete(sql, linuxId)
+}
+
+func GetLinuxById(id int64) *model.Linux {
+	sql := "select * from linux where id = ?"
+	target := model.DBSelectRow(sql, id)
+	linux := new(model.Linux)
+	if target["agent_conn"] != nil {
+		linux.AgentConn = string(target["agent_conn"].([]uint8))
+	}
+	// linux.AgentConn = string(target["agent_conn"].([]uint8))
+	linux.CreateTimestamp = target["create_timestamp"].(int64)
+	linux.UpdateTimestamp = target["update_timestamp"].(int64)
+	linux.Id = target["id"].(int64)
+	linux.Hostname = string(target["hostname"].([]uint8))
+	linux.LinuxId = string(target["linux_id"].([]uint8))
+	return linux
 }
 
 func GetAnalyzationJobLst(linuxId int64, pid int64) []map[string]interface{} {

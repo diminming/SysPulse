@@ -7,6 +7,7 @@ import (
 	"syscall"
 	"syspulse/tracker/linux/client"
 	"syspulse/tracker/linux/common"
+	"syspulse/tracker/linux/restful"
 	"syspulse/tracker/linux/task/perf"
 )
 
@@ -25,7 +26,7 @@ func startup() {
 	reporter := client.NewCourier()
 	defer reporter.Close()
 
-	executor, _ := client.NewExecutor(reporter)
+	executor, _ := restful.NewExecutor(reporter)
 	go func() {
 		executor.RunServer(reporter)
 	}()

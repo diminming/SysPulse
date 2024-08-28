@@ -35,6 +35,12 @@ type Config struct {
 		File struct {
 			Path string `yaml:"path"`
 		} `yaml:"file"`
+		FileServer struct {
+			Endpoint  string `yaml:"endpoint"`
+			AccessKey string `yaml:"access_key"`
+			SecretKey string `yaml:"secret_key"`
+			UseSSL    bool   `yaml:"useSSL"`
+		} `yaml:"file_server"`
 	} `yaml:"storage"`
 
 	Cache struct {

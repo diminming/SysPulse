@@ -42,7 +42,7 @@ import {computed, onMounted, reactive, ref} from "vue";
 import {useRouter} from "vue-router";
 import request from "@/utils/request";
 import type {TableColumnType, TableProps} from "ant-design-vue";
-import type {Linux} from "@/views/linux/linux"
+import type {Linux} from "@/views/linux/api"
 
 const showEditeDialog = ref<boolean>(false),
     linuxObj = reactive({
@@ -107,7 +107,10 @@ const pathTo1 = () => {
 };
 const gotoLinuxDetail = (data: Linux) => {
   // router.push({ name: "linuxSystem", query: { ...data.biz, ...data } });
-  router.push({path: "/main/linux/detail", query: {linuxId: data.id}});
+  // router.push({path: "/main/linux/detail", query: {linuxId: data.id}});
+  router.push({
+    path: `/main/linux/${data.id}/detail`,
+  });
 };
 
 const pgSetting = computed(() => ({

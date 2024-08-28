@@ -16,16 +16,22 @@ const (
 )
 
 type Job struct {
-	Id              int64  `json:"id"`
-	JobName         string `json:"job_name"`
-	Category        string `json:"category"`
-	Type            string `json:"type"`
-	Status          int    `json:"status"`
-	StartupTime     int64  `json:"startup_time"`
-	LinuxId         int64  `json:"linux_id"`
-	Pid             int32  `json:"pid"`
-	Duration        int32  `json:"duration"`
-	Immediately     bool   `json:"immediately"`
-	CreateTimestamp int64  `json:"create_timestamp"`
-	UpdateTimestamp int64  `json:"update_timestamp"`
+	Id              int64    `json:"id"`
+	JobName         string   `json:"job_name"`
+	Category        string   `json:"category"`
+	Type            string   `json:"type"`
+	Status          int      `json:"status"`
+	StartupTime     int64    `json:"startup_time"`
+	LinuxId         int64    `json:"linux_id"`
+	Pid             int32    `json:"pid"`
+	Duration        int32    `json:"duration"`
+	Immediately     bool     `json:"immediately"`
+	IfName          string   `json:"ifName"`
+	IpAddr          string   `json:"ipAddr"`
+	Port            int32    `json:"port"`
+	Direction       []string `json:"direction"`
+	Count           int64    `json:"count"`
+	Extend          string   `json:"extend"`
+	CreateTimestamp int64    `json:"create_timestamp"`
+	UpdateTimestamp int64    `json:"update_timestamp"`
 }

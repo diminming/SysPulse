@@ -50,6 +50,16 @@ type Config struct {
 			PerfFileSystem   int32 `yaml:"perf_filesystem"`
 		} `yaml:"frequency"`
 	} `yaml:"monitor"`
+
+	Storage struct {
+		TempDir    string `yaml:"temp_dir"`
+		FileServer struct {
+			Endpoint  string `yaml:"endpoint"`
+			AccessKey string `yaml:"access_key"`
+			SecretKey string `yaml:"secret_key"`
+			UseSSL    bool   `yaml:"useSSL"`
+		} `yaml:"file_server"`
+	} `yaml:"storage"`
 }
 
 var SysArgs Config

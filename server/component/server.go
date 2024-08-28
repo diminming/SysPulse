@@ -55,10 +55,9 @@ type HubServer struct {
 }
 
 func NewHubServer() *HubServer {
-	multicore := true
 	return &HubServer{
 		Addr:      common.SysArgs.Server.Hub.Addr,
-		Multicore: multicore,
+		Multicore: true,
 		buffChan:  make(chan []byte, 1000),
 	}
 
