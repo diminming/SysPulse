@@ -48,17 +48,20 @@ type Document struct {
 type HubServer struct {
 	gnet.BuiltinEventEngine
 
-	eng       gnet.Engine
-	Addr      string
-	Multicore bool
-	buffChan  chan []byte
+	eng           gnet.Engine
+	Addr          string
+	Multicore     bool
+	perfBuffChan  chan []byte
+	alarmBuffChan chan *Document
 }
 
 func NewHubServer() *HubServer {
+
 	return &HubServer{
-		Addr:      common.SysArgs.Server.Hub.Addr,
-		Multicore: true,
-		buffChan:  make(chan []byte, 1000),
+		Addr:          common.SysArgs.Server.Hub.Addr,
+		Multicore:     true,
+		perfBuffChan:  make(chan []byte, 1000),
+		alarmBuffChan: make(chan *Document, 1000),
 	}
 
 }
@@ -345,7 +348,7 @@ func (hub *HubServer) saveData(doc *Document) {
 
 func (hub *HubServer) unpack() {
 	for {
-		buff := <-hub.buffChan
+		buff := <-hub.perfBuffChan
 
 		buffer := bytes.NewBuffer(buff)
 		data := new(Document)
@@ -356,7 +359,162 @@ func (hub *HubServer) unpack() {
 			continue
 		}
 		hub.saveData(data)
+		hub.alarmBuffChan <- data
 		// hub.mongoClient.Insert("perf_data", data)
+	}
+}
+
+func (hub *HubServer) triggerCheck() {
+	for {
+		perfData := <-hub.alarmBuffChan
+		parameterLst := make([]PerfData, 0, 10)
+		data := perfData.Data
+		switch val := data.(type) {
+		case []cpu.TimesStat:
+			for _, stat := range val {
+				if stat.CPU == "cpu-total" {
+					parameter := PerfData{}
+					parameter.CPU = CpuPerfData{
+						User:      stat.User,
+						System:    stat.System,
+						Idle:      stat.Idle,
+						Nice:      stat.Nice,
+						Iowait:    stat.Iowait,
+						Irq:       stat.Irq,
+						Softirq:   stat.Softirq,
+						Steal:     stat.Steal,
+						Guest:     stat.Guest,
+						GuestNice: stat.GuestNice,
+					}
+					parameterLst = append(parameterLst, parameter)
+				}
+			}
+		case load.AvgStat:
+			parameter := PerfData{}
+			parameter.Load = LoadPerfData{
+				Load1:  val.Load1,
+				Load5:  val.Load5,
+				Load15: val.Load15,
+			}
+			parameterLst = append(parameterLst, parameter)
+		case mem.VirtualMemoryStat:
+			parameter := PerfData{}
+			parameter.Memory = MemoryPerfData{
+				Total:          val.Total,
+				Free:           val.Free,
+				Active:         val.Active,
+				Inactive:       val.Inactive,
+				Wired:          val.Wired,
+				Laundry:        val.Laundry,
+				Buffers:        val.Buffers,
+				Cached:         val.Cached,
+				WriteBack:      val.WriteBack,
+				Dirty:          val.Dirty,
+				WriteBackTmp:   val.WriteBackTmp,
+				Shared:         val.Shared,
+				Slab:           val.Slab,
+				Sreclaimable:   val.Sreclaimable,
+				Sunreclaim:     val.Sunreclaim,
+				PageTables:     val.PageTables,
+				SwapCached:     val.SwapCached,
+				CommitLimit:    val.CommitLimit,
+				CommittedAS:    val.CommittedAS,
+				HighTotal:      val.HighTotal,
+				HighFree:       val.HighFree,
+				LowTotal:       val.LowTotal,
+				LowFree:        val.LowFree,
+				SwapTotal:      val.SwapTotal,
+				SwapFree:       val.SwapFree,
+				Mapped:         val.Mapped,
+				VmallocTotal:   val.VmallocTotal,
+				VmallocUsed:    val.VmallocUsed,
+				VmallocChunk:   val.VmallocChunk,
+				HugePagesTotal: val.HugePagesTotal,
+				HugePagesFree:  val.HugePagesFree,
+				HugePagesRsvd:  val.HugePagesRsvd,
+				HugePagesSurp:  val.HugePagesSurp,
+				HugePageSize:   val.HugePageSize,
+				AnonHugePages:  val.AnonHugePages,
+			}
+			parameterLst = append(parameterLst, parameter)
+		case mem.SwapMemoryStat:
+			parameter := PerfData{}
+			parameter.Swap = SwapPerfData{
+				Total:       val.Total,
+				Used:        val.Used,
+				Free:        val.Free,
+				UsedPercent: val.UsedPercent,
+				Sin:         val.Sin,
+				Sout:        val.Sout,
+				PgIn:        val.PgIn,
+				PgOut:       val.PgOut,
+				PgFault:     val.PgFault,
+				PgMajFault:  val.PgMajFault,
+			}
+			parameterLst = append(parameterLst, parameter)
+		case []disk.UsageStat:
+			for _, item := range val {
+				parameter := PerfData{}
+				parameter.Disk = DiskPerfData{
+					Path:              item.Path,
+					Fstype:            item.Fstype,
+					Total:             item.Total,
+					Free:              item.Free,
+					Used:              item.Used,
+					UsedPercent:       item.UsedPercent,
+					InodesTotal:       item.InodesTotal,
+					InodesUsed:        item.InodesUsed,
+					InodesFree:        item.InodesFree,
+					InodesUsedPercent: item.InodesUsedPercent,
+				}
+				parameterLst = append(parameterLst, parameter)
+			}
+
+		case map[string]disk.IOCountersStat:
+			for disk, item := range val {
+				parameter := PerfData{}
+				parameter.DiskIO = DiskIOPerfData{
+					Disk:             disk,
+					ReadCount:        item.ReadCount,
+					MergedReadCount:  item.MergedReadCount,
+					WriteCount:       item.WriteCount,
+					MergedWriteCount: item.MergedWriteCount,
+					ReadBytes:        item.ReadBytes,
+					WriteBytes:       item.WriteBytes,
+					ReadTime:         item.ReadTime,
+					WriteTime:        item.WriteTime,
+					IopsInProgress:   item.IopsInProgress,
+					IoTime:           item.IoTime,
+					WeightedIO:       item.WeightedIO,
+					Name:             item.Name,
+					SerialNumber:     item.SerialNumber,
+					Label:            item.Label,
+				}
+				parameterLst = append(parameterLst, parameter)
+			}
+
+		case []net.IOCountersStat:
+			for _, item := range val {
+				parameter := PerfData{}
+				parameter.NetDeviceIO = NetDeviceIOPerfData{
+					Name:        item.Name,
+					BytesSent:   item.BytesSent,
+					BytesRecv:   item.BytesRecv,
+					PacketsSent: item.PacketsSent,
+					PacketsRecv: item.PacketsRecv,
+					Errin:       item.Errin,
+					Errout:      item.Errout,
+					Dropin:      item.Dropin,
+					Dropout:     item.Dropout,
+					Fifoin:      item.Fifoin,
+					Fifoout:     item.Fifoout,
+				}
+				parameterLst = append(parameterLst, parameter)
+			}
+		}
+		for _, param := range parameterLst {
+			TriggerCheck(perfData.Identity, param, perfData.Timestamp)
+		}
 	}
 }
 
@@ -364,11 +522,19 @@ func (hub *HubServer) OnBoot(eng gnet.Engine) gnet.Action {
 	hub.eng = eng
 	log.Printf("echo server with multi-core=%t is listening on %s\n", hub.Multicore, hub.Addr)
 	goroutine_total := 5
+
 	for idx := 0; idx < goroutine_total; idx++ {
 		go func() {
 			hub.unpack()
 		}()
 	}
+
+	for idx := 0; idx < goroutine_total; idx++ {
+		go func() {
+			hub.triggerCheck()
+		}()
+	}
+
 	return gnet.None
 }
 
@@ -376,6 +542,6 @@ func (hub *HubServer) OnTraffic(c gnet.Conn) gnet.Action {
 	buf0, _ := c.Next(-1)
 	buf := make([]byte, len(buf0))
 	copy(buf, buf0)
-	hub.buffChan <- buf
+	hub.perfBuffChan <- buf
 	return gnet.None
 }

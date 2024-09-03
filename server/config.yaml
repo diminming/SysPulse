@@ -25,3 +25,4 @@ cache:
   host: "localhost"
   port: 6379
   index: 0
+trigger_cfg: "/workspace/SysPulse/server/trigger.yaml"

@@ -48,6 +48,8 @@ type Config struct {
 		Port    int    `yaml:"port"`
 		DBIndex int    `yaml:"index"`
 	} `yaml:"cache"`
+
+	TriggerCfg string `yaml:"trigger_cfg"`
 }
 
 var SysArgs Config
