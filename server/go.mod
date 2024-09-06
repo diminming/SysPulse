@@ -14,8 +14,7 @@ require (
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
-	github.com/panjf2000/ants v1.3.0 // indirect
-	github.com/panjf2000/ants/v2 v2.10.0 // indirect
+	github.com/panjf2000/ants/v2 v2.10.0
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/rs/xid v1.5.0 // indirect
