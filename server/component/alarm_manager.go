@@ -3,7 +3,8 @@ package component
 import (
 	"log"
 	"os"
-	"syspulse/common"
+
+	"github.com/syspulse/common"
 
 	"github.com/expr-lang/expr"
 	"github.com/expr-lang/expr/vm"
@@ -34,12 +35,7 @@ type CpuPerfData struct {
 	Steal     float64 `expr:"steal"`
 	Guest     float64 `expr:"guest"`
 	GuestNice float64 `expr:"guestNice"`
-}
-
-func (data CpuPerfData) UserPrct() float64 {
-	used := data.User + data.Nice + data.System + data.Iowait + data.Irq + data.Softirq + data.Steal
-	result := used / (used + data.Idle) * 100
-	return result
+	CpuUtil   float64 `expr:"util"`
 }
 
 type LoadPerfData struct {
@@ -195,7 +191,7 @@ func TriggerCheck(identity string, parameters PerfData, timestamp int64) {
 		}
 
 		if result.(bool) {
-			log.Default().Printf("<Alarm> timestamp: %d, identity: %s, result: %b, data: %s", timestamp, identity, result, common.ToString(parameters))
+			log.Default().Printf("<Alarm> timestamp: %d, identity: %s, result: %b, trigger: %s", timestamp, identity, result, program.Source().String())
 		}
 
 	}

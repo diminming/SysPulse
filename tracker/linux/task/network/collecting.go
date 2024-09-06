@@ -13,8 +13,8 @@ import (
 	"github.com/google/gopacket/pcapgo"
 	"github.com/google/uuid"
 
-	"syspulse/tracker/linux/common"
-	"syspulse/tracker/linux/task"
+	"github.com/syspulse/tracker/linux/common"
+	"github.com/syspulse/tracker/linux/task"
 )
 
 func GetPacket(ifName string, limit int64, filterSetting map[string]interface{}, successNotification func(), onFinish func(fPath string)) {

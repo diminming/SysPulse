@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"syspulse/common"
 	"time"
+
+	"github.com/syspulse/common"
 
 	_ "github.com/go-sql-driver/mysql"
 )

@@ -6,9 +6,10 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"syspulse/model"
-	"syspulse/restful/server/response"
 	"time"
+
+	"github.com/syspulse/model"
+	"github.com/syspulse/restful/server/response"
 
 	"github.com/gin-gonic/gin"
 )

@@ -3,7 +3,8 @@ package model
 import (
 	"context"
 	"log"
-	"syspulse/common"
+
+	"github.com/syspulse/common"
 
 	driver "github.com/arangodb/go-driver"
 	"github.com/arangodb/go-driver/http"

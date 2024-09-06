@@ -3,7 +3,8 @@ package client
 import (
 	"context"
 	"log"
-	"syspulse/tracker/linux/common"
+
+	"github.com/syspulse/tracker/linux/common"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"

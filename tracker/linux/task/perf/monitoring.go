@@ -13,8 +13,9 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/shirou/gopsutil/v3/net"
 
-	"syspulse/tracker/linux/client"
-	"syspulse/tracker/linux/common"
+	"github.com/syspulse/mutual"
+	"github.com/syspulse/tracker/linux/client"
+	"github.com/syspulse/tracker/linux/common"
 
 	"github.com/shirou/gopsutil/v3/process"
 )
@@ -34,15 +35,10 @@ func init() {
 	gob.Register([]net.ConnectionStat{})
 	gob.Register(net.InterfaceStatList{})
 	gob.Register([]*process.Process{})
+	gob.Register(mutual.CpuUtilization{})
 }
 
 type Callback func()
-
-type Document struct {
-	Identity  string
-	Timestamp int64
-	Data      interface{}
-}
 
 type Monitor struct {
 	client   *client.Courier
@@ -61,7 +57,7 @@ func NewMonitor(client *client.Courier, cb Callback) (*Monitor, error) {
 func (m *Monitor) Send(data interface{}) {
 	buffer := new(bytes.Buffer)
 	encoder := gob.NewEncoder(buffer)
-	p := Document{
+	p := mutual.Document{
 		Identity:  common.SysArgs.Identity,
 		Timestamp: time.Now().UnixMilli(),
 		Data:      data,
@@ -70,7 +66,8 @@ func (m *Monitor) Send(data interface{}) {
 	if err != nil {
 		log.Default().Println(err)
 	}
-	m.client.Send(buffer.Bytes())
+	m.client.Write(buffer.Bytes())
+	// m.client.SendPipe <- buffer.Bytes()
 }
 
 func (m *Monitor) Run() {
@@ -109,10 +106,14 @@ func (m *Monitor) Run() {
 			m.Send(procLst)
 		case <-tickerPerfCpu.C:
 			timeStat1, _ := cpu.Times(false)
-			timeStat2, _ := cpu.Times(true)
+			perc, _ := cpu.Percent(time.Second, false)
+
+			log.Default().Printf("got cpt util: %f", perc[0])
 
 			m.Send(timeStat1)
-			m.Send(timeStat2)
+			m.Send(mutual.CpuUtilization{
+				Percent: perc[0],
+			})
 		case <-tickerPerfLoad.C:
 			loadStat, _ := load.Avg()
 			m.Send(loadStat)

@@ -7,9 +7,10 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"syspulse/tracker/linux/client"
-	"syspulse/tracker/linux/common"
 	"time"
+
+	"github.com/syspulse/tracker/linux/client"
+	"github.com/syspulse/tracker/linux/common"
 
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )

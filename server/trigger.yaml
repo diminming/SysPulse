@@ -1,4 +1,4 @@
 triggers:
   - linux: "dev.env"
     expression: 
-    - "cpu.UserPrct() > 10"
+    - "cpu.util > 10"

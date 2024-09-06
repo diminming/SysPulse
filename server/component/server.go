@@ -2,11 +2,13 @@ package component
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/gob"
 	"fmt"
 	"log"
 	"runtime"
 	"strconv"
+	"time"
 
 	"github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -16,11 +18,16 @@ import (
 	"github.com/shirou/gopsutil/v3/net"
 	"github.com/shirou/gopsutil/v3/process"
 
-	"github.com/panjf2000/gnet/v2"
+	ants "github.com/panjf2000/ants/v2"
+	gnet "github.com/panjf2000/gnet/v2"
 
-	"syspulse/common"
-	"syspulse/model"
+	"github.com/syspulse/common"
+	"github.com/syspulse/model"
+
+	"github.com/syspulse/mutual"
 )
+
+var pool4PerfData, pool4Alarm *ants.PoolWithFunc
 
 func init() {
 	gob.Register([]cpu.InfoStat{})
@@ -37,31 +44,198 @@ func init() {
 	gob.Register([]net.ConnectionStat{})
 	gob.Register(net.InterfaceStatList{})
 	gob.Register([]*process.Process{})
-}
-
-type Document struct {
-	Identity  string
-	Timestamp int64
-	Data      interface{}
+	gob.Register(mutual.CpuUtilization{})
 }
 
 type HubServer struct {
 	gnet.BuiltinEventEngine
 
-	eng           gnet.Engine
-	Addr          string
-	Multicore     bool
-	perfBuffChan  chan []byte
-	alarmBuffChan chan *Document
+	eng       gnet.Engine
+	Addr      string
+	Multicore bool
+	// perfBuffChan  chan []byte
+	// alarmBuffChan chan *mutual.Document
+
 }
 
 func NewHubServer() *HubServer {
 
+	pool0, err := ants.NewPoolWithFunc(100, saveData)
+
+	if err != nil {
+		log.Default().Fatalf("error create routine pool: %v", err)
+	}
+
+	pool1, err := ants.NewPoolWithFunc(100, func(arg any) {
+		doc := arg.(*mutual.Document)
+		parameterLst := make([]PerfData, 0, 10)
+		data := doc.Data
+		switch val := data.(type) {
+		case mutual.CpuUtilization:
+			parameterLst = append(parameterLst, PerfData{
+				CPU: CpuPerfData{
+					CpuUtil: val.Percent,
+				},
+			})
+		case []cpu.TimesStat:
+			for _, stat := range val {
+				if stat.CPU == "cpu-total" {
+					parameter := PerfData{}
+					parameter.CPU = CpuPerfData{
+						User:      stat.User,
+						System:    stat.System,
+						Idle:      stat.Idle,
+						Nice:      stat.Nice,
+						Iowait:    stat.Iowait,
+						Irq:       stat.Irq,
+						Softirq:   stat.Softirq,
+						Steal:     stat.Steal,
+						Guest:     stat.Guest,
+						GuestNice: stat.GuestNice,
+					}
+					parameterLst = append(parameterLst, parameter)
+				}
+			}
+		case load.AvgStat:
+			parameter := PerfData{}
+			parameter.Load = LoadPerfData{
+				Load1:  val.Load1,
+				Load5:  val.Load5,
+				Load15: val.Load15,
+			}
+			parameterLst = append(parameterLst, parameter)
+		case mem.VirtualMemoryStat:
+			parameter := PerfData{}
+			parameter.Memory = MemoryPerfData{
+				Total:          val.Total,
+				Free:           val.Free,
+				Active:         val.Active,
+				Inactive:       val.Inactive,
+				Wired:          val.Wired,
+				Laundry:        val.Laundry,
+				Buffers:        val.Buffers,
+				Cached:         val.Cached,
+				WriteBack:      val.WriteBack,
+				Dirty:          val.Dirty,
+				WriteBackTmp:   val.WriteBackTmp,
+				Shared:         val.Shared,
+				Slab:           val.Slab,
+				Sreclaimable:   val.Sreclaimable,
+				Sunreclaim:     val.Sunreclaim,
+				PageTables:     val.PageTables,
+				SwapCached:     val.SwapCached,
+				CommitLimit:    val.CommitLimit,
+				CommittedAS:    val.CommittedAS,
+				HighTotal:      val.HighTotal,
+				HighFree:       val.HighFree,
+				LowTotal:       val.LowTotal,
+				LowFree:        val.LowFree,
+				SwapTotal:      val.SwapTotal,
+				SwapFree:       val.SwapFree,
+				Mapped:         val.Mapped,
+				VmallocTotal:   val.VmallocTotal,
+				VmallocUsed:    val.VmallocUsed,
+				VmallocChunk:   val.VmallocChunk,
+				HugePagesTotal: val.HugePagesTotal,
+				HugePagesFree:  val.HugePagesFree,
+				HugePagesRsvd:  val.HugePagesRsvd,
+				HugePagesSurp:  val.HugePagesSurp,
+				HugePageSize:   val.HugePageSize,
+				AnonHugePages:  val.AnonHugePages,
+			}
+			parameterLst = append(parameterLst, parameter)
+		case mem.SwapMemoryStat:
+			parameter := PerfData{}
+			parameter.Swap = SwapPerfData{
+				Total:       val.Total,
+				Used:        val.Used,
+				Free:        val.Free,
+				UsedPercent: val.UsedPercent,
+				Sin:         val.Sin,
+				Sout:        val.Sout,
+				PgIn:        val.PgIn,
+				PgOut:       val.PgOut,
+				PgFault:     val.PgFault,
+				PgMajFault:  val.PgMajFault,
+			}
+			parameterLst = append(parameterLst, parameter)
+		case []disk.UsageStat:
+			for _, item := range val {
+				parameter := PerfData{}
+				parameter.Disk = DiskPerfData{
+					Path:              item.Path,
+					Fstype:            item.Fstype,
+					Total:             item.Total,
+					Free:              item.Free,
+					Used:              item.Used,
+					UsedPercent:       item.UsedPercent,
+					InodesTotal:       item.InodesTotal,
+					InodesUsed:        item.InodesUsed,
+					InodesFree:        item.InodesFree,
+					InodesUsedPercent: item.InodesUsedPercent,
+				}
+				parameterLst = append(parameterLst, parameter)
+			}
+
+		case map[string]disk.IOCountersStat:
+			for disk, item := range val {
+				parameter := PerfData{}
+				parameter.DiskIO = DiskIOPerfData{
+					Disk:             disk,
+					ReadCount:        item.ReadCount,
+					MergedReadCount:  item.MergedReadCount,
+					WriteCount:       item.WriteCount,
+					MergedWriteCount: item.MergedWriteCount,
+					ReadBytes:        item.ReadBytes,
+					WriteBytes:       item.WriteBytes,
+					ReadTime:         item.ReadTime,
+					WriteTime:        item.WriteTime,
+					IopsInProgress:   item.IopsInProgress,
+					IoTime:           item.IoTime,
+					WeightedIO:       item.WeightedIO,
+					Name:             item.Name,
+					SerialNumber:     item.SerialNumber,
+					Label:            item.Label,
+				}
+				parameterLst = append(parameterLst, parameter)
+			}
+
+		case []net.IOCountersStat:
+			for _, item := range val {
+				parameter := PerfData{}
+				parameter.NetDeviceIO = NetDeviceIOPerfData{
+					Name:        item.Name,
+					BytesSent:   item.BytesSent,
+					BytesRecv:   item.BytesRecv,
+					PacketsSent: item.PacketsSent,
+					PacketsRecv: item.PacketsRecv,
+					Errin:       item.Errin,
+					Errout:      item.Errout,
+					Dropin:      item.Dropin,
+					Dropout:     item.Dropout,
+					Fifoin:      item.Fifoin,
+					Fifoout:     item.Fifoout,
+				}
+				parameterLst = append(parameterLst, parameter)
+			}
+		}
+		for _, param := range parameterLst {
+			TriggerCheck(doc.Identity, param, doc.Timestamp)
+		}
+	})
+
+	if err != nil {
+		log.Default().Fatalf("error create routine pool: %v", err)
+	}
+
+	pool4PerfData = pool0
+	pool4Alarm = pool1
+
 	return &HubServer{
-		Addr:          common.SysArgs.Server.Hub.Addr,
-		Multicore:     true,
-		perfBuffChan:  make(chan []byte, 1000),
-		alarmBuffChan: make(chan *Document, 1000),
+		Addr:      common.SysArgs.Server.Hub.Addr,
+		Multicore: true,
+		// perfBuffChan:  make(chan []byte, 1000),
+		// alarmBuffChan: make(chan *mutual.Document, 1000),
 	}
 
 }
@@ -301,7 +475,7 @@ func saveProcess(linuxId int64, procLst []*process.Process, timestamp int64) {
 
 }
 
-func (hub *HubServer) saveData(doc *Document) {
+func saveData(arg interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Default().Println(err)
@@ -314,7 +488,8 @@ func (hub *HubServer) saveData(doc *Document) {
 			}
 		}
 	}()
-	perfData := *doc
+	doc := arg.(*mutual.Document)
+	perfData := doc
 	values := perfData.Data
 	identity := perfData.Identity
 	linux := model.GetLinuxById(identity)
@@ -346,202 +521,45 @@ func (hub *HubServer) saveData(doc *Document) {
 	}
 }
 
-func (hub *HubServer) unpack() {
-	for {
-		buff := <-hub.perfBuffChan
-
-		buffer := bytes.NewBuffer(buff)
-		data := new(Document)
-		decoder := gob.NewDecoder(buffer)
-		err := decoder.Decode(data)
-		if err != nil {
-			log.Default().Println(err)
-			continue
-		}
-		hub.saveData(data)
-		hub.alarmBuffChan <- data
-		// hub.mongoClient.Insert("perf_data", data)
-	}
-}
-
-func (hub *HubServer) triggerCheck() {
-	for {
-		perfData := <-hub.alarmBuffChan
-		parameterLst := make([]PerfData, 0, 10)
-		data := perfData.Data
-		switch val := data.(type) {
-		case []cpu.TimesStat:
-			for _, stat := range val {
-				if stat.CPU == "cpu-total" {
-					parameter := PerfData{}
-					parameter.CPU = CpuPerfData{
-						User:      stat.User,
-						System:    stat.System,
-						Idle:      stat.Idle,
-						Nice:      stat.Nice,
-						Iowait:    stat.Iowait,
-						Irq:       stat.Irq,
-						Softirq:   stat.Softirq,
-						Steal:     stat.Steal,
-						Guest:     stat.Guest,
-						GuestNice: stat.GuestNice,
-					}
-					parameterLst = append(parameterLst, parameter)
-				}
-			}
-		case load.AvgStat:
-			parameter := PerfData{}
-			parameter.Load = LoadPerfData{
-				Load1:  val.Load1,
-				Load5:  val.Load5,
-				Load15: val.Load15,
-			}
-			parameterLst = append(parameterLst, parameter)
-		case mem.VirtualMemoryStat:
-			parameter := PerfData{}
-			parameter.Memory = MemoryPerfData{
-				Total:          val.Total,
-				Free:           val.Free,
-				Active:         val.Active,
-				Inactive:       val.Inactive,
-				Wired:          val.Wired,
-				Laundry:        val.Laundry,
-				Buffers:        val.Buffers,
-				Cached:         val.Cached,
-				WriteBack:      val.WriteBack,
-				Dirty:          val.Dirty,
-				WriteBackTmp:   val.WriteBackTmp,
-				Shared:         val.Shared,
-				Slab:           val.Slab,
-				Sreclaimable:   val.Sreclaimable,
-				Sunreclaim:     val.Sunreclaim,
-				PageTables:     val.PageTables,
-				SwapCached:     val.SwapCached,
-				CommitLimit:    val.CommitLimit,
-				CommittedAS:    val.CommittedAS,
-				HighTotal:      val.HighTotal,
-				HighFree:       val.HighFree,
-				LowTotal:       val.LowTotal,
-				LowFree:        val.LowFree,
-				SwapTotal:      val.SwapTotal,
-				SwapFree:       val.SwapFree,
-				Mapped:         val.Mapped,
-				VmallocTotal:   val.VmallocTotal,
-				VmallocUsed:    val.VmallocUsed,
-				VmallocChunk:   val.VmallocChunk,
-				HugePagesTotal: val.HugePagesTotal,
-				HugePagesFree:  val.HugePagesFree,
-				HugePagesRsvd:  val.HugePagesRsvd,
-				HugePagesSurp:  val.HugePagesSurp,
-				HugePageSize:   val.HugePageSize,
-				AnonHugePages:  val.AnonHugePages,
-			}
-			parameterLst = append(parameterLst, parameter)
-		case mem.SwapMemoryStat:
-			parameter := PerfData{}
-			parameter.Swap = SwapPerfData{
-				Total:       val.Total,
-				Used:        val.Used,
-				Free:        val.Free,
-				UsedPercent: val.UsedPercent,
-				Sin:         val.Sin,
-				Sout:        val.Sout,
-				PgIn:        val.PgIn,
-				PgOut:       val.PgOut,
-				PgFault:     val.PgFault,
-				PgMajFault:  val.PgMajFault,
-			}
-			parameterLst = append(parameterLst, parameter)
-		case []disk.UsageStat:
-			for _, item := range val {
-				parameter := PerfData{}
-				parameter.Disk = DiskPerfData{
-					Path:              item.Path,
-					Fstype:            item.Fstype,
-					Total:             item.Total,
-					Free:              item.Free,
-					Used:              item.Used,
-					UsedPercent:       item.UsedPercent,
-					InodesTotal:       item.InodesTotal,
-					InodesUsed:        item.InodesUsed,
-					InodesFree:        item.InodesFree,
-					InodesUsedPercent: item.InodesUsedPercent,
-				}
-				parameterLst = append(parameterLst, parameter)
-			}
-
-		case map[string]disk.IOCountersStat:
-			for disk, item := range val {
-				parameter := PerfData{}
-				parameter.DiskIO = DiskIOPerfData{
-					Disk:             disk,
-					ReadCount:        item.ReadCount,
-					MergedReadCount:  item.MergedReadCount,
-					WriteCount:       item.WriteCount,
-					MergedWriteCount: item.MergedWriteCount,
-					ReadBytes:        item.ReadBytes,
-					WriteBytes:       item.WriteBytes,
-					ReadTime:         item.ReadTime,
-					WriteTime:        item.WriteTime,
-					IopsInProgress:   item.IopsInProgress,
-					IoTime:           item.IoTime,
-					WeightedIO:       item.WeightedIO,
-					Name:             item.Name,
-					SerialNumber:     item.SerialNumber,
-					Label:            item.Label,
-				}
-				parameterLst = append(parameterLst, parameter)
-			}
-
-		case []net.IOCountersStat:
-			for _, item := range val {
-				parameter := PerfData{}
-				parameter.NetDeviceIO = NetDeviceIOPerfData{
-					Name:        item.Name,
-					BytesSent:   item.BytesSent,
-					BytesRecv:   item.BytesRecv,
-					PacketsSent: item.PacketsSent,
-					PacketsRecv: item.PacketsRecv,
-					Errin:       item.Errin,
-					Errout:      item.Errout,
-					Dropin:      item.Dropin,
-					Dropout:     item.Dropout,
-					Fifoin:      item.Fifoin,
-					Fifoout:     item.Fifoout,
-				}
-				parameterLst = append(parameterLst, parameter)
-			}
-		}
-		for _, param := range parameterLst {
-			TriggerCheck(perfData.Identity, param, perfData.Timestamp)
-		}
-	}
-}
-
 func (hub *HubServer) OnBoot(eng gnet.Engine) gnet.Action {
 	hub.eng = eng
 	log.Printf("echo server with multi-core=%t is listening on %s\n", hub.Multicore, hub.Addr)
-	goroutine_total := 5
-
-	for idx := 0; idx < goroutine_total; idx++ {
-		go func() {
-			hub.unpack()
-		}()
-	}
-
-	for idx := 0; idx < goroutine_total; idx++ {
-		go func() {
-			hub.triggerCheck()
-		}()
-	}
 
 	return gnet.None
 }
 
 func (hub *HubServer) OnTraffic(c gnet.Conn) gnet.Action {
-	buf0, _ := c.Next(-1)
-	buf := make([]byte, len(buf0))
-	copy(buf, buf0)
-	hub.perfBuffChan <- buf
+	st1 := time.Now().Unix()
+	header, err := c.Next(5)
+	if err != nil {
+		log.Default().Printf("error in read msg header: %v", err)
+	}
+	if header[0] == 'S' {
+		length := binary.LittleEndian.Uint32(header[1:])
+		payload, err := c.Next(int(length))
+		if err != nil {
+			log.Default().Panicf("error in read payload: %v", err)
+		}
+
+		buffer := bytes.NewBuffer(payload)
+		doc := new(mutual.Document)
+		decoder := gob.NewDecoder(buffer)
+		err = decoder.Decode(doc)
+		if err != nil {
+			log.Default().Println(err)
+		}
+		log.Default().Printf("got doc, gap: %d", time.Now().UnixMilli()-doc.Timestamp)
+		pool4PerfData.Invoke(doc)
+		pool4Alarm.Invoke(doc)
+
+		log.Default().Printf("goroutine pool size: %d, free: %d", pool4PerfData.Cap(), pool4PerfData.Free())
+		st2 := time.Now().Unix()
+		log.Default().Printf("spend: %d", st2-st1)
+	}
+
 	return gnet.None
+}
+
+func (hub *HubServer) OnShutdown(eng gnet.Engine) {
+
 }

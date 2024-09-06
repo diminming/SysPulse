@@ -1,8 +1,9 @@
 package housekeeper
 
 import (
-	"syspulse/model"
 	"time"
+
+	"github.com/syspulse/model"
 )
 
 func NewHouseKeeper() *Housekeeper {

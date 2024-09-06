@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"syspulse/common"
-	"syspulse/model"
-	"syspulse/restful/server/response"
 	"time"
+
+	"github.com/syspulse/common"
+	"github.com/syspulse/model"
+	"github.com/syspulse/restful/server/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

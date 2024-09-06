@@ -5,9 +5,10 @@ import (
 	"log"
 	_ "net/http/pprof"
 	"sync"
-	"syspulse/component"
-	"syspulse/housekeeper"
-	rest "syspulse/restful/server"
+
+	"github.com/syspulse/component"
+	"github.com/syspulse/housekeeper"
+	rest "github.com/syspulse/restful/server"
 
 	"github.com/panjf2000/gnet/v2"
 )
@@ -33,7 +34,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		srv := component.NewHubServer()
-		log.Fatal(gnet.Run(srv, srv.Addr, gnet.WithMulticore(srv.Multicore)))
+		log.Fatal(gnet.Run(srv, srv.Addr, gnet.WithMulticore(srv.Multicore), gnet.WithTCPNoDelay(gnet.TCPNoDelay), gnet.WithNumEventLoop(10)))
 	}()
 
 	wg.Add(1)

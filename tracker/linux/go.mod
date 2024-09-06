@@ -1,6 +1,6 @@
-module syspulse/tracker/linux
+module github.com/syspulse/tracker/linux
 
-go 1.21.5
+go 1.22.4
 
 require github.com/hashicorp/go-multierror v1.1.1
 
@@ -45,6 +45,7 @@ require (
 )
 
 require (
+github.com/syspulse/mutual v0.0.0
 	github.com/cilium/ebpf v0.13.2
 	github.com/gin-gonic/gin v1.9.1
 	github.com/google/gopacket v1.1.19
@@ -58,3 +59,5 @@ require (
 	google.golang.org/protobuf v1.32.0
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+replace github.com/syspulse/mutual => /workspace/SysPulse/mutual

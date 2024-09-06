@@ -2,7 +2,8 @@ package server
 
 import (
 	"net/http"
-	"syspulse/restful/handler"
+
+	"github.com/syspulse/restful/handler"
 )
 
 func (ws *WebServer) SetupRoutes() {

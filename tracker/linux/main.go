@@ -5,10 +5,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"syspulse/tracker/linux/client"
-	"syspulse/tracker/linux/common"
-	"syspulse/tracker/linux/restful"
-	"syspulse/tracker/linux/task/perf"
+
+	"github.com/syspulse/tracker/linux/client"
+	"github.com/syspulse/tracker/linux/common"
+	"github.com/syspulse/tracker/linux/restful"
+	"github.com/syspulse/tracker/linux/task/perf"
 )
 
 func main() {
@@ -33,13 +34,14 @@ func startup() {
 
 	monitorConfig := common.SysArgs.Monitor
 	if monitorConfig.Enable {
-		monitor, _ := perf.NewMonitor(reporter, func() {
-		})
 
 		go func() {
+			monitor, _ := perf.NewMonitor(reporter, func() {
+			})
+			defer monitor.Stop()
 			monitor.Run()
 		}()
-		defer monitor.Stop()
+
 	}
 
 	<-sigChan

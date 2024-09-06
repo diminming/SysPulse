@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"log"
 	"path"
-	"syspulse/common"
+
+	"github.com/syspulse/common"
 
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"

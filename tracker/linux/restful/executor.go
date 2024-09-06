@@ -5,12 +5,13 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"syspulse/tracker/linux/client"
-	"syspulse/tracker/linux/common"
-	"syspulse/tracker/linux/task"
-	"syspulse/tracker/linux/task/kernel"
-	"syspulse/tracker/linux/task/network"
 	"time"
+
+	"github.com/syspulse/tracker/linux/client"
+	"github.com/syspulse/tracker/linux/common"
+	"github.com/syspulse/tracker/linux/task"
+	"github.com/syspulse/tracker/linux/task/kernel"
+	"github.com/syspulse/tracker/linux/task/network"
 
 	"github.com/gin-gonic/gin"
 	"github.com/shirou/gopsutil/v3/process"
