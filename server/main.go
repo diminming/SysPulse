@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	log.Default().SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	log.Default().SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 }
 
 func main() {
@@ -34,7 +34,14 @@ func main() {
 	go func() {
 		defer wg.Done()
 		srv := component.NewHubServer()
-		log.Fatal(gnet.Run(srv, srv.Addr, gnet.WithMulticore(srv.Multicore), gnet.WithTCPNoDelay(gnet.TCPNoDelay), gnet.WithNumEventLoop(10)))
+		gnet.Run(srv,
+			srv.Addr,
+			gnet.WithMulticore(srv.Multicore),
+			// gnet.WithTCPNoDelay(gnet.TCPNoDelay),
+			// gnet.WithNumEventLoop(10),
+			// gnet.WithWriteBufferCap(1024*1024),
+		)
+
 	}()
 
 	wg.Add(1)
