@@ -25,6 +25,7 @@ import (
 	"github.com/syspulse/model"
 
 	"github.com/syspulse/mutual"
+	mutual_common "github.com/syspulse/mutual/common"
 )
 
 var pool4PerfData, pool4Alarm *ants.PoolWithFunc
@@ -529,17 +530,25 @@ func (hub *HubServer) OnBoot(eng gnet.Engine) gnet.Action {
 }
 
 func (hub *HubServer) OnTraffic(c gnet.Conn) gnet.Action {
-	st1 := time.Now().Unix()
-	header, err := c.Next(5)
+
+	data, err := c.Next(-1)
 	if err != nil {
-		log.Default().Printf("error in read msg header: %v", err)
+		log.Default().Printf("can't read data from conn: %v", err)
 	}
-	if header[0] == 'S' {
-		length := binary.LittleEndian.Uint32(header[1:])
-		payload, err := c.Next(int(length))
+	buff := make([]byte, len(data))
+	copy(buff, data)
+	// go func() {
+	st1 := time.Now().Unix()
+	if buff[0] == 'S' {
+		length := binary.LittleEndian.Uint32(buff[1:5])
+		payload := buff[5 : length+5]
 		if err != nil {
 			log.Default().Panicf("error in read payload: %v", err)
 		}
+
+		payloadMD5 := mutual_common.MD5Calc(payload)
+
+		log.Default().Printf("the md5 of payload: %s", payloadMD5)
 
 		buffer := bytes.NewBuffer(payload)
 		doc := new(mutual.Document)
@@ -549,6 +558,7 @@ func (hub *HubServer) OnTraffic(c gnet.Conn) gnet.Action {
 			log.Default().Println(err)
 		}
 		log.Default().Printf("got doc, gap: %d", time.Now().UnixMilli()-doc.Timestamp)
+
 		pool4PerfData.Invoke(doc)
 		pool4Alarm.Invoke(doc)
 
@@ -556,6 +566,7 @@ func (hub *HubServer) OnTraffic(c gnet.Conn) gnet.Action {
 		st2 := time.Now().Unix()
 		log.Default().Printf("spend: %d", st2-st1)
 	}
+	// }()
 
 	return gnet.None
 }

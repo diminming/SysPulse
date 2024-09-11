@@ -8,6 +8,7 @@ import (
 	"net"
 	"time"
 
+	mutual_common "github.com/syspulse/mutual/common"
 	"github.com/syspulse/tracker/linux/common"
 )
 
@@ -42,6 +43,7 @@ func (c *Courier) Connect() bool {
 		log.Default().Println("Error connecting:", err)
 		return false
 	}
+	conn.(*net.TCPConn).SetWriteBuffer(1024 * 1024 * 10)
 	c.conn = conn
 	return true
 
@@ -61,8 +63,10 @@ func (c *Courier) Write(payload []byte) {
 	buffer.Write(payload)
 
 	data := buffer.Bytes()
-	log.Default().Printf("length of send data: %d", len(data))
+	md5 := mutual_common.MD5Calc(payload)
+	log.Default().Printf("the md5 of payload_1: %s", md5)
 	_, err := c.conn.Write(data)
+	log.Default().Printf("payload: %s - Done.", md5)
 	if err != nil {
 		log.Default().Println(err)
 	}

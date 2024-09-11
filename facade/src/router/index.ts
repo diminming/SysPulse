@@ -158,6 +158,14 @@ const router = createRouter({
                 text: "系统设置",
               },
             },
+            {
+              path: "/main/notification",
+              name: "notification",
+              component: () => import("../views/notification/index.vue"),
+              meta: {
+                text: "消息中心",
+              },
+            },
           ],
         },
         {
