@@ -3,8 +3,10 @@ package component
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/syspulse/common"
+	"github.com/syspulse/model"
 
 	"github.com/expr-lang/expr"
 	"github.com/expr-lang/expr/vm"
@@ -180,6 +182,15 @@ func buildTrigger() {
 	}
 }
 
+func createAlarmRecord(timestamp int64, identity string, trigger string, parameters PerfData) {
+	linuxId := model.CacheGet(identity)
+	perfDataStr := common.ToString(parameters)
+
+	sql := "insert into alarm(`timestamp`,`linux_id`,`trigger`,`ack`,`perf_data`,`create_timestamp`) value(?,?,?,?,?,?)"
+
+	model.DBInsert(sql, timestamp, linuxId, trigger, false, []byte(perfDataStr), time.Now().UnixMilli())
+}
+
 func TriggerCheck(identity string, parameters PerfData, timestamp int64) {
 	programs := TriggerCache[identity]
 	for _, program := range programs {
@@ -192,6 +203,7 @@ func TriggerCheck(identity string, parameters PerfData, timestamp int64) {
 
 		if result.(bool) {
 			log.Default().Printf("<Alarm> timestamp: %d, identity: %s, result: %b, trigger: %s", timestamp, identity, result, program.Source().String())
+			createAlarmRecord(timestamp, identity, program.Source().String(), parameters)
 		}
 
 	}

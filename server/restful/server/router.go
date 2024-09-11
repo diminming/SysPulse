@@ -54,4 +54,7 @@ func (ws *WebServer) SetupRoutes() {
 
 	ws.Register4Callback(http.MethodPatch, "/job/updateStatus", handler.UpdateJobStatus)
 	ws.Register4Callback(http.MethodPatch, "/job/:jobId/onFinish", handler.OnJobFinished)
+
+	ws.Register4Api(http.MethodGet, "/alarm/page", handler.GetAlarmLstByPage)
+
 }

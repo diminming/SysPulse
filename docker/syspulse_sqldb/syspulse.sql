@@ -17,6 +17,21 @@ USE `syspulse`;
 -- Table structure for table `biz`
 --
 
+DROP TABLE IF EXISTS `alarm`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `alarm` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `timestamp` bigint NOT NULL,
+  `linux_id` bigint NOT NULL,
+  `trigger` varchar(500) NOT NULL,
+  `ack` tinyint(1) NOT NULL,
+  `perf_data` blob NOT NULL,
+  `create_timestamp` bigint NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
 DROP TABLE IF EXISTS `biz`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -417,6 +432,14 @@ CREATE TABLE `user` (
   `updateTimestamp` bigint NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+LOCK TABLES `user` WRITE;
+/*!40000 ALTER TABLE `user` DISABLE KEYS */;
+INSERT INTO `user` VALUES (1,'admin','admin1!',1,0,0);
+/*!40000 ALTER TABLE `user` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

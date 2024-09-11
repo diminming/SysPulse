@@ -41,8 +41,8 @@ export default [
     //     href: "/main/queue",
     //     icon: DesktopOutlined
     // },
-    {    name: "Users",
-        text: "消息",
+    {    name: "Notification",
+        text: "消息中心",
         href: "/main/notification",
         icon: DesktopOutlined
     },
