@@ -26,8 +26,7 @@ go.work.sum
 facade/.env.prod
 /facade/node_modules/*
 *.sql
-!init_db.sql
-!syspulse.sql
+!docker/syspulse_sqldb/*.sql
 
 *.log
 .vscode
