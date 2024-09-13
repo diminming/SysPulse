@@ -365,7 +365,7 @@ func isLocalIP(ip string) bool {
 func GetLinuxIdByIp(ip string) int64 {
 	lst, _ := model.GetLinuxIdByIP(ip)
 	if len(lst) != 1 {
-		panic(fmt.Sprintf("got error when search linux id by ip: %s", ip))
+		log.Default().Printf("got error when search linux id by ip: %s", ip)
 	}
 	return lst[0]
 }

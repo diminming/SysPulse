@@ -197,7 +197,7 @@ func CreateJob(ctx *gin.Context) {
 		panic(err)
 	}
 
-	if job.Category == "profiling" {
+	if job.Category == "proc_profiling" {
 		CreateAnalJob(job)
 	} else if job.Category == "traffic" {
 		CreateTrafficJob(job)
@@ -269,8 +269,9 @@ func GetJobById(jobId int64) *model.Job {
 		job.Category = string(item["category"].([]uint8))
 		job.CreateTimestamp = item["create_timestamp"].(int64)
 		job.UpdateTimestamp = item["update_timestamp"].(int64)
-		job.Extend = string(item["extend"].([]uint8))
-
+		if item["extend"] != nil {
+			job.Extend = string(item["extend"].([]uint8))
+		}
 		return job
 	}
 

@@ -222,7 +222,7 @@ func GetLinuxTotal() int64 {
 }
 
 func CreateLinux(linux *model.Linux) {
-	sql := "insert into linux(`hostname`, `linux_id`, `biz_id`, `agent_conn`, create_timestamp, update_timestamp) value(?, ?, ?, ?, ?)"
+	sql := "insert into linux(`hostname`, `linux_id`, `biz_id`, `agent_conn`, create_timestamp, update_timestamp) value(?, ?, ?, ?, ?, ?)"
 	id := model.DBInsert(sql, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, linux.CreateTimestamp, linux.UpdateTimestamp)
 	linux.Id = id
 }

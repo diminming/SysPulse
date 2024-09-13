@@ -41,6 +41,12 @@ type Config struct {
 			SecretKey string `yaml:"secret_key"`
 			UseSSL    bool   `yaml:"useSSL"`
 		} `yaml:"file_server"`
+		GraphDB struct {
+			Endpoints []string `yaml:"endpoints"`
+			Username  string   `yaml:"user"`
+			Password  string   `yaml:"password"`
+			DbName    string   `yaml:"db_name"`
+		} `yaml:"graph_db"`
 	} `yaml:"storage"`
 
 	Cache struct {
@@ -60,7 +66,7 @@ func init() {
 	for i := 1; i < len(args); i = i + 2 {
 		arg := args[i]
 		val := args[i+1]
-		if arg == "conf" {
+		if arg == "--conf" {
 			yamlFile, err := os.ReadFile(val)
 			if err != nil {
 				log.Fatalf("can't open config file: %v", err)

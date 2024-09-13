@@ -13,23 +13,30 @@ import (
 var Client driver.Client
 var GraphDB driver.Database
 
+var (
+	Endpoints = common.SysArgs.Storage.GraphDB.Endpoints
+	Username  = common.SysArgs.Storage.GraphDB.Username
+	Password  = common.SysArgs.Storage.GraphDB.Password
+	DbName    = common.SysArgs.Storage.GraphDB.DbName
+)
+
 func init() {
 	conn, err := http.NewConnection(http.ConnectionConfig{
-		Endpoints: []string{"http://localhost:8529"},
+		Endpoints: Endpoints,
 	})
 	if err != nil {
 		panic(err)
 	}
 	client, err := driver.NewClient(driver.ClientConfig{
 		Connection:     conn,
-		Authentication: driver.BasicAuthentication("root", "123456"),
+		Authentication: driver.BasicAuthentication(Username, Password),
 	})
 	if err != nil {
 		panic(err)
 	}
 
 	ctx := context.Background()
-	db, err := client.Database(ctx, "insight")
+	db, err := client.Database(ctx, DbName)
 	if err != nil {
 		panic(err)
 	}
@@ -283,7 +290,7 @@ func QueryLinuxTopo(linuxId int64) ([]map[string]interface{}, error) {
 	aql := `
 for h in host
   filter h.host_identity == @linuxId
-  for v, e, p in 2..2 any h graph graph_demployment
+  for v, e, p in 1..2 any h graph graph_demployment
   return p
 `
 	ctx := context.Background()

@@ -64,10 +64,20 @@ func (c *Courier) Write(payload []byte) {
 
 	data := buffer.Bytes()
 	md5 := mutual_common.MD5Calc(payload)
-	log.Default().Printf("the md5 of payload_1: %s", md5)
-	_, err := c.conn.Write(data)
-	log.Default().Printf("payload: %s - Done.", md5)
-	if err != nil {
-		log.Default().Println(err)
+	log.Default().Printf("the md5 of payload: %s", md5)
+	for {
+		_, err := c.conn.Write(data)
+		log.Default().Printf("payload: %s - Done.", md5)
+		if err != nil {
+			log.Default().Println(err)
+			reConnected := c.Connect()
+			if reConnected {
+				break
+			}
+			time.Sleep(3 * time.Second)
+		} else {
+			break
+		}
 	}
+
 }

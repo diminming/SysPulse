@@ -70,7 +70,7 @@ func init() {
 	for i := 1; i < len(args); i = i + 2 {
 		arg := args[i]
 		val := args[i+1]
-		if arg == "conf" {
+		if arg == "--conf" {
 			yamlFile, err := os.ReadFile(val)
 			if err != nil {
 				log.Fatalf("can't open config file: %v", err)

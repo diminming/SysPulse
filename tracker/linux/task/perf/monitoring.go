@@ -112,8 +112,6 @@ func (m *Monitor) Run() {
 			timeStat1, _ := cpu.Times(false)
 			perc, _ := cpu.Percent(time.Second, false)
 
-			log.Default().Printf("got cpt util: %f", perc[0])
-
 			m.Send(timeStat1)
 			m.Send(mutual.CpuUtilization{
 				Percent: perc[0],
