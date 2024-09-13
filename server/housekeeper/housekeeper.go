@@ -25,9 +25,9 @@ func (housekeeper *Housekeeper) Run() {
 func (housekeeper *Housekeeper) clearTopo() {
 
 	for {
-		ticker := time.NewTicker(housekeeper.topoCleaningInterval)
-		<-ticker.C
 		timestamp := time.Now().UnixMilli() - housekeeper.topoTimeout*60*60*1000
 		model.DeleteTimeoutTopo(timestamp)
+		ticker := time.NewTicker(housekeeper.topoCleaningInterval)
+		<-ticker.C
 	}
 }

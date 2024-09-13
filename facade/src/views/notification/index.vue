@@ -18,8 +18,8 @@
     </a-layout-content>
 </template>
 <script lang="ts" setup>
-import request from '@/utils/request';
 import { computed, onMounted, reactive } from 'vue';
+import { Alarm } from '.';
 
 const pagination = reactive({
     page: 0,
@@ -59,16 +59,9 @@ const columns = [
 ]
 
 onMounted(() => {
-    request({
-        url: "/alarm/page",
-        method: "GET",
-        params: {
-            page: pagination.page,
-            pageSize: pagination.pageSize,
-        },
-    }).then((resp) => {
+    Alarm.loadPage(pagination).then((resp) => {
         console.log(resp)
-    });
+    })
 })
 </script>
 <style lang="css" scoped>

@@ -125,7 +125,7 @@ func (ws *Executor) mapping() {
 		switch category {
 		case "traffic":
 			network.CreateCollectingTask(job)
-		case "profiling":
+		case "proc_profiling":
 			kernel.CreateProfilingTask(job, func() {
 				task.UpdateJobStatus(jobId, task.JOB_STATUS_RUNNING)
 			}, func(data []*task.EBPFProfilingData) {

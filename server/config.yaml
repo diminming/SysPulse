@@ -11,9 +11,15 @@ storage:
   db:
     host: "localhost"
     port: 3306
-    database: "perf_data"
-    user: "admin"
-    password: "123456"
+    database: "syspulse"
+    user: "syspulse"
+    password: "123qweASD"
+  graph_db:
+    endpoints:
+      - "http://localhost:8529"
+    user: "root"
+    password: "123qweASD"
+    db_name: "insight"
   file_server:
     endpoint: "localhost:9000"
     access_key: "cDoXKjZh2YJldhpTHoED"

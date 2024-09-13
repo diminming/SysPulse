@@ -51,7 +51,7 @@
                                 </a>
                             </template>
                             <template v-if="column.key === 'status'">
-                                {{ record.getStatusTxt() }}
+                                {{ record.getJobStatusTxt() }}
                             </template>
                             <template v-if="column.key === 'startup_time'">
                                 {{ record.getStartupTimeTxt() }}
@@ -248,6 +248,7 @@ function getJobLst(record: any) {
         const data = resp.data
         if (data !== null) {
             jobData.value = data.map((item: any) => {
+                debugger
                 let job = new ProfilingJob(item["id"])
                 job.status = item['status']
                 job.job_name = item['job_name']
