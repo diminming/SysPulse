@@ -5,7 +5,7 @@ USER="root"
 DATABASE="insight"
 OUTPUT="/workspace/SysPulse/docker/syspulse_graphdb/insight"
 
-DOCKER_NAME="syspulse_graphdb"
+DOCKER_IMAGE_NAME="syspulse_graphdb"
 
 arangodump \
   --server.endpoint ${ENDPOINT} \
@@ -15,4 +15,4 @@ arangodump \
   --overwrite true \
   --output-directory ${OUTPUT}
 
-docker build -t ${DOCKER_NAME} .
+docker build -t ${DOCKER_IMAGE_NAME} .
