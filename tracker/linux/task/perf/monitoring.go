@@ -14,7 +14,6 @@ import (
 	"github.com/shirou/gopsutil/v3/net"
 
 	"github.com/syspulse/mutual"
-	mutual_common "github.com/syspulse/mutual/common"
 	"github.com/syspulse/tracker/linux/client"
 	"github.com/syspulse/tracker/linux/common"
 
@@ -69,7 +68,6 @@ func (m *Monitor) Send(data interface{}) {
 	}
 
 	payload := buffer.Bytes()
-	log.Default().Printf("the md5 of payload_0: %s", mutual_common.MD5Calc(payload))
 	m.client.Write(payload)
 	// m.client.SendPipe <- buffer.Bytes()
 }

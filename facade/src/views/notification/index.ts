@@ -8,13 +8,17 @@ export class Alarm {
     createTimestamp?: number;
     ack?: boolean;
     linux?: Linux;
+    perfData?: {};
 
     constructor(id: number) {
         this.id = id
     }
 
     load() {
-
+        return request({
+            url: `/alarm/${this.id}`,
+            method: "GET"
+        })
     }
 
     static loadPage(pagination: any) {

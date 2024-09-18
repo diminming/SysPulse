@@ -30,7 +30,7 @@ monitor:
     cfg_cpu: 120
     cfg_interface: 120
     rt_proc: 60
-    rt_net_conn: 60
+    rt_net_conn: 10
     perf_cpu: 3
     perf_load: 3
     perf_memory: 3

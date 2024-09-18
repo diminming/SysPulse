@@ -6,8 +6,10 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
+	gonet "net"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/shirou/gopsutil/host"
@@ -69,20 +71,20 @@ func NewHubServer() *HubServer {
 
 	pool1, err := ants.NewPoolWithFunc(100, func(arg any) {
 		doc := arg.(*mutual.Document)
-		parameterLst := make([]PerfData, 0, 10)
+		parameterLst := make([]model.PerfData, 0, 10)
 		data := doc.Data
 		switch val := data.(type) {
 		case mutual.CpuUtilization:
-			parameterLst = append(parameterLst, PerfData{
-				CPU: CpuPerfData{
+			parameterLst = append(parameterLst, model.PerfData{
+				CPU: model.CpuPerfData{
 					CpuUtil: val.Percent,
 				},
 			})
 		case []cpu.TimesStat:
 			for _, stat := range val {
 				if stat.CPU == "cpu-total" {
-					parameter := PerfData{}
-					parameter.CPU = CpuPerfData{
+					parameter := model.PerfData{}
+					parameter.CPU = model.CpuPerfData{
 						User:      stat.User,
 						System:    stat.System,
 						Idle:      stat.Idle,
@@ -98,16 +100,16 @@ func NewHubServer() *HubServer {
 				}
 			}
 		case load.AvgStat:
-			parameter := PerfData{}
-			parameter.Load = LoadPerfData{
+			parameter := model.PerfData{}
+			parameter.Load = model.LoadPerfData{
 				Load1:  val.Load1,
 				Load5:  val.Load5,
 				Load15: val.Load15,
 			}
 			parameterLst = append(parameterLst, parameter)
 		case mem.VirtualMemoryStat:
-			parameter := PerfData{}
-			parameter.Memory = MemoryPerfData{
+			parameter := model.PerfData{}
+			parameter.Memory = model.MemoryPerfData{
 				Total:          val.Total,
 				Free:           val.Free,
 				Active:         val.Active,
@@ -146,8 +148,8 @@ func NewHubServer() *HubServer {
 			}
 			parameterLst = append(parameterLst, parameter)
 		case mem.SwapMemoryStat:
-			parameter := PerfData{}
-			parameter.Swap = SwapPerfData{
+			parameter := model.PerfData{}
+			parameter.Swap = model.SwapPerfData{
 				Total:       val.Total,
 				Used:        val.Used,
 				Free:        val.Free,
@@ -162,8 +164,8 @@ func NewHubServer() *HubServer {
 			parameterLst = append(parameterLst, parameter)
 		case []disk.UsageStat:
 			for _, item := range val {
-				parameter := PerfData{}
-				parameter.Disk = DiskPerfData{
+				parameter := model.PerfData{}
+				parameter.Disk = model.DiskPerfData{
 					Path:              item.Path,
 					Fstype:            item.Fstype,
 					Total:             item.Total,
@@ -180,8 +182,8 @@ func NewHubServer() *HubServer {
 
 		case map[string]disk.IOCountersStat:
 			for disk, item := range val {
-				parameter := PerfData{}
-				parameter.DiskIO = DiskIOPerfData{
+				parameter := model.PerfData{}
+				parameter.DiskIO = model.DiskIOPerfData{
 					Disk:             disk,
 					ReadCount:        item.ReadCount,
 					MergedReadCount:  item.MergedReadCount,
@@ -203,8 +205,8 @@ func NewHubServer() *HubServer {
 
 		case []net.IOCountersStat:
 			for _, item := range val {
-				parameter := PerfData{}
-				parameter.NetDeviceIO = NetDeviceIOPerfData{
+				parameter := model.PerfData{}
+				parameter.NetDeviceIO = model.NetDeviceIOPerfData{
 					Name:        item.Name,
 					BytesSent:   item.BytesSent,
 					BytesRecv:   item.BytesRecv,
@@ -328,38 +330,39 @@ func saveInterfaceInfo(linuxId int64, infoLst net.InterfaceStatList, timestamp i
 	}
 }
 
-func CacheLinuxPort(linuxId int64, connLst []net.ConnectionStat) map[uint32]int32 {
+func CacheMapping4PortAndPid(linuxId int64, connLst []net.ConnectionStat) {
 	key := fmt.Sprintf("port_%d", linuxId)
-	mapping := make(map[uint32]int32)
-	for _, conn := range connLst {
-		mapping[conn.Laddr.Port] = conn.Pid
+
+	var buffer bytes.Buffer
+	latest := len(connLst) - 1
+	for idx, conn := range connLst {
+		buffer.WriteString(strconv.FormatUint(uint64(conn.Laddr.Port), 10))
+		buffer.WriteString(":")
+		buffer.WriteString(strconv.FormatInt(int64(conn.Pid), 10))
+		if latest == idx {
+			break
+		}
+		buffer.WriteString(";")
 	}
 
-	entry := map[string]interface{}{}
-	for key, value := range mapping {
-		entry[strconv.FormatInt(int64(key), 10)] = value
-	}
-
-	model.CacheHMSet(key, entry)
-	return mapping
+	model.CacheSet(key, buffer.String(), 12*time.Hour)
 }
 
-func GetRemotePid(linuxId int64, port uint32) int32 {
+func TranslatePort2Pid(linuxId int64, port uint32) int32 {
 
 	key := fmt.Sprintf("port_%d", linuxId)
-	field := strconv.FormatUint(uint64(port), 10)
-	value := model.CacheHGet(key, field)
+	value := model.CacheGet(key)
 
-	if value != "" {
-		remotePid, _ := strconv.ParseInt(value, 10, 32)
-		return int32(remotePid)
+	mapping := map[string]int32{}
+
+	array0 := strings.Split(value, ";")
+	for _, item := range array0 {
+		info := strings.Split(item, ":")
+		val, _ := strconv.ParseInt(info[1], 10, 32)
+		mapping[info[0]] = int32(val)
 	}
 
-	return -1
-}
-
-func isLocalIP(ip string) bool {
-	return ip == "127.0.0.1"
+	return mapping[strconv.FormatInt(int64(port), 10)]
 }
 
 func GetLinuxIdByIp(ip string) int64 {
@@ -370,27 +373,66 @@ func GetLinuxIdByIp(ip string) int64 {
 	return lst[0]
 }
 
-func saveConnRelation(localLinuxId int64, localPorts map[uint32]int32, connLst []net.ConnectionStat, timestamp int64) {
-	for _, conn := range connLst {
-		localPid := conn.Pid
-
-		rIp := conn.Raddr.IP
-
-		var remoteLinuxId int64
-		var remotePid int32
-
-		if isLocalIP(rIp) {
-			remoteLinuxId = localLinuxId
-			remotePid = localPorts[conn.Raddr.Port]
-		} else {
-			remoteLinuxId = GetLinuxIdByIp(rIp)
-			remotePid = GetRemotePid(remoteLinuxId, conn.Raddr.Port)
+func translateIp2LinuxId(ipLst map[string]struct{}) map[string]int64 {
+	result := make(map[string]int64)
+	model.BatchGetNIC(func(mappingBetweenCidrAndLinuxId []map[string]any) bool {
+		for ip, _ := range ipLst {
+			for _, mapping := range mappingBetweenCidrAndLinuxId {
+				cidr := mapping["addr"].(string)
+				linuxId := mapping["host_id"]
+				_, ipNet, err := gonet.ParseCIDR(cidr)
+				if err != nil {
+					log.Default().Println("con't parse CIDR: ", err)
+				}
+				if ipNet.Contains(gonet.ParseIP(ip)) {
+					result[ip] = int64(linuxId.(float64))
+				}
+			}
 		}
+		return len(ipLst) == len(result)
+	})
+	return result
+}
 
-		if remotePid <= 0 || localPid <= 0 {
+func saveConnRelation(localLinuxId int64, connLst []net.ConnectionStat, timestamp int64) {
+
+	mappingBetweenIpAndId0 := make(map[string]int64)
+	remoteIpSet := make(map[string]struct{})
+
+	for _, conn := range connLst {
+		rIp := conn.Raddr.IP
+		ipObj := gonet.ParseIP(rIp)
+
+		if ipObj.IsLoopback() {
+			mappingBetweenIpAndId0[rIp] = localLinuxId
+		} else {
+			remoteIpSet[rIp] = struct{}{}
+		}
+	}
+
+	mappingBetweenIpAndId1 := translateIp2LinuxId(remoteIpSet)
+	for key, value := range mappingBetweenIpAndId1 {
+		mappingBetweenIpAndId0[key] = value
+	}
+
+	for _, conn := range connLst {
+
+		localPort := conn.Pid
+		if localPort == 0 {
 			continue
 		}
-		err := model.UpsertConnRelation(localLinuxId, localPid, remoteLinuxId, remotePid, timestamp)
+
+		remoteLinuxId, exists := mappingBetweenIpAndId0[conn.Raddr.IP]
+		if !exists {
+			continue
+		}
+
+		remotePid := TranslatePort2Pid(remoteLinuxId, conn.Raddr.Port)
+		if remotePid <= 0 {
+			continue
+		}
+
+		err := model.UpsertConnRelation(localLinuxId, conn.Pid, remoteLinuxId, remotePid, timestamp)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to execute UpsertConnRelation: %v", err))
 		}
@@ -404,8 +446,9 @@ func saveNetConnection(linuxId int64, connLst []net.ConnectionStat, timestamp in
 			establishedLst = append(establishedLst, conn)
 		}
 	}
-	lPortMapping := CacheLinuxPort(linuxId, establishedLst)
-	saveConnRelation(linuxId, lPortMapping, establishedLst, timestamp)
+	CacheMapping4PortAndPid(linuxId, establishedLst)
+
+	saveConnRelation(linuxId, establishedLst, timestamp)
 }
 
 func saveProc2Cache(linuxId int64, procLst []*process.Process, timestamp int64) {

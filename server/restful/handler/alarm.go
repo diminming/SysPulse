@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -62,4 +64,39 @@ func GetAlarmLstByPage(ctx *gin.Context) {
 		"lst":   result,
 		"total": model.GetTotalofAlarm(),
 	}, Msg: "success"})
+}
+
+func GetAlarmById(alarmId int64) *model.Alarm {
+	sql := "select a.`id`, a.`timestamp`, a.`linux_id`, a.`trigger`, a.`ack`, a.`perf_data`, a.`create_timestamp`, l.`id` as linuxId, l.`hostname` from (select * from alarm where id = ?) a inner join linux l where l.id = a.linux_id"
+	alarmInfo := model.DBSelectRow(sql, alarmId)
+	perfData := model.PerfData{}
+	err := json.Unmarshal(alarmInfo["perf_data"].([]uint8), &perfData)
+	if err != nil {
+		log.Default().Printf("error get alarm info at method GetAlarmById: %v\n", err)
+	}
+	return &model.Alarm{
+		Id:              alarmInfo["id"].(int64),
+		Timestamp:       alarmInfo["timestamp"].(int64),
+		CreateTimestamp: alarmInfo["create_timestamp"].(int64),
+		Trigger:         string(alarmInfo["trigger"].([]uint8)),
+		Ack:             alarmInfo["ack"].(int64) == 1,
+		PerfData:        perfData,
+		Linux: model.Linux{
+			Id:       alarmInfo["linuxId"].(int64),
+			Hostname: string(alarmInfo["hostname"].([]uint8)),
+		},
+	}
+}
+
+func GetAlarm(ctx *gin.Context) {
+	alarmId, err := strconv.ParseInt(ctx.Param("alarmId"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "job id is not a number."})
+	}
+
+	log.Default().Printf("alarm id: %v", alarmId)
+	alarm := GetAlarmById(alarmId)
+
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "OK", Data: alarm})
+
 }

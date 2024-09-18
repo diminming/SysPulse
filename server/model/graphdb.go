@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/syspulse/common"
 
@@ -313,4 +314,53 @@ for h in host
 		result = append(result, info)
 	}
 	return result, nil
+}
+
+func BatchGetNIC(callback func([]map[string]any) bool) {
+	times := 0
+	batchSize := 100
+	startTimestamp := time.Now().UnixMilli()
+	for {
+		aql := `
+for h in host
+  for i in h.interface
+    for addr in i.addrs
+		limit @offset, @size
+		return {
+			"addr": addr.addr,
+			"host_id": h.host_identity
+		}
+`
+		result := false
+		ctx := context.Background()
+		cur, err := GraphDB.Query(ctx, aql, map[string]any{
+			"offset": times * batchSize,
+			"size":   batchSize,
+		})
+
+		if err != nil {
+			log.Default().Println("error in BatchGetNIC: ", err)
+		}
+		lst := make([]map[string]any, 0)
+		for {
+			info := make(map[string]interface{})
+			_, err := cur.ReadDocument(context.Background(), &info)
+			if driver.IsNoMoreDocuments(err) {
+				break
+			} else if err != nil {
+				log.Default().Println("error in BatchGetNIC: ", err)
+			}
+			lst = append(lst, info)
+		}
+
+		result = callback(lst)
+		defer cur.Close()
+		times += 1
+		if result || (time.Now().UnixMilli()-startTimestamp >= 30*1000) {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
 }

@@ -60,7 +60,7 @@ func CacheAdd2HSet(key string, field string, value string) {
 	client.HSetNX(context.Background(), key, field, value)
 }
 
-func CacheHMSet(key string, entry interface{}) {
+func CacheHMSet(key string, entry any) {
 	err := client.HMSet(context.Background(), key, entry).Err()
 	if err != nil {
 		panic(err)

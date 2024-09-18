@@ -9,3 +9,8 @@ type Document struct {
 	Timestamp int64
 	Data      interface{}
 }
+
+type ListenStat struct {
+	Addr string
+	Port uint32
+}

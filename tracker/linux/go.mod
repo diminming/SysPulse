@@ -45,8 +45,8 @@ require (
 )
 
 require (
-github.com/syspulse/mutual v0.0.0
 	github.com/cilium/ebpf v0.13.2
+	github.com/drael/GOnetstat v0.0.0-20201004132414-bf4a88b0bdab
 	github.com/gin-gonic/gin v1.9.1
 	github.com/google/gopacket v1.1.19
 	github.com/hashicorp/errwrap v1.0.0 // indirect
@@ -54,6 +54,7 @@ github.com/syspulse/mutual v0.0.0
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/shirou/gopsutil/v3 v3.24.3
+	github.com/syspulse/mutual v0.0.0
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225 // indirect
 	golang.org/x/sys v0.21.0
 	google.golang.org/protobuf v1.32.0
