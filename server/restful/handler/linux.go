@@ -71,7 +71,21 @@ func GetLinuxLstByPage(ctx *gin.Context) {
 	}, Msg: "success"})
 }
 
-func NewLinuxRecord(ctx *gin.Context) {
+func Insert2SqlDB(linux *model.Linux) {
+	sql := "insert into linux(`hostname`, `linux_id`, `biz_id`, `agent_conn`, create_timestamp, update_timestamp) value(?, ?, ?, ?, ?, ?)"
+	id := model.DBInsert(sql, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, linux.CreateTimestamp, linux.UpdateTimestamp)
+	linux.Id = id
+}
+
+func InsertLinuxRecord(linux *model.Linux) {
+	Insert2SqlDB(linux)
+	model.UpsertHost(map[string]any{
+		"host_identity": linux.Id,
+		"timestamp":     time.Now().UnixMilli(),
+	})
+}
+
+func CreateLinuxRecord(ctx *gin.Context) {
 	body, err := io.ReadAll(ctx.Request.Body)
 	if err != nil {
 		log.Default().Println(err)
@@ -85,11 +99,39 @@ func NewLinuxRecord(ctx *gin.Context) {
 	}
 	linux.CreateTimestamp = time.Now().Unix()
 	linux.UpdateTimestamp = time.Now().Unix()
-	CreateLinux(&linux)
+
+	InsertLinuxRecord(&linux)
+
+	if linux.Biz.Id > 0 {
+		model.SaveConsumptionRelation(&linux)
+	}
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: &linux, Msg: "success"})
 }
 
-func UpdateLinuxRecord(ctx *gin.Context) {
+func UpdateLinuxInSqlDB(linux *model.Linux) {
+	sql := "update linux set `hostname`=?, `linux_id`=?, `biz_id`=?, `agent_conn`=?, `update_timestamp`=? where `id`=?"
+	model.DBUpdate(sql, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, linux.UpdateTimestamp, linux.Id)
+}
+
+func UpdateLinuxRecord(linux *model.Linux, id int64) {
+
+	if id != linux.Id {
+		log.Default().Println("The two records that need to be updated have inconsistent ID values.")
+		return
+	}
+
+	linux0 := GetLinuxById(id)
+	if linux0 == nil {
+		log.Default().Printf("Can't get linux record by id: %d", id)
+		return
+	}
+
+	UpdateLinuxInSqlDB(linux)
+	model.UpdateConsumptionRelation(linux)
+
+}
+
+func ModifyLinuxRecord(ctx *gin.Context) {
 	idOfLinux, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
@@ -107,7 +149,7 @@ func UpdateLinuxRecord(ctx *gin.Context) {
 	}
 
 	linux.UpdateTimestamp = time.Now().Unix()
-	UpdateLinux(linux, idOfLinux)
+	UpdateLinuxRecord(linux, idOfLinux)
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: &linux, Msg: "success"})
 }
 
@@ -221,35 +263,31 @@ func GetLinuxTotal() int64 {
 	return model.GetLinuxTotal()
 }
 
-func CreateLinux(linux *model.Linux) {
-	sql := "insert into linux(`hostname`, `linux_id`, `biz_id`, `agent_conn`, create_timestamp, update_timestamp) value(?, ?, ?, ?, ?, ?)"
-	id := model.DBInsert(sql, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, linux.CreateTimestamp, linux.UpdateTimestamp)
-	linux.Id = id
-}
-
-func UpdateLinux(linux *model.Linux, id int64) {
-	sql := "update linux set `id` = ?, `hostname`=?, `linux_id`=?, `biz_id`=?, `agent_conn`=?, `update_timestamp`=? where `id`=?"
-	model.DBUpdate(sql, linux.Id, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, linux.UpdateTimestamp, id)
-}
-
 func DeleteLinux(linuxId int) {
 	sql := "delete from linux where id = ?"
 	model.DBDelete(sql, linuxId)
 }
 
 func GetLinuxById(id int64) *model.Linux {
-	sql := "select * from linux where id = ?"
+	sql := "select l.id, l.hostname, l.linux_id as linux_identity, l.agent_conn, b.id as bizId, b.biz_name from linux l left join biz b on l.biz_id = b.id where l.id = ?"
 	target := model.DBSelectRow(sql, id)
+	if target == nil {
+		log.Default().Printf("there is no record with id: %d\n", id)
+		return nil
+	}
 	linux := new(model.Linux)
 	if target["agent_conn"] != nil {
 		linux.AgentConn = string(target["agent_conn"].([]uint8))
 	}
-	// linux.AgentConn = string(target["agent_conn"].([]uint8))
-	linux.CreateTimestamp = target["create_timestamp"].(int64)
-	linux.UpdateTimestamp = target["update_timestamp"].(int64)
+
+	if target["bizId"] != nil {
+		linux.Biz.Id = target["bizId"].(int64)
+		linux.Biz.BizName = string(target["biz_name"].([]uint8))
+	}
+
 	linux.Id = target["id"].(int64)
 	linux.Hostname = string(target["hostname"].([]uint8))
-	linux.LinuxId = string(target["linux_id"].([]uint8))
+	linux.LinuxId = string(target["linux_identity"].([]uint8))
 	return linux
 }
 

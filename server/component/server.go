@@ -294,39 +294,34 @@ func saveIfIOStat(linuxId int64, statLst []net.IOCountersStat, timestamp int64) 
 }
 
 func saveHostInfo(linuxId int64, info host.InfoStat, timestamp int64) {
+	err := model.UpsertHost(map[string]interface{}{
+		"host_identity": linuxId,
+		"info":          info,
+		"timestamp":     timestamp,
+	})
 
-	for {
-		err := model.UpsertHost(map[string]interface{}{
-			"host_identity": linuxId,
-			"info":          info,
-			"timestamp":     timestamp,
-		})
-		if err == nil {
-			break
-		}
+	if err == nil {
+		log.Default().Println("error create linux: ", err)
 	}
-
 }
 
 func saveCPUInfo(linuxId int64, infoLst []cpu.InfoStat, timestamp int64) {
-	for {
-		err := model.UpdateCPUInfo(map[string]interface{}{"host_identity": linuxId, "cpu_lst": infoLst, "timestamp": timestamp})
-		if err == nil {
-			break
-		}
+	err := model.UpdateCPUInfo(map[string]interface{}{"host_identity": linuxId, "cpu_lst": infoLst, "timestamp": timestamp})
+
+	if err == nil {
+		log.Default().Println("error save cpu detail: ", err)
 	}
 }
 
 func saveInterfaceInfo(linuxId int64, infoLst net.InterfaceStatList, timestamp int64) {
-	for {
-		err := model.UpdateInterface(map[string]interface{}{
-			"host_identity": linuxId,
-			"interface":     infoLst,
-			"timestamp":     timestamp,
-		})
-		if err == nil {
-			break
-		}
+	err := model.UpdateInterface(map[string]interface{}{
+		"host_identity": linuxId,
+		"interface":     infoLst,
+		"timestamp":     timestamp,
+	})
+
+	if err == nil {
+		log.Default().Println("error save interface detail: ", err)
 	}
 }
 

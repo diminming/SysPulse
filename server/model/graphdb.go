@@ -234,23 +234,23 @@ IN conn_tcp
 }
 
 func DeleteTimeoutTopo(timestamp int64) {
-	DeleteTimeoutHostRecord(timestamp)
+	// DeleteTimeoutHostRecord(timestamp)
 	DeleteTimeoutProcessRecord(timestamp)
 	DeleteTimeoutTCPRecord(timestamp)
 	DeleteTimeoutDeploymentRecord(timestamp)
 }
 
-func DeleteTimeoutHostRecord(timestamp int64) {
-	aql := `
-FOR t IN host
-	FILTER t.timestamp < @timestamp
-	REMOVE { _key: t._key } IN host
-`
-	ctx := context.Background()
-	GraphDB.Query(ctx, aql, map[string]interface{}{
-		"timestamp": timestamp,
-	})
-}
+// func DeleteTimeoutHostRecord(timestamp int64) {
+// 	aql := `
+// FOR t IN host
+// 	FILTER t.timestamp < @timestamp
+// 	REMOVE { _key: t._key } IN host
+// `
+// 	ctx := context.Background()
+// 	GraphDB.Query(ctx, aql, map[string]interface{}{
+// 		"timestamp": timestamp,
+// 	})
+// }
 
 func DeleteTimeoutProcessRecord(timestamp int64) {
 	aql := `
@@ -340,6 +340,7 @@ for h in host
 
 		if err != nil {
 			log.Default().Println("error in BatchGetNIC: ", err)
+			return
 		}
 		lst := make([]map[string]any, 0)
 		for {
@@ -363,4 +364,79 @@ for h in host
 		time.Sleep(time.Second)
 	}
 
+}
+
+func SaveBiz(biz *Business) {
+	ctx := context.Background()
+	coll, err := GraphDB.Collection(ctx, "business")
+	if err != nil {
+		log.Default().Println("can't get business collection: ", err)
+	}
+	_, err = coll.CreateDocument(ctx, biz)
+	if err != nil {
+		log.Default().Println("error create business document: ", err)
+	}
+}
+
+func SaveConsumptionRelation(linux *Linux) {
+	ctx := context.Background()
+	aql := `
+for biz in business
+  filter biz.id == @bizId
+  limit 1
+  for linux in host
+    filter linux.host_identity == @linuxId
+    limit 1
+  let _from = concat("business/", biz._key)
+  let _to = concat("host/", linux._key)
+  
+  insert
+  {
+    "_from": _from,
+    "_to": _to,
+    "timestamp": @timestamp
+  }
+  into res_consumption
+`
+	_, err := GraphDB.Query(ctx, aql, map[string]any{
+		"bizId":     linux.Biz.Id,
+		"linuxId":   linux.Id,
+		"timestamp": time.Now().UnixMilli(),
+	})
+	if err != nil {
+		log.Default().Printf("Failed to execute transaction: %v", err)
+	}
+
+}
+
+func UpdateConsumptionRelation(linux *Linux) {
+	ctx := context.Background()
+	aql := `FOR biz IN business
+  FILTER biz.id == @bizId
+  LIMIT 1
+  FOR linux IN host
+    FILTER linux.host_identity == @linuxId
+    LIMIT 1
+    UPSERT {"_from": biz._id, "_to": linux._id} 
+      INSERT {
+        "timestamp": @timestamp,
+        "_from": biz._id, 
+        "_to": linux._id
+      } 
+      UPDATE {
+        "timestamp": @timestamp,
+      }  
+      IN res_consumption`
+
+	meta, err := GraphDB.Query(ctx, aql, map[string]any{
+		"bizId":     linux.Biz.Id,
+		"linuxId":   linux.Id,
+		"timestamp": time.Now().UnixMilli(),
+	})
+
+	if err != nil {
+		log.Default().Printf("Failed to execute transaction: %v", err)
+	}
+
+	log.Default().Println("UpdateConsumptionRelation: ", meta)
 }

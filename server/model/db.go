@@ -38,10 +38,14 @@ func init() {
 
 func DBSelectRow(sql string, args ...interface{}) map[string]interface{} {
 	lst := DBSelect(sql, args...)
-	if len(lst) == 1 {
+	length := len(lst)
+	if length == 1 {
 		return lst[0]
+	} else if length == 0 {
+		log.Default().Println("no result...")
+	} else {
+		log.Default().Println("got more than 1 record...")
 	}
-	fmt.Println("got more than 1 record...")
 	return nil
 }
 

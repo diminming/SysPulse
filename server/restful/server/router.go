@@ -9,8 +9,8 @@ import (
 func (ws *WebServer) SetupRoutes() {
 	ws.Register4Api(http.MethodGet, "/linux/:id", handler.GetLinuxInfoById)
 	ws.Register4Api(http.MethodGet, "/linux/page", handler.GetLinuxLstByPage)
-	ws.Register4Api(http.MethodPost, "/linux", handler.NewLinuxRecord)
-	ws.Register4Api(http.MethodPut, "/linux/:id", handler.UpdateLinuxRecord)
+	ws.Register4Api(http.MethodPost, "/linux", handler.CreateLinuxRecord)
+	ws.Register4Api(http.MethodPut, "/linux/:id", handler.ModifyLinuxRecord)
 	ws.Register4Api(http.MethodDelete, "/linux", handler.DeleteLinuxRecord)
 	ws.Register4Api(http.MethodGet, "/linux/:id/procLst", handler.GetProcessLst)
 	ws.Register4Api(http.MethodGet, "/linux/:id/proc/:pid/analyze", handler.GetProcAnalJobLst)

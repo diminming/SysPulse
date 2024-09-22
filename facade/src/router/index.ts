@@ -47,7 +47,7 @@ const router = createRouter({
               children: [],
             },
             {
-              path: "/main/biz/bizSystem",
+              path: "/main/biz/:bizId/detail",
               name: "bizSystem",
               component: () => import("../views/biz/view/BizSystem.vue"),
               meta: {
@@ -55,11 +55,11 @@ const router = createRouter({
               },
             },
             {
-              path: "/main/biz/bizadd",
+              path: "/main/biz/bizAdd",
               name: "bizAdd",
               component: () => import("../views/biz/view/BizAdd.vue"),
               meta: {
-                text: "新增业务",
+                text: "新增业务系统",
               },
             },
             {

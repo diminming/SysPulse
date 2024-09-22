@@ -63,9 +63,10 @@ func NewBizRecord(ctx *gin.Context) {
 		fmt.Println(err)
 		return
 	}
-	biz.CreateTimestamp = time.Now().Unix()
-	biz.UpdateTimestamp = time.Now().Unix()
+	biz.CreateTimestamp = time.Now().UnixMilli()
+	biz.UpdateTimestamp = time.Now().UnixMilli()
 	CreateBiz(&biz)
+	model.SaveBiz(&biz)
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: &biz, Msg: "success"})
 }
 

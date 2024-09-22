@@ -7,7 +7,8 @@
       <a-form-item label="标识符">
         <a-input v-model:value="linux.linux_id" placeholder="请输入标识符" />
       </a-form-item>
-      <a-form-item label="业务系统名称">
+      <a-form-item label="业务系统">
+        <a-tag v-if="biz.id > 0" :closable="true" @close="Object.assign(biz, new BizObj(-1))">{{ biz.bizName }}</a-tag>
         <a-button type="primary" @click="onSelect">选择</a-button>
       </a-form-item>
       <a-form-item label="Agent地址">
@@ -21,30 +22,42 @@
       </a-form-item>
     </a-form>
   </a-layout-content>
+  <a-modal v-model:open="showSelectingBizDialog" title="选择业务系统" width="70%">
+    <Business stage="select" @select-biz="onSelectBiz"></Business>
+  </a-modal>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router'
 
 import { message } from 'ant-design-vue';
 
-import { Linux } from "@/views/linux/api"
+import { Business as BizObj, Linux } from "@/views/linux/api"
+import Business from '../biz/Business.vue';
 
 
-const linux = ref<Linux>(new Linux(-1))
-const route = useRoute(), router = useRouter()
+const linux = reactive(new Linux(-1))
+const route = useRoute(), router = useRouter(), showSelectingBizDialog = ref(false)
+
+const biz = reactive(new BizObj(-1))
 
 function onCancel() {
   router.push("/main/linux")
 }
 
-function onSelect() {
+const onSelectBiz = (business: BizObj) => {
+  Object.assign(biz, business)
+  linux.biz = business
+  showSelectingBizDialog.value = false
+}
 
+function onSelect() {
+  showSelectingBizDialog.value = true
 }
 
 function onSave() {
-  linux.value.save().then(() => {
+  linux.save().then(() => {
     message.success('保存完成，将返回列表页...', 3, () => {
       router.push("/main/linux")
     });
@@ -60,7 +73,13 @@ onMounted(() => {
       linux0.agent_conn = data['agent_conn']
       linux0.hostname = data['hostname']
       linux0.linux_id = data['linux_id']
-      linux.value = linux0
+
+      const bizData = data['biz']
+      const biz0 = new BizObj(bizData['id'], bizData['bizName'])
+      linux0.biz = biz0
+      Object.assign(biz, biz0)
+
+      Object.assign(linux, linux0)
     })
   }
 

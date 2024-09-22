@@ -26,18 +26,18 @@ class Node {
 
 export class Business {
   id: number;
-  bizName: string;
-  bizId: string;
-  bizDesc: string;
-  createTimestamp: number;
-  updateTimestamp: number;
-  constructor(id: number, bizName: string, bizId: string, bizDesc: string, createTimestamp: number, updateTimestamp: number) {
+  bizName?: string;
+  bizId?: string;
+  bizDesc?: string;
+  createTimestamp?: number;
+  updateTimestamp?: number;
+  constructor(id: number, bizName?: string) {
     this.id = id;
     this.bizName = bizName;
-    this.bizId = bizId;
-    this.bizDesc = bizDesc;
-    this.createTimestamp = createTimestamp;
-    this.updateTimestamp = updateTimestamp;
+    // this.bizId = bizId;
+    // this.bizDesc = bizDesc;
+    // this.createTimestamp = createTimestamp;
+    // this.updateTimestamp = updateTimestamp;
   }
 };
 
@@ -832,7 +832,7 @@ export class Linux {
     let option = {
       legend: [
         {
-          data: ["Linux", "Process"]
+          data: ["Linux", "Process", "Business"]
         }
       ],
       series: [
@@ -867,6 +867,10 @@ export class Linux {
           }, {
             "name": "Process",
             "base": "Process",
+            "keyword": {}
+          }, {
+            "name": "Business",
+            "base": "Business",
             "keyword": {}
           }],
           force: {
@@ -906,26 +910,40 @@ export class Linux {
           const key = v['_id']
 
           if (!verteies.has(key)) {
-            let category = -1, name = "", symbolSize = 5
-            if (v["_id"].startsWith("process/")) {
+            let category = -1, name = "", symbolSize = 5, detail = {}
+
+            if (key.startsWith("process/")) {
               category = 1
               symbolSize = 20
               name = `${v["pid"]}:${v['info']['name']}`
-            } else if (v["_id"].startsWith("host/")) {
-              category = 0
-              symbolSize = 30
-              name = v['info']['hostname']
-            }
-            verteies.set(key, {
-              "name": name,
-              "symbolSize": symbolSize,
-              "_detail": {
+              detail = {
                 "_id": v["_id"],
                 "pid": v["pid"],
                 "name": v['info']['name'],
                 "exec": v["info"]['exec'],
                 "timestamp": v['info']['create_time']
-              },
+              }
+            } else if (key.startsWith("host/")) {
+              category = 0
+              symbolSize = 40
+              name = v['info']['hostname']
+              detail = {
+                "_id": v["_id"],
+                "pid": v["pid"],
+                "name": v['info']['name'],
+                "exec": v["info"]['exec'],
+                "timestamp": v['info']['create_time']
+              }
+            } else if (key.startsWith("business/")) {
+              category = 2
+              symbolSize = 60
+              name = v['bizName']
+            }
+
+            verteies.set(key, {
+              "name": name,
+              "symbolSize": symbolSize,
+              "_detail": detail,
               "category": category
             })
           }
