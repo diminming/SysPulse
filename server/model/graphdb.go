@@ -417,13 +417,14 @@ func UpdateConsumptionRelation(linux *Linux) {
   FOR linux IN host
     FILTER linux.host_identity == @linuxId
     LIMIT 1
-    UPSERT {"_from": biz._id, "_to": linux._id} 
+    UPSERT {"_to": linux._id} 
       INSERT {
         "timestamp": @timestamp,
         "_from": biz._id, 
         "_to": linux._id
       } 
       UPDATE {
+        "_from": biz._id, 
         "timestamp": @timestamp,
       }  
       IN res_consumption`
