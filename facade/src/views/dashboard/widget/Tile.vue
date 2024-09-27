@@ -4,11 +4,11 @@
       <icon class="title-icon-img" :component="icon" />
     </div>
     <div class="text">
-      <div class="num" :style="{ color: color }">{{ value }}</div>
+      <div class="num" :style="{ color: color }">{{ numVal }}</div>
       <div class="title">{{ title }}</div>
     </div>
     <div class="handler">
-      <span> 点击查看-> </span>
+      <span @click="clickHandler()"> 点击查看-> </span>
     </div>
   </div>
 </template>
@@ -16,8 +16,11 @@
 <script setup lang="ts">
 import Icon from "@ant-design/icons-vue";
 import { BorderOutlined } from "@ant-design/icons-vue";
+import { onMounted, ref } from "vue";
 
-defineProps({
+const numVal = ref(0)
+
+const props = defineProps({
   color: {
     type: String,
     default: "#ebedef",
@@ -29,11 +32,21 @@ defineProps({
     type: String,
     default: "<标题>",
   },
-  value: {
-    type: Number,
-    default: 123456789,
+  clickHandler: {
+    type: Function,
+    required: true
   },
+  loadValue: {
+    type: Function,
+    required: true
+  }
 });
+
+onMounted(() => {
+  props.loadValue().then((val: number) => {
+    numVal.value = val
+  })
+})
 </script>
 
 <style  scoped>

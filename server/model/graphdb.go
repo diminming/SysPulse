@@ -157,36 +157,36 @@ FOR h IN host
 	}
 }
 
-func GetLinuxIdByIP(ip string) ([]int64, error) {
-	aql := `
-for h in host
-  for i in h.interface
-    for addr in i.addrs
-      filter addr.addr like @ip
-        return h.host_identity
-`
-	ctx := context.Background()
-	cur, err := GraphDB.Query(ctx, aql, map[string]interface{}{
-		"ip": ip + "/%",
-	})
-	if err != nil {
-		return nil, err
-	}
-	defer cur.Close()
+// func GetLinuxIdByIP(ip string) ([]int64, error) {
+// 	aql := `
+// for h in host
+//   for i in h.interface
+//     for addr in i.addrs
+//       filter addr.addr like @ip
+//         return h.host_identity
+// `
+// 	ctx := context.Background()
+// 	cur, err := GraphDB.Query(ctx, aql, map[string]interface{}{
+// 		"ip": ip + "/%",
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer cur.Close()
 
-	keyLst := make([]int64, 0)
-	for {
-		var linuxId int64
-		_, err := cur.ReadDocument(context.Background(), &linuxId)
-		if driver.IsNoMoreDocuments(err) {
-			break
-		} else if err != nil {
-			return nil, err
-		}
-		keyLst = append(keyLst, linuxId)
-	}
-	return keyLst, nil
-}
+// 	keyLst := make([]int64, 0)
+// 	for {
+// 		var linuxId int64
+// 		_, err := cur.ReadDocument(context.Background(), &linuxId)
+// 		if driver.IsNoMoreDocuments(err) {
+// 			break
+// 		} else if err != nil {
+// 			return nil, err
+// 		}
+// 		keyLst = append(keyLst, linuxId)
+// 	}
+// 	return keyLst, nil
+// }
 
 func UpsertConnRelation(localLinuxId int64, localPid int32, remoteLinuxId int64, remotePid int32, timestamp int64) error {
 	aql := `

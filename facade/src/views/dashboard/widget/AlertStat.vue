@@ -1,48 +1,52 @@
 <template>
-    <div style="width: 100%;" class="graph">
-        <canvas id="alertStat" width="824" height="400"></canvas>
-    </div>
+    <a-card size="small" title="告警趋势图" style="margin-right: 1rem;margin-bottom: 1rem;">
+        <template #extra>
+            <a href="#" @click="showSetting = true">设置</a>
+        </template>
+        <div id="alertStat" style="width: 800px;height: 400px;"></div>
+    </a-card>
+    <a-modal v-model:open="showSetting" title="告警趋势图：设置" @ok="getData">
+        <a-form>
+            <a-form-item label="统计范围" name="range">
+                <a-range-picker :show-time="{ format: 'HH:mm' }" format="YYYY-MM-DD HH:mm" @change="onRangeChange" :placeholder="['起始时间', '终止时间']" />
+            </a-form-item>
+        </a-form>
+    </a-modal>
 </template>
 
 <script setup lang="ts">
+import request from '@/utils/request';
 import * as echarts from 'echarts';
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
+import dayjs, { Dayjs } from 'dayjs';
 
-onMounted(() => {
+const now = new Date()
+const showSetting = ref(false);
+const timeRange = ref([dayjs(now).add(-24, "hour").valueOf(), dayjs(now).valueOf()])
 
-    let container: any = document.querySelector(".graph")
-    let chart_dom: any = document.getElementById('alertStat')
+const onRangeChange = (value: [Dayjs, Dayjs]) => {
     
-    let chart = echarts.init(chart_dom, undefined, {
-        width: container.offsetWidth,
-        height: container.offsetHeight
-    });
+    const start = value[0].valueOf()
+    const end = value[1].valueOf()
 
-  let option;
+    timeRange.value = [start, end]
 
-  // prettier-ignore
-    const data = [["2000-06-05", 116], ["2000-06-06", 129], ["2000-06-07", 135], ["2000-06-08", 86], ["2000-06-09", 73], ["2000-06-10", 85], ["2000-06-11", 73], ["2000-06-12", 68], ["2000-06-13", 92], ["2000-06-14", 130], ["2000-06-15", 245], ["2000-06-16", 139], ["2000-06-17", 115], ["2000-06-18", 111], ["2000-06-19", 309], ["2000-06-20", 206], ["2000-06-21", 137], ["2000-06-22", 128], ["2000-06-23", 85], ["2000-06-24", 94], ["2000-06-25", 71], ["2000-06-26", 106], ["2000-06-27", 84], ["2000-06-28", 93], ["2000-06-29", 85], ["2000-06-30", 73], ["2000-07-01", 83], ["2000-07-02", 125], ["2000-07-03", 107], ["2000-07-04", 82], ["2000-07-05", 44], ["2000-07-06", 72], ["2000-07-07", 106], ["2000-07-08", 107], ["2000-07-09", 66], ["2000-07-10", 91], ["2000-07-11", 92], ["2000-07-12", 113], ["2000-07-13", 107], ["2000-07-14", 131], ["2000-07-15", 111], ["2000-07-16", 64], ["2000-07-17", 69], ["2000-07-18", 88], ["2000-07-19", 77], ["2000-07-20", 83], ["2000-07-21", 111], ["2000-07-22", 57], ["2000-07-23", 55], ["2000-07-24", 60]];
-    const dateList = data.map(function (item) {
-        return item[0];
-    });
-    const valueList = data.map(function (item) {
-        return item[1];
-    });
+};
+
+const render = (xAxis, valueLst, min, max) => {
+    let chart_dom: any = document.getElementById('alertStat')
+
+    let chart = echarts.init(chart_dom)
+    let option;
+
     option = {
-        // Make gradient line here
         visualMap: [
             {
                 show: false,
                 type: 'continuous',
                 seriesIndex: 0,
-                min: 0,
-                max: 400
-            },
-        ],
-        title: [
-            {
-                left: 'center',
-                text: 'Gradient along the y axis'
+                min: min,
+                max: max
             },
         ],
         tooltip: {
@@ -50,7 +54,7 @@ onMounted(() => {
         },
         xAxis: [
             {
-                data: dateList
+                data: xAxis
             },
         ],
         yAxis: [
@@ -60,13 +64,48 @@ onMounted(() => {
             {
                 type: 'line',
                 showSymbol: false,
-                data: valueList
+                data: valueLst
             }
         ]
     };
 
     option && chart.setOption(option);
+}
+
+const loadData = () => {
+    return request({
+        url: "/alarm/stat_trend",
+        method: "GET",
+        params: {
+            "from": timeRange.value[0],
+            "to": timeRange.value[1]
+        }
+    })
+}
+
+const getData = () => {
+    loadData().then(resp => {
+        const data = resp["data"]
+        data.sort((a, b) => {
+            return parseInt(a["timetag"]) - parseInt(b["timetag"])
+        })
+        let min = 0, max = 0;
+        const xAxis = data.map(item => item["timetag"])
+        const valueLst = data.map(item => {
+            const value = item["total"]
+            if (value < min) min = value
+            else if (value > max) max = value
+            return value
+        })
+        render(xAxis, valueLst, min, max)
+        showSetting.value = false
+    })
+}
+
+onMounted(() => {
+    getData()
 })
+
 </script>
 
 <style scoped></style>

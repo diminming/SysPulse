@@ -42,7 +42,7 @@ func GetBizByPage(page int, pageSize int) []model.Business {
 	return result
 }
 
-func GetBizTotal() int {
+func GetBizTotal() int64 {
 	return model.GetBizTotal()
 }
 
@@ -113,4 +113,8 @@ func DeleteBizRecord(ctx *gin.Context) {
 	}
 	DeleteBiz(bizId)
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "success"})
+}
+
+func GetBizCount(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: model.GetBizTotal(), Msg: "success"})
 }

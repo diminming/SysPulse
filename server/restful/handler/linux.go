@@ -16,6 +16,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func GetLinuxCount(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: model.GetLinuxTotal(), Msg: "success"})
+}
+
 func GetInterfaceLst(ctx *gin.Context) {
 	linuxId, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {

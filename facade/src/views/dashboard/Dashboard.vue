@@ -2,65 +2,119 @@
   <div class="dashboard">
     <div class="tiles">
       <a-space size="large">
-        <tile v-for="item in tile_lst" :key="item.name" :color="item.color" :title="item.title" :value="item.value" :icon="item.icon"></tile>
+        <tile v-for="item in tileLst" :key="item.name" :color="item.color" :title="item.title"
+          :icon="item.icon" :loadValue="item.loadValue" :clickHandler="item.clickHandler">
+        </tile>
       </a-space>
     </div>
     <div class="charts">
-        <a-flex justify="space-between" align="flex-end">
-          <heat-map></heat-map>
-          <alert-stat></alert-stat>
-        </a-flex>
-
+      
+      <a-flex justify="space-between" :align="'flex-end'">
+        <alert-stat></alert-stat>
+        <heat-map></heat-map>
+      </a-flex>
 
     </div>
     <div>
-      <a-table :dataSource="dataSource" :columns="columns">
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key == 'level'">
-          <span>
-            <a-tag :color="colorMap[record.level]">{{ record.level }}</a-tag>
-          </span>
-        </template>
-      </template>
-    </a-table>
+      <a-card title="告警列表" size="small">
+        <AlarmLst :stage="'dashboard'"></AlarmLst>
+      </a-card>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import AlarmLst from "@/views/notification/AlarmLst.vue"
 import Tile from "@/views/dashboard/widget/Tile.vue"
 import AlertStat from "@/views/dashboard/widget/AlertStat.vue"
 import { GroupOutlined, DesktopOutlined, BarsOutlined, NotificationOutlined } from '@ant-design/icons-vue';
 import HeatMap from "@/views/dashboard/widget/HeatMap.vue";
 
-const tile_lst = [
+import request from "@/utils/request"
+import router from "@/router";
+
+const tileLst = [
   {
     "name": "grp",
     "title": "资源分组",
-    "value": 12345,
     "icon": GroupOutlined,
-    "color": "#321FDB"
+    "color": "#321FDB",
+    "loadValue": () => {
+      return new Promise((resolve, reject) => {
+        request({
+          url: "/biz/count",
+          method: "GET"
+        }).then((resp: any) => {
+          resolve(resp["data"])
+        })
+      })
+    },
+    "clickHandler": () => {
+      router.push({
+        path: "/main/biz"
+      })
+    }
   },
   {
     "name": "linux",
     "title": "Linux",
-    "value": 23456,
     "icon": DesktopOutlined,
-    "color": "#3399FF"
+    "color": "#3399FF",
+    "loadValue": () => {
+      return new Promise((resolve, reject) => {
+        request({
+          url: "/linux/count",
+          method: "GET"
+        }).then((resp: any) => {
+          resolve(resp["data"])
+        })
+      })
+    },
+    "clickHandler": () => {
+      router.push({
+        path: "/main/linux"
+      })
+    }
   },
   {
-    "name": "item",
-    "title": "指标项",
-    "value": 34567,
+    "name": "job",
+    "title": "分析任务",
     "icon": BarsOutlined,
-    "color": "#F9B115"
+    "color": "#F9B115",
+    "loadValue": () => {
+      return new Promise((resolve, reject) => {
+        request({
+          url: "/job/count",
+          method: "GET"
+        }).then((resp: any) => {
+          resolve(resp["data"])
+        })
+      })
+    },
+    "clickHandler": () => {
+      console.log(123)
+    }
   },
   {
     "name": "alert",
     "title": "告警",
-    "value": 45678,
     "icon": NotificationOutlined,
-    "color": "#E55353"
+    "color": "#E55353",
+    "loadValue": () => {
+      return new Promise((resolve, reject) => {
+        request({
+          url: "/alarm/count",
+          method: "GET"
+        }).then((resp: any) => {
+          resolve(resp["data"])
+        })
+      })
+    },
+    "clickHandler": () => {
+      router.push({
+        path: "/main/notification"
+      })
+    }
   }
 ]
 
@@ -123,11 +177,11 @@ const columns = [
 </script>
 
 <style scoped>
-
 .dashboard {
   background-color: #fff;
   padding: 1rem;
 }
+
 .cardList {
   width: 95%;
   margin: 0 auto;
@@ -148,7 +202,7 @@ const columns = [
   margin-bottom: 20px;
 }
 
-.charts{
+.charts {
   display: inline-block;
 }
 </style>

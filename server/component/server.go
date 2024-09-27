@@ -360,13 +360,13 @@ func TranslatePort2Pid(linuxId int64, port uint32) int32 {
 	return mapping[strconv.FormatInt(int64(port), 10)]
 }
 
-func GetLinuxIdByIp(ip string) int64 {
-	lst, _ := model.GetLinuxIdByIP(ip)
-	if len(lst) != 1 {
-		log.Default().Printf("got error when search linux id by ip: %s", ip)
-	}
-	return lst[0]
-}
+// func GetLinuxIdByIp(ip string) int64 {
+// 	lst, _ := model.GetLinuxIdByIP(ip)
+// 	if len(lst) != 1 {
+// 		log.Default().Printf("got error when search linux id by ip: %s", ip)
+// 	}
+// 	return lst[0]
+// }
 
 func translateIp2LinuxId(ipLst map[string]struct{}) map[string]int64 {
 	result := make(map[string]int64)
@@ -531,7 +531,7 @@ func saveData(arg interface{}) {
 	perfData := doc
 	values := perfData.Data
 	identity := perfData.Identity
-	linux := model.GetLinuxById(identity)
+	linux := model.GetLinuxIdByIdentity(identity)
 	switch val := values.(type) {
 	case []cpu.TimesStat:
 		saveCPUPerf(linux.Id, val, doc.Timestamp)

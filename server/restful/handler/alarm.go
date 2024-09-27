@@ -88,6 +88,10 @@ func GetAlarmById(alarmId int64) *model.Alarm {
 	}
 }
 
+func GetAlarmCount(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "OK", Data: model.GetTotalofAlarm()})
+}
+
 func GetAlarm(ctx *gin.Context) {
 	alarmId, err := strconv.ParseInt(ctx.Param("alarmId"), 10, 64)
 	if err != nil {
@@ -99,4 +103,61 @@ func GetAlarm(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "OK", Data: alarm})
 
+}
+
+func GetData4AlarmHeatMap(from, to int64) []map[string]any {
+	sqlstr := "select a.time_tag, a.total, biz.`biz_name` from (select biz_id, time_tag, count(id) as total from alarm where `timestamp` between ? and ? group by biz_id, time_tag order by total desc limit 10) a left join biz on biz.id = a.biz_id"
+	result := make([]map[string]any, 0, 10)
+	lst := model.DBSelect(sqlstr, from, to)
+	for _, item := range lst {
+
+		bizName := item["biz_name"]
+		if bizName == nil {
+			bizName = ""
+		} else {
+			bizName = string(item["biz_name"].([]uint8))
+		}
+
+		total, _ := item["total"].(int64)
+
+		result = append(result, map[string]any{
+			"timetag": string(item["time_tag"].([]uint8)),
+			"bizName": bizName,
+			"total":   total,
+		})
+	}
+
+	return result
+}
+
+func Stat4HeatMap(ctx *gin.Context) {
+	from, _ := strconv.ParseInt(ctx.Query("from"), 10, 64)
+	to, _ := strconv.ParseInt(ctx.Query("to"), 10, 64)
+	log.Default().Println("from: ", from, ", to: ", to)
+	result := GetData4AlarmHeatMap(from, to)
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "OK", Data: result})
+}
+
+func GetData4AlarmTrend(from, to int64) []map[string]any {
+	sqlstr := "select time_tag, count(id) as total from alarm where `timestamp` between ? and ? group by time_tag"
+	result := make([]map[string]any, 0, 10)
+	lst := model.DBSelect(sqlstr, from, to)
+
+	for _, item := range lst {
+		total, _ := item["total"].(int64)
+		result = append(result, map[string]any{
+			"timetag": string(item["time_tag"].([]uint8)),
+			"total":   total,
+		})
+	}
+
+	return result
+}
+
+func Stat4Trend(ctx *gin.Context) {
+	from, _ := strconv.ParseInt(ctx.Query("from"), 10, 64)
+	to, _ := strconv.ParseInt(ctx.Query("to"), 10, 64)
+	log.Default().Println("from: ", from, ", to: ", to)
+	result := GetData4AlarmTrend(from, to)
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "OK", Data: result})
 }

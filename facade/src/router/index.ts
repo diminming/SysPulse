@@ -161,7 +161,7 @@ const router = createRouter({
             {
               path: "/main/notification",
               name: "notification",
-              component: () => import("../views/notification/index.vue"),
+              component: () => import("../views/notification/AlarmLst.vue"),
               meta: {
                 text: "消息中心",
               },

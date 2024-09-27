@@ -306,6 +306,10 @@ func OnTrafficJobFinished(jobId int64, body []byte) {
 	model.DBUpdate("update job set `status`=?, `extend`=? where `id`=?", model.JOB_STATUS_FINISHED, extend, jobId)
 }
 
+func GetJobCount(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "success", Data: model.GetJobTotal()})
+}
+
 func OnJobFinished(ctx *gin.Context) {
 
 	jobId, err := strconv.ParseInt(ctx.Param("jobId"), 10, 64)

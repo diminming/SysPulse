@@ -19,6 +19,20 @@ type Linux struct {
 	UpdateTimestamp int64    `json:"update_timestamp"`
 }
 
+func LoadLinuxByIdentity(identity string) *Linux {
+	sqlstr := "select `id`, `hostname`, `linux_id`, `biz_id`, `agent_conn`, `create_timestamp`, `update_timestamp` from `linux` where linux_id = ?"
+	row := DBSelectRow(sqlstr, identity)
+	linux := new(Linux)
+	linux.Id = row["id"].(int64)
+	linux.Hostname = string(row["hostname"].([]uint8))
+	linux.LinuxId = string(row["linux_id"].([]uint8))
+	linux.AgentConn = string(row["agent_conn"].([]uint8))
+	linux.Biz.Id = row["biz_id"].(int64)
+	linux.CreateTimestamp = row["create_timestamp"].(int64)
+	linux.UpdateTimestamp = row["update_timestamp"].(int64)
+	return linux
+}
+
 func GetLinuxTotal() int64 {
 	s := "select count(id) from linux"
 	var row *sql.Row
@@ -31,14 +45,14 @@ func GetLinuxTotal() int64 {
 	return count
 }
 
-func GetLinuxById(id string) *Linux {
+func GetLinuxIdByIdentity(id string) *Linux {
 
 	linuxId := CacheGet(id)
 	if linuxId == "0" || linuxId == "" {
-		sql := "select id from linux where linux_id = ?"
+		sqlstr := "select id from linux where linux_id = ?"
 		// var row *sql.Row
 		linux := new(Linux)
-		row := SqlDB.QueryRow(sql, id)
+		row := SqlDB.QueryRow(sqlstr, id)
 		err := row.Scan(&linux.Id)
 		if err != nil {
 			log.Default().Println(err)

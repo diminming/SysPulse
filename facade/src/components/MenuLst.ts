@@ -46,16 +46,16 @@ export default [
         href: "/main/notification",
         icon: DesktopOutlined
     },
-    {
-        name: "Users",
-        text: "用户管理",
-        href: "/main/users",
-        icon: DesktopOutlined
-    },
-    {
-        name: "Setting",
-        text: "系统设置",
-        href: "/main/setting",
-        icon: DesktopOutlined
-    }
+    // {
+    //     name: "Users",
+    //     text: "用户管理",
+    //     href: "/main/users",
+    //     icon: DesktopOutlined
+    // },
+    // {
+    //     name: "Setting",
+    //     text: "系统设置",
+    //     href: "/main/setting",
+    //     icon: DesktopOutlined
+    // }
 ]

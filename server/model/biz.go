@@ -14,10 +14,10 @@ type Business struct {
 	UpdateTimestamp int64  `json:"updateTimestamp"`
 }
 
-func GetBizTotal() int {
+func GetBizTotal() int64 {
 	s := "select count(id) from biz"
 	var row *sql.Row
-	var count int
+	var count int64
 	row = SqlDB.QueryRow(s)
 	err := row.Scan(&count)
 	if err != nil {

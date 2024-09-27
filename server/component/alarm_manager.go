@@ -57,13 +57,18 @@ func buildTrigger() {
 	}
 }
 
+func timestamp2timeTag(timestmap int64) string {
+	return time.UnixMilli(timestmap).Format("2006010215")
+}
+
 func createAlarmRecord(timestamp int64, identity string, trigger string, parameters model.PerfData) {
-	linuxId := model.CacheGet(identity)
+	linux := model.LoadLinuxByIdentity(identity)
+	// linuxId := model.CacheGet(identity)
 	perfDataStr := common.ToString(parameters)
 
-	sql := "insert into alarm(`timestamp`,`linux_id`,`trigger`,`ack`,`perf_data`,`create_timestamp`) value(?,?,?,?,?,?)"
-
-	model.DBInsert(sql, timestamp, linuxId, trigger, false, []byte(perfDataStr), time.Now().UnixMilli())
+	sql := "insert into alarm(`timestamp`, `time_tag`, `linux_id`, `biz_id`, `trigger`,`ack`,`perf_data`,`create_timestamp`) value(?,?,?,?,?,?,?,?)"
+	timeTag := timestamp2timeTag(timestamp)
+	model.DBInsert(sql, timestamp, timeTag, linux.Id, linux.Biz.Id, trigger, false, []byte(perfDataStr), time.Now().UnixMilli())
 }
 
 func TriggerCheck(identity string, parameters model.PerfData, timestamp int64) {

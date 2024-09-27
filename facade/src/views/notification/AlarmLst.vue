@@ -5,7 +5,7 @@
         margin: 0,
         minHeight: '800px',
     }">
-        <div class="opBar">
+        <div class="opBar" v-if="stage !== 'dashboard'">
             <label class="search_label">时间范围</label>
             <a-range-picker style="width: 400px" show-time :format="dateTimeFormat" :presets="rangePresets"
                 v-model:value="dateTimeRange" @change="onRangeChange" size="small" />
@@ -55,14 +55,18 @@
     </a-modal>
 </template>
 <script lang="ts" setup>
-import { computed, onMounted, reactive, ref, type Ref, type UnwrapRef } from 'vue';
+import { computed, onMounted, reactive, defineProps, ref } from 'vue';
 import { Alarm } from '.';
-import dayjs, { type Dayjs }  from 'dayjs';
+import dayjs from 'dayjs';
 import { Linux } from '../linux/api';
+
+const props = defineProps({
+  stage: String
+})
 
 const pagination = reactive({
     page: 0,
-    pageSize: 20,
+    pageSize: props["stage"] == "dashboard" ? 200 : 20,
     total: 0,
 })
 
