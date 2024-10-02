@@ -17,9 +17,9 @@
                     <template v-if="column.key === 'linux'">
                         {{ record.linux.hostname }}
                     </template>
-                    <template v-else-if="column.key === 'title'">
+                    <template v-else-if="column.key === 'msg'">
                         <a @click="showAlarmDetail(record)">
-                            {{ record.trigger }}
+                            {{ record.msg }}
                         </a>
                     </template>
                     <template v-else-if="column.key === 'timestamp'">
@@ -42,15 +42,27 @@
     </a-layout-content>
     <a-modal v-model:open="isShowDetail" title="消息详情" @ok="isShowDetail = false" width="1000px">
         <a-descriptions bordered :column="2">
-            <a-descriptions-item label="消息标题" :span="2">
-                <span style="">{{ alarm?.trigger }}</span>
+            <a-descriptions-item label="消息" :span="2">
+                <span style="">{{ alarm?.msg }}</span>
             </a-descriptions-item>
-            <a-descriptions-item label="消息时间">{{ dayjs(alarm?.timestamp).format("YYYY/MM/DD HH:mm:ss") }}</a-descriptions-item>
-            <a-descriptions-item label="记录时间">{{ dayjs(alarm?.createTimestamp).format("YYYY/MM/DD HH:mm:ss") }}</a-descriptions-item>
-            <a-descriptions-item label="消息主体" :span="2">{{ alarm?.linux?.hostname  }}</a-descriptions-item>
-            <a-descriptions-item label="消息内容" :span="2">
-                <span style="">{{ JSON.stringify(alarm?.perfData) }}</span>
+            <a-descriptions-item label="Trigger ID">{{ alarm?.triggerId }}</a-descriptions-item>
+            <a-descriptions-item label="Trigger">{{ alarm?.trigger }}</a-descriptions-item>
+            <a-descriptions-item label="消息时间">{{ dayjs(alarm?.timestamp).format("YYYY/MM/DD HH:mm:ss")
+                }}</a-descriptions-item>
+            <a-descriptions-item label="记录时间">{{ dayjs(alarm?.createTimestamp).format("YYYY/MM/DD HH:mm:ss")
+                }}</a-descriptions-item>
+            <a-descriptions-item label="产生对象">{{ alarm?.linux?.hostname }}</a-descriptions-item>
+            <a-descriptions-item label="消息状态">
+                <span v-if="alarm?.ack === true" style="font-weight: bold;color: green;">
+                    <a-tag color="green">已确认</a-tag>
+                </span>
+                <span v-else style="font-weight: bold;;color: red;">
+                    <a-tag color="red">未确认</a-tag>
+                </span>
             </a-descriptions-item>
+            <!-- <a-descriptions-item label="" :span="2">
+                <span style="">{{ alarm?.msg }}</span>
+            </a-descriptions-item> -->
         </a-descriptions>
     </a-modal>
 </template>
@@ -61,7 +73,7 @@ import dayjs from 'dayjs';
 import { Linux } from '../linux/api';
 
 const props = defineProps({
-  stage: String
+    stage: String
 })
 
 const pagination = reactive({
@@ -91,22 +103,21 @@ const columns = [
         title: "消息时间",
         dataIndex: "timestamp",
         key: "timestamp",
+        width: 160
     }, {
-        title: "消息标题",
-        dataIndex: "title",
-        key: "title",
-    }, {
-        title: "消息主体",
+        title: "产生对象",
         dataIndex: "linux",
         key: "linux",
+        width: 160
     }, {
-        title: "已确认",
+        title: "消息",
+        dataIndex: "msg",
+        key: "msg",
+    }, {
+        title: "消息状态",
         dataIndex: "ack",
         key: "ack",
-    }, {
-        title: "记录时间",
-        dataIndex: "createTimestamp",
-        key: "createTimestamp",
+        width: 100
     }
 ]
 
@@ -119,7 +130,9 @@ const showAlarmDetail = (record: any) => {
         a.createTimestamp = data['createTimestamp']
         a.linux = new Linux(data["linux"]["id"], data["linux"]["hostname"])
         a.trigger = data['trigger']
+        a.triggerId = data['triggerId']
         a.perfData = data['perfData']
+        a.msg = data["msg"]
         isShowDetail.value = true
     })
     alarm.value = a

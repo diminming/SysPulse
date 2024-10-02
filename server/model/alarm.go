@@ -5,6 +5,18 @@ import (
 	"log"
 )
 
+type PerformenceDataType int
+
+const (
+	DataType_CpuPerformence         = 1
+	DataType_LoadPerformence        = 2
+	DataType_MemoryPerformence      = 3
+	DataType_SwapPerformence        = 4
+	DataType_DiskPerformence        = 5
+	DataType_DiskIOPerformence      = 6
+	DataType_NetDeviceIOPerformence = 7
+)
+
 type CpuPerfData struct {
 	User      float64 `expr:"user"`
 	System    float64 `expr:"system"`
@@ -134,8 +146,10 @@ type Alarm struct {
 	Id              int64    `json:"id"`
 	Timestamp       int64    `json:"timestamp"`
 	CreateTimestamp int64    `json:"createTimestamp"`
+	TriggerId       string   `json:"triggerId"`
 	Trigger         string   `json:"trigger"`
 	Ack             bool     `json:"ack"`
+	Msg             string   `json:"msg"`
 	Linux           Linux    `json:"linux"`
 	PerfData        PerfData `json:"perfData"`
 }

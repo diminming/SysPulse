@@ -118,7 +118,7 @@ func DBSelect(sql string, args ...interface{}) []map[string]interface{} {
 func DBInsert(sql string, args ...interface{}) int64 {
 	ret, err := SqlDB.Exec(sql, args...)
 	if err != nil {
-		log.Default().Println("failed: ", err)
+		log.Default().Panicln("failed: ", err)
 	}
 	theID, err := ret.LastInsertId() // 新插入数据的id
 	if err != nil {

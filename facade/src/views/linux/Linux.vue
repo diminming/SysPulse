@@ -158,7 +158,7 @@ const onEdite = (linux: Linux) => {
 const onDelete = (linux_id: number) => {
   return new Promise((resolve) => {
     request({
-      url: "/linux/page",
+      url: "/linux",
       method: "delete",
       params: {
         linux_id: linux_id,

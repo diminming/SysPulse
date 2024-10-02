@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -13,13 +12,13 @@ import (
 
 func GetAlarmByPage(page int, pageSize int) []model.Alarm {
 	sql := "SELECT \n" +
-		"    a.id, a.timestamp, linux.hostname, a.ack, a.`trigger`, a.create_timestamp\n" +
+		"    a.id, a.timestamp, linux.hostname, a.ack, a.`msg`, a.create_timestamp\n" +
 		"FROM\n" +
 		"    (SELECT \n" +
 		"        `id`,\n" +
 		"            `timestamp`,\n" +
 		"            `linux_id`,\n" +
-		"            `trigger`,\n" +
+		"            `msg`,\n" +
 		"            `ack`,\n" +
 		"            `perf_data`,\n" +
 		"            `create_timestamp`\n" +
@@ -37,7 +36,7 @@ func GetAlarmByPage(page int, pageSize int) []model.Alarm {
 			Id:              item["id"].(int64),
 			Timestamp:       item["timestamp"].(int64),
 			CreateTimestamp: item["create_timestamp"].(int64),
-			Trigger:         string(item["trigger"].([]uint8)),
+			Msg:             string(item["msg"].([]uint8)),
 			Ack:             item["ack"].(int64) == 1,
 			Linux: model.Linux{
 				Hostname: string(item["hostname"].([]uint8)),
@@ -66,24 +65,26 @@ func GetAlarmLstByPage(ctx *gin.Context) {
 	}, Msg: "success"})
 }
 
-func GetAlarmById(alarmId int64) *model.Alarm {
-	sql := "select a.`id`, a.`timestamp`, a.`linux_id`, a.`trigger`, a.`ack`, a.`perf_data`, a.`create_timestamp`, l.`id` as linuxId, l.`hostname` from (select * from alarm where id = ?) a inner join linux l where l.id = a.linux_id"
+func GetAlarmById(alarmId int64) map[string]any {
+	sql := "select a.`id`, a.`timestamp`, a.`linux_id`, a.`trigger`, a.`trigger_id`, a.`msg`, a.`ack`, a.`perf_data`, a.`create_timestamp`, l.`id` as linuxId, l.`hostname` from (select * from alarm where id = ?) a inner join linux l where l.id = a.linux_id"
 	alarmInfo := model.DBSelectRow(sql, alarmId)
-	perfData := model.PerfData{}
-	err := json.Unmarshal(alarmInfo["perf_data"].([]uint8), &perfData)
-	if err != nil {
-		log.Default().Printf("error get alarm info at method GetAlarmById: %v\n", err)
-	}
-	return &model.Alarm{
-		Id:              alarmInfo["id"].(int64),
-		Timestamp:       alarmInfo["timestamp"].(int64),
-		CreateTimestamp: alarmInfo["create_timestamp"].(int64),
-		Trigger:         string(alarmInfo["trigger"].([]uint8)),
-		Ack:             alarmInfo["ack"].(int64) == 1,
-		PerfData:        perfData,
-		Linux: model.Linux{
-			Id:       alarmInfo["linuxId"].(int64),
-			Hostname: string(alarmInfo["hostname"].([]uint8)),
+	// perfData := model.PerfData{}
+	// err := json.Unmarshal(alarmInfo["perf_data"].([]uint8), &perfData)
+	// if err != nil {
+	// 	log.Default().Printf("error get alarm info at method GetAlarmById: %v\n", err)
+	// }
+	return map[string]any{
+		"id":              alarmInfo["id"].(int64),
+		"timestamp":       alarmInfo["timestamp"].(int64),
+		"createTimestamp": alarmInfo["create_timestamp"].(int64),
+		"trigger":         string(alarmInfo["trigger"].([]uint8)),
+		"triggerId":       string(alarmInfo["trigger_id"].([]uint8)),
+		"msg":             string(alarmInfo["msg"].([]uint8)),
+		"ack":             alarmInfo["ack"].(int64) == 1,
+		"perfData":        string(alarmInfo["perf_data"].([]uint8)),
+		"linux": map[string]any{
+			"id":       alarmInfo["linuxId"].(int64),
+			"hostname": string(alarmInfo["hostname"].([]uint8)),
 		},
 	}
 }
@@ -109,6 +110,7 @@ func GetData4AlarmHeatMap(from, to int64) []map[string]any {
 	sqlstr := "select a.time_tag, a.total, biz.`biz_name` from (select biz_id, time_tag, count(id) as total from alarm where `timestamp` between ? and ? group by biz_id, time_tag order by total desc limit 10) a left join biz on biz.id = a.biz_id"
 	result := make([]map[string]any, 0, 10)
 	lst := model.DBSelect(sqlstr, from, to)
+
 	for _, item := range lst {
 
 		bizName := item["biz_name"]
@@ -133,7 +135,6 @@ func GetData4AlarmHeatMap(from, to int64) []map[string]any {
 func Stat4HeatMap(ctx *gin.Context) {
 	from, _ := strconv.ParseInt(ctx.Query("from"), 10, 64)
 	to, _ := strconv.ParseInt(ctx.Query("to"), 10, 64)
-	log.Default().Println("from: ", from, ", to: ", to)
 	result := GetData4AlarmHeatMap(from, to)
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "OK", Data: result})
 }
@@ -157,7 +158,6 @@ func GetData4AlarmTrend(from, to int64) []map[string]any {
 func Stat4Trend(ctx *gin.Context) {
 	from, _ := strconv.ParseInt(ctx.Query("from"), 10, 64)
 	to, _ := strconv.ParseInt(ctx.Query("to"), 10, 64)
-	log.Default().Println("from: ", from, ", to: ", to)
 	result := GetData4AlarmTrend(from, to)
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "OK", Data: result})
 }

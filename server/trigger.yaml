@@ -1,4 +1,14 @@
-triggers:
-  - linux: "dev.env"
-    expression: 
-    - "cpu.util > 10"
+_default:
+  - id: "cpu_utilization"
+    expression: "cpu.util > 10"
+    message: "Linux: <!hostname> CPU使用率过高。"
+  - id: "memory_utilization"
+    expression: "memory.free / memory.total < 0.6"
+    message: "Linux: <!hostname> 内存使用率过高。"
+
+trigger_setting:
+  - identity: "dev.env"
+    triggers:
+    - id: "cpu_utilization"
+      expression: "cpu.util > 20"
+      message: "Linux: [<!hostname>] CPU使用率过高。"

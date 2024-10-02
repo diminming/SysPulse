@@ -83,3 +83,12 @@ func CacheHGet(key string, field string) string {
 	}
 	return result
 }
+
+func CacheHSet(key, field string, value any) int64 {
+	result, err := client.HSet(context.Background(), key, field, value).Result()
+	if err != nil {
+		log.Default().Println(err)
+		log.Default().Printf("key %s, field %s\n", key, field)
+	}
+	return result
+}

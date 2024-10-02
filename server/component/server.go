@@ -71,159 +71,161 @@ func NewHubServer() *HubServer {
 
 	pool1, err := ants.NewPoolWithFunc(100, func(arg any) {
 		doc := arg.(*mutual.Document)
-		parameterLst := make([]model.PerfData, 0, 10)
 		data := doc.Data
 		switch val := data.(type) {
 		case mutual.CpuUtilization:
-			parameterLst = append(parameterLst, model.PerfData{
+			obj := model.PerfData{
 				CPU: model.CpuPerfData{
 					CpuUtil: val.Percent,
 				},
-			})
-		case []cpu.TimesStat:
-			for _, stat := range val {
-				if stat.CPU == "cpu-total" {
-					parameter := model.PerfData{}
-					parameter.CPU = model.CpuPerfData{
-						User:      stat.User,
-						System:    stat.System,
-						Idle:      stat.Idle,
-						Nice:      stat.Nice,
-						Iowait:    stat.Iowait,
-						Irq:       stat.Irq,
-						Softirq:   stat.Softirq,
-						Steal:     stat.Steal,
-						Guest:     stat.Guest,
-						GuestNice: stat.GuestNice,
-					}
-					parameterLst = append(parameterLst, parameter)
-				}
 			}
+			TriggerCheck(doc.Identity, obj, model.DataType_CpuPerformence, doc.Timestamp)
+		// case []cpu.TimesStat:
+		// 	for _, stat := range val {
+		// 		if stat.CPU == "cpu-total" {
+		// 			parameter := model.PerfData{}
+		// 			parameter.CPU = model.CpuPerfData{
+		// 				User:      stat.User,
+		// 				System:    stat.System,
+		// 				Idle:      stat.Idle,
+		// 				Nice:      stat.Nice,
+		// 				Iowait:    stat.Iowait,
+		// 				Irq:       stat.Irq,
+		// 				Softirq:   stat.Softirq,
+		// 				Steal:     stat.Steal,
+		// 				Guest:     stat.Guest,
+		// 				GuestNice: stat.GuestNice,
+		// 			}
+		// 			parameterLst = append(parameterLst, parameter)
+		// 		}
+		// 	}
 		case load.AvgStat:
-			parameter := model.PerfData{}
-			parameter.Load = model.LoadPerfData{
-				Load1:  val.Load1,
-				Load5:  val.Load5,
-				Load15: val.Load15,
+			obj := model.PerfData{
+				Load: model.LoadPerfData{
+					Load1:  val.Load1,
+					Load5:  val.Load5,
+					Load15: val.Load15,
+				},
 			}
-			parameterLst = append(parameterLst, parameter)
+			TriggerCheck(doc.Identity, obj, model.DataType_LoadPerformence, doc.Timestamp)
 		case mem.VirtualMemoryStat:
-			parameter := model.PerfData{}
-			parameter.Memory = model.MemoryPerfData{
-				Total:          val.Total,
-				Free:           val.Free,
-				Active:         val.Active,
-				Inactive:       val.Inactive,
-				Wired:          val.Wired,
-				Laundry:        val.Laundry,
-				Buffers:        val.Buffers,
-				Cached:         val.Cached,
-				WriteBack:      val.WriteBack,
-				Dirty:          val.Dirty,
-				WriteBackTmp:   val.WriteBackTmp,
-				Shared:         val.Shared,
-				Slab:           val.Slab,
-				Sreclaimable:   val.Sreclaimable,
-				Sunreclaim:     val.Sunreclaim,
-				PageTables:     val.PageTables,
-				SwapCached:     val.SwapCached,
-				CommitLimit:    val.CommitLimit,
-				CommittedAS:    val.CommittedAS,
-				HighTotal:      val.HighTotal,
-				HighFree:       val.HighFree,
-				LowTotal:       val.LowTotal,
-				LowFree:        val.LowFree,
-				SwapTotal:      val.SwapTotal,
-				SwapFree:       val.SwapFree,
-				Mapped:         val.Mapped,
-				VmallocTotal:   val.VmallocTotal,
-				VmallocUsed:    val.VmallocUsed,
-				VmallocChunk:   val.VmallocChunk,
-				HugePagesTotal: val.HugePagesTotal,
-				HugePagesFree:  val.HugePagesFree,
-				HugePagesRsvd:  val.HugePagesRsvd,
-				HugePagesSurp:  val.HugePagesSurp,
-				HugePageSize:   val.HugePageSize,
-				AnonHugePages:  val.AnonHugePages,
+			obj := model.PerfData{
+				Memory: model.MemoryPerfData{
+					Total:          val.Total,
+					Free:           val.Free,
+					Active:         val.Active,
+					Inactive:       val.Inactive,
+					Wired:          val.Wired,
+					Laundry:        val.Laundry,
+					Buffers:        val.Buffers,
+					Cached:         val.Cached,
+					WriteBack:      val.WriteBack,
+					Dirty:          val.Dirty,
+					WriteBackTmp:   val.WriteBackTmp,
+					Shared:         val.Shared,
+					Slab:           val.Slab,
+					Sreclaimable:   val.Sreclaimable,
+					Sunreclaim:     val.Sunreclaim,
+					PageTables:     val.PageTables,
+					SwapCached:     val.SwapCached,
+					CommitLimit:    val.CommitLimit,
+					CommittedAS:    val.CommittedAS,
+					HighTotal:      val.HighTotal,
+					HighFree:       val.HighFree,
+					LowTotal:       val.LowTotal,
+					LowFree:        val.LowFree,
+					SwapTotal:      val.SwapTotal,
+					SwapFree:       val.SwapFree,
+					Mapped:         val.Mapped,
+					VmallocTotal:   val.VmallocTotal,
+					VmallocUsed:    val.VmallocUsed,
+					VmallocChunk:   val.VmallocChunk,
+					HugePagesTotal: val.HugePagesTotal,
+					HugePagesFree:  val.HugePagesFree,
+					HugePagesRsvd:  val.HugePagesRsvd,
+					HugePagesSurp:  val.HugePagesSurp,
+					HugePageSize:   val.HugePageSize,
+					AnonHugePages:  val.AnonHugePages,
+				},
 			}
-			parameterLst = append(parameterLst, parameter)
+			TriggerCheck(doc.Identity, obj, model.DataType_MemoryPerformence, doc.Timestamp)
 		case mem.SwapMemoryStat:
-			parameter := model.PerfData{}
-			parameter.Swap = model.SwapPerfData{
-				Total:       val.Total,
-				Used:        val.Used,
-				Free:        val.Free,
-				UsedPercent: val.UsedPercent,
-				Sin:         val.Sin,
-				Sout:        val.Sout,
-				PgIn:        val.PgIn,
-				PgOut:       val.PgOut,
-				PgFault:     val.PgFault,
-				PgMajFault:  val.PgMajFault,
+			obj := model.PerfData{
+				Swap: model.SwapPerfData{
+					Total:       val.Total,
+					Used:        val.Used,
+					Free:        val.Free,
+					UsedPercent: val.UsedPercent,
+					Sin:         val.Sin,
+					Sout:        val.Sout,
+					PgIn:        val.PgIn,
+					PgOut:       val.PgOut,
+					PgFault:     val.PgFault,
+					PgMajFault:  val.PgMajFault,
+				},
 			}
-			parameterLst = append(parameterLst, parameter)
+			TriggerCheck(doc.Identity, obj, model.DataType_SwapPerformence, doc.Timestamp)
 		case []disk.UsageStat:
 			for _, item := range val {
-				parameter := model.PerfData{}
-				parameter.Disk = model.DiskPerfData{
-					Path:              item.Path,
-					Fstype:            item.Fstype,
-					Total:             item.Total,
-					Free:              item.Free,
-					Used:              item.Used,
-					UsedPercent:       item.UsedPercent,
-					InodesTotal:       item.InodesTotal,
-					InodesUsed:        item.InodesUsed,
-					InodesFree:        item.InodesFree,
-					InodesUsedPercent: item.InodesUsedPercent,
+				obj := model.PerfData{
+					Disk: model.DiskPerfData{
+						Path:              item.Path,
+						Fstype:            item.Fstype,
+						Total:             item.Total,
+						Free:              item.Free,
+						Used:              item.Used,
+						UsedPercent:       item.UsedPercent,
+						InodesTotal:       item.InodesTotal,
+						InodesUsed:        item.InodesUsed,
+						InodesFree:        item.InodesFree,
+						InodesUsedPercent: item.InodesUsedPercent,
+					},
 				}
-				parameterLst = append(parameterLst, parameter)
+				TriggerCheck(doc.Identity, obj, model.DataType_DiskPerformence, doc.Timestamp)
 			}
-
 		case map[string]disk.IOCountersStat:
 			for disk, item := range val {
-				parameter := model.PerfData{}
-				parameter.DiskIO = model.DiskIOPerfData{
-					Disk:             disk,
-					ReadCount:        item.ReadCount,
-					MergedReadCount:  item.MergedReadCount,
-					WriteCount:       item.WriteCount,
-					MergedWriteCount: item.MergedWriteCount,
-					ReadBytes:        item.ReadBytes,
-					WriteBytes:       item.WriteBytes,
-					ReadTime:         item.ReadTime,
-					WriteTime:        item.WriteTime,
-					IopsInProgress:   item.IopsInProgress,
-					IoTime:           item.IoTime,
-					WeightedIO:       item.WeightedIO,
-					Name:             item.Name,
-					SerialNumber:     item.SerialNumber,
-					Label:            item.Label,
+				obj := model.PerfData{
+					DiskIO: model.DiskIOPerfData{
+						Disk:             disk,
+						ReadCount:        item.ReadCount,
+						MergedReadCount:  item.MergedReadCount,
+						WriteCount:       item.WriteCount,
+						MergedWriteCount: item.MergedWriteCount,
+						ReadBytes:        item.ReadBytes,
+						WriteBytes:       item.WriteBytes,
+						ReadTime:         item.ReadTime,
+						WriteTime:        item.WriteTime,
+						IopsInProgress:   item.IopsInProgress,
+						IoTime:           item.IoTime,
+						WeightedIO:       item.WeightedIO,
+						Name:             item.Name,
+						SerialNumber:     item.SerialNumber,
+						Label:            item.Label,
+					},
 				}
-				parameterLst = append(parameterLst, parameter)
+				TriggerCheck(doc.Identity, obj, model.DataType_DiskIOPerformence, doc.Timestamp)
 			}
 
 		case []net.IOCountersStat:
 			for _, item := range val {
-				parameter := model.PerfData{}
-				parameter.NetDeviceIO = model.NetDeviceIOPerfData{
-					Name:        item.Name,
-					BytesSent:   item.BytesSent,
-					BytesRecv:   item.BytesRecv,
-					PacketsSent: item.PacketsSent,
-					PacketsRecv: item.PacketsRecv,
-					Errin:       item.Errin,
-					Errout:      item.Errout,
-					Dropin:      item.Dropin,
-					Dropout:     item.Dropout,
-					Fifoin:      item.Fifoin,
-					Fifoout:     item.Fifoout,
+				obj := model.PerfData{
+					NetDeviceIO: model.NetDeviceIOPerfData{
+						Name:        item.Name,
+						BytesSent:   item.BytesSent,
+						BytesRecv:   item.BytesRecv,
+						PacketsSent: item.PacketsSent,
+						PacketsRecv: item.PacketsRecv,
+						Errin:       item.Errin,
+						Errout:      item.Errout,
+						Dropin:      item.Dropin,
+						Dropout:     item.Dropout,
+						Fifoin:      item.Fifoin,
+						Fifoout:     item.Fifoout,
+					},
 				}
-				parameterLst = append(parameterLst, parameter)
+				TriggerCheck(doc.Identity, obj, model.DataType_NetDeviceIOPerformence, doc.Timestamp)
 			}
-		}
-		for _, param := range parameterLst {
-			TriggerCheck(doc.Identity, param, doc.Timestamp)
 		}
 	})
 
