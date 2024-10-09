@@ -27,7 +27,6 @@ import (
 	"github.com/syspulse/model"
 
 	"github.com/syspulse/mutual"
-	mutual_common "github.com/syspulse/mutual/common"
 )
 
 var pool4PerfData, pool4Alarm *ants.PoolWithFunc
@@ -302,7 +301,7 @@ func saveHostInfo(linuxId int64, info host.InfoStat, timestamp int64) {
 		"timestamp":     timestamp,
 	})
 
-	if err == nil {
+	if err != nil {
 		log.Default().Println("error create linux: ", err)
 	}
 }
@@ -310,7 +309,7 @@ func saveHostInfo(linuxId int64, info host.InfoStat, timestamp int64) {
 func saveCPUInfo(linuxId int64, infoLst []cpu.InfoStat, timestamp int64) {
 	err := model.UpdateCPUInfo(map[string]interface{}{"host_identity": linuxId, "cpu_lst": infoLst, "timestamp": timestamp})
 
-	if err == nil {
+	if err != nil {
 		log.Default().Println("error save cpu detail: ", err)
 	}
 }
@@ -322,7 +321,7 @@ func saveInterfaceInfo(linuxId int64, infoLst net.InterfaceStatList, timestamp i
 		"timestamp":     timestamp,
 	})
 
-	if err == nil {
+	if err != nil {
 		log.Default().Println("error save interface detail: ", err)
 	}
 }
@@ -362,18 +361,10 @@ func TranslatePort2Pid(linuxId int64, port uint32) int32 {
 	return mapping[strconv.FormatInt(int64(port), 10)]
 }
 
-// func GetLinuxIdByIp(ip string) int64 {
-// 	lst, _ := model.GetLinuxIdByIP(ip)
-// 	if len(lst) != 1 {
-// 		log.Default().Printf("got error when search linux id by ip: %s", ip)
-// 	}
-// 	return lst[0]
-// }
-
 func translateIp2LinuxId(ipLst map[string]struct{}) map[string]int64 {
 	result := make(map[string]int64)
 	model.BatchGetNIC(func(mappingBetweenCidrAndLinuxId []map[string]any) bool {
-		for ip, _ := range ipLst {
+		for ip := range ipLst {
 			for _, mapping := range mappingBetweenCidrAndLinuxId {
 				cidr := mapping["addr"].(string)
 				linuxId := mapping["host_id"]
@@ -578,7 +569,7 @@ func (hub *HubServer) OnTraffic(c gnet.Conn) gnet.Action {
 	buff := make([]byte, len(data))
 	copy(buff, data)
 	// go func() {
-	st1 := time.Now().Unix()
+	// st1 := time.Now().Unix()
 	if buff[0] == 'S' {
 		length := binary.LittleEndian.Uint32(buff[1:5])
 		payload := buff[5 : length+5]
@@ -586,9 +577,9 @@ func (hub *HubServer) OnTraffic(c gnet.Conn) gnet.Action {
 			log.Default().Panicf("error in read payload: %v", err)
 		}
 
-		payloadMD5 := mutual_common.MD5Calc(payload)
+		// payloadMD5 := mutual_common.MD5Calc(payload)
 
-		log.Default().Printf("the md5 of payload: %s", payloadMD5)
+		// log.Default().Printf("the md5 of payload: %s", payloadMD5)
 
 		buffer := bytes.NewBuffer(payload)
 		doc := new(mutual.Document)
@@ -597,14 +588,14 @@ func (hub *HubServer) OnTraffic(c gnet.Conn) gnet.Action {
 		if err != nil {
 			log.Default().Println(err)
 		}
-		log.Default().Printf("got doc, gap: %d", time.Now().UnixMilli()-doc.Timestamp)
+		// log.Default().Printf("got doc, gap: %d", time.Now().UnixMilli()-doc.Timestamp)
 
 		pool4PerfData.Invoke(doc)
 		pool4Alarm.Invoke(doc)
 
-		log.Default().Printf("goroutine pool size: %d, free: %d", pool4PerfData.Cap(), pool4PerfData.Free())
-		st2 := time.Now().Unix()
-		log.Default().Printf("spend: %d", st2-st1)
+		// log.Default().Printf("goroutine pool size: %d, free: %d", pool4PerfData.Cap(), pool4PerfData.Free())
+		// st2 := time.Now().Unix()
+		// log.Default().Printf("spend: %d", st2-st1)
 	}
 	// }()
 

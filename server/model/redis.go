@@ -92,3 +92,60 @@ func CacheHSet(key, field string, value any) int64 {
 	}
 	return result
 }
+
+func CacheLPUSH(key string, value any) int64 {
+	result, err := client.LPush(client.Context(), key, value).Result()
+	if err != nil {
+		log.Default().Println(err)
+	}
+	return result
+}
+
+// 尝试获取锁
+func AcquireLock(lockKey string, lockValue string, expiration time.Duration) (bool, error) {
+	// 使用SETNX命令实现锁，如果key不存在则设置成功并返回true，否则返回false
+	ok, err := client.SetNX(client.Context(), lockKey, lockValue, expiration).Result()
+	if err != nil {
+		return false, err
+	}
+	return ok, nil
+}
+
+// 释放锁
+func ReleaseLock(lockKey string, lockValue string) error {
+	// 使用Lua脚本删除锁，确保只有持有锁的客户端能够删除
+	luaScript := `
+        if redis.call("GET", KEYS[1]) == ARGV[1] then
+            return redis.call("DEL", KEYS[1])
+        else
+            return 0
+        end
+    `
+	// 执行Lua脚本
+	_, err := client.Eval(client.Context(), luaScript, []string{lockKey}, lockValue).Result()
+	return err
+}
+
+func CacheLLen(key string) int64 {
+	result, err := client.LLen(client.Context(), key).Result()
+	if err != nil {
+		log.Default().Println("error redis get lenght of list: ", err)
+	}
+	return result
+}
+
+func CacheRPop(key string) string {
+	result, err := client.RPop(client.Context(), key).Result()
+	if err != nil {
+		log.Default().Println("error redis get lenght of list: ", err)
+	}
+	return result
+}
+
+func CacheLRange(key string, start int64, end int64) []string {
+	result, err := client.LRange(client.Context(), key, start, end).Result()
+	if err != nil {
+		log.Default().Println("error redis get range of list:", err)
+	}
+	return result
+}

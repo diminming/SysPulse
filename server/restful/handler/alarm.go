@@ -20,7 +20,6 @@ func GetAlarmByPage(page int, pageSize int) []model.Alarm {
 		"            `linux_id`,\n" +
 		"            `msg`,\n" +
 		"            `ack`,\n" +
-		"            `perf_data`,\n" +
 		"            `create_timestamp`\n" +
 		"    FROM\n" +
 		"        alarm\n" +
@@ -66,13 +65,9 @@ func GetAlarmLstByPage(ctx *gin.Context) {
 }
 
 func GetAlarmById(alarmId int64) map[string]any {
-	sql := "select a.`id`, a.`timestamp`, a.`linux_id`, a.`trigger`, a.`trigger_id`, a.`msg`, a.`ack`, a.`perf_data`, a.`create_timestamp`, l.`id` as linuxId, l.`hostname` from (select * from alarm where id = ?) a inner join linux l where l.id = a.linux_id"
+	sql := "select a.`id`, a.`timestamp`, a.`linux_id`, a.`trigger`, a.`trigger_id`, a.`msg`, a.`ack`, a.`create_timestamp`, l.`id` as linuxId, l.`hostname` from (select * from alarm where id = ?) a inner join linux l where l.id = a.linux_id"
 	alarmInfo := model.DBSelectRow(sql, alarmId)
-	// perfData := model.PerfData{}
-	// err := json.Unmarshal(alarmInfo["perf_data"].([]uint8), &perfData)
-	// if err != nil {
-	// 	log.Default().Printf("error get alarm info at method GetAlarmById: %v\n", err)
-	// }
+
 	return map[string]any{
 		"id":              alarmInfo["id"].(int64),
 		"timestamp":       alarmInfo["timestamp"].(int64),
@@ -81,7 +76,6 @@ func GetAlarmById(alarmId int64) map[string]any {
 		"triggerId":       string(alarmInfo["trigger_id"].([]uint8)),
 		"msg":             string(alarmInfo["msg"].([]uint8)),
 		"ack":             alarmInfo["ack"].(int64) == 1,
-		"perfData":        string(alarmInfo["perf_data"].([]uint8)),
 		"linux": map[string]any{
 			"id":       alarmInfo["linuxId"].(int64),
 			"hostname": string(alarmInfo["hostname"].([]uint8)),
