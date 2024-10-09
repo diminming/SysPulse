@@ -389,10 +389,23 @@ const renderFlameChart = (chart: any, root: Node) => {
   });
 }
 
-export const CaclUsage = (target: any, value: any) => {
-  return (target / (value.user + value.system + value.idle + value.nice + value.iowait + value.irq + value.softirq + value.steal + value.guest + value.guestnice) * 100).toFixed(2)
+export const CaclUsage = (itemNew: any, itemOld: any) => {
+  try {
+    let totalNew = itemNew["guest"] + itemNew["guestnice"] + itemNew["idle"] + itemNew["iowait"] + itemNew["irq"] + itemNew["nice"] + itemNew["softirq"] + itemNew["steal"] + itemNew["system"] + itemNew["user"]
+    let totalOld = itemOld["guest"] + itemOld["guestnice"] + itemOld["idle"] + itemOld["iowait"] + itemOld["irq"] + itemOld["nice"] + itemOld["softirq"] + itemOld["steal"] + itemOld["system"] + itemOld["user"]
+    let idle = itemNew["idle"] - itemOld["idle"]
+    return ((1 - idle / (totalNew - totalOld)) * 100).toFixed(2)
+  } catch (err) {
+    console.error(err)
+  }
 }
 
+const CaclCPUPercent = (itemNew: any, itemOld: any, field: string) => {
+  let totalNew = itemNew["guest"] + itemNew["guestnice"] + itemNew["idle"] + itemNew["iowait"] + itemNew["irq"] + itemNew["nice"] + itemNew["softirq"] + itemNew["steal"] + itemNew["system"] + itemNew["user"]
+  let totalOld = itemOld["guest"] + itemOld["guestnice"] + itemOld["idle"] + itemOld["iowait"] + itemOld["irq"] + itemOld["nice"] + itemOld["softirq"] + itemOld["steal"] + itemOld["system"] + itemOld["user"]
+  let value = itemNew[field] - itemOld[field]
+  return ((value / (totalNew - totalOld)) * 100).toFixed(2)
+}
 
 const renderChartInDashboard = (selector: string, series: Array<any>) => {
   let dom = document.querySelector(selector),
@@ -484,6 +497,7 @@ export class Linux {
     })
   }
   RenderCpuPerfChart(start: number, end: number) {
+
     const linuxId = this.id,
       selector = ".gallery .graph.cpu",
       dom = document.querySelector(selector),
@@ -499,21 +513,22 @@ export class Linux {
       }
     }).then((resp: any) => {
       if (resp.data && resp.data != null) {
-        let jsonResp = new JsonResponse(resp.data, resp.msg, resp.status);
         let userData: any = [], systemData: any = [], idleData: any = [], iowaitData: any = [], stealData: any = [], niceData: any = [], irqData: any = [], softirqData: any = [], guestData: any = [], guestniceData: any = []
-        jsonResp.Data.forEach((item: any) => {
-          let timestamp: Date = new Date(item.timestamp)
-          userData.push([timestamp, CaclUsage(item.user, item)])
-          systemData.push([timestamp, CaclUsage(item.system, item)])
-          idleData.push([timestamp, CaclUsage(item.idle, item)])
-          niceData.push([timestamp, CaclUsage(item.nice, item)])
-          iowaitData.push([timestamp, CaclUsage(item.iowait, item)])
-          irqData.push([timestamp, CaclUsage(item.irq, item)])
-          softirqData.push([timestamp, CaclUsage(item.softirq, item)])
-          stealData.push([timestamp, CaclUsage(item.steal, item)])
-          guestData.push([timestamp, CaclUsage(item.guest, item)])
-          guestniceData.push([timestamp, CaclUsage(item.guestnice, item)])
-        })
+        for (let i = 0; i < resp.data.length - 1; i = i + 2) {
+          let item0 = resp.data[i]
+          let item1 = resp.data[i + 1]
+          userData.push([new Date(item1["timestamp"]), CaclCPUPercent(item1, item0, "user")])
+          systemData.push([new Date(item1["timestamp"]), CaclCPUPercent(item1, item0, "system")])
+          idleData.push([new Date(item1["timestamp"]), CaclCPUPercent(item1, item0, "idle")])
+          niceData.push([new Date(item1["timestamp"]), CaclCPUPercent(item1, item0, "nice")])
+          iowaitData.push([new Date(item1["timestamp"]), CaclCPUPercent(item1, item0, "iowait")])
+          irqData.push([new Date(item1["timestamp"]), CaclCPUPercent(item1, item0, "irq")])
+          softirqData.push([new Date(item1["timestamp"]), CaclCPUPercent(item1, item0, "softirq")])
+          stealData.push([new Date(item1["timestamp"]), CaclCPUPercent(item1, item0, "steal")])
+          guestData.push([new Date(item1["timestamp"]), CaclCPUPercent(item1, item0, "guest")])
+          guestniceData.push([new Date(item1["timestamp"]), CaclCPUPercent(item1, item0, "guestnice")])
+        }
+        
         renderChartInDashboard(selector, [
           {
             name: "user",
@@ -1413,9 +1428,17 @@ export default {
     })
   },
   RenderCpuUsageLine: (resp: JsonResponse) => {
-    let data = resp.Data.map((value: any, index: number, array: any[]) => {
-      return [new Date(value.timestamp), CaclUsage(value["user"], value)]
-    })
+    let data = []
+    for (let i = 0; i < resp.Data.length - 1; i = i + 2) {
+      let item0 = resp.Data[i]
+      let item1 = resp.Data[i + 1]
+      let usage = CaclUsage(item1, item0)
+      data.push([
+        new Date(item1["timestamp"]),
+        usage
+      ])
+    }
+
     let dom = document.querySelector(".graph.cpu-usage-mini"),
       myChart = echarts.getInstanceByDom(dom as HTMLElement) || echarts.init(dom as HTMLElement),
       options = {

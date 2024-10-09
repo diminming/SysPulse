@@ -221,11 +221,10 @@ const render = (start: number, end: number) => {
 
     LinuxAPI.GetCpuUsageLine(linuxId.value, start, end).then((resp: any) => {
         if (resp.data && resp.data != null) {
-            let jsonResp = new JsonResponse(resp.data, resp.msg, resp.status);
-            let item = resp.data[resp.data.length - 1]
-            let user = item["user"]
-            lastCpuUsage.value = CaclUsage(user, item)
-            LinuxAPI.RenderCpuUsageLine(jsonResp)
+            let item1 = resp.data[resp.data.length - 1]
+            let item2 = resp.data[resp.data.length - 2]
+            lastCpuUsage.value = CaclUsage(item1, item2)
+            LinuxAPI.RenderCpuUsageLine(new JsonResponse(resp.data, resp.msg, resp.status))
         }
     })
     LinuxAPI.GetLoad1Line(linuxId.value, start, end).then((resp: any) => {
