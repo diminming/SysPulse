@@ -30,10 +30,13 @@
                     </template>
                     <template v-else-if="column.key === 'ack'">
                         <span v-if="record.ack === true" style="font-weight: bold;color: green;">
-                            <a-tag color="green">已确认</a-tag>
+                            <a-tag color="green">已恢复</a-tag>
                         </span>
                         <span v-else style="font-weight: bold;;color: red;">
-                            <a-tag color="red">未确认</a-tag>
+                            <a-popconfirm title="您正在手动关闭一个告警，是否确认？" ok-text="确认" cancel-text="取消"
+                                @confirm="disableAlarm(record.id)">
+                                <a-tag color="red">生效中</a-tag>
+                            </a-popconfirm>
                         </span>
                     </template>
                 </template>
@@ -47,17 +50,17 @@
             </a-descriptions-item>
             <a-descriptions-item label="Trigger ID">{{ alarm?.triggerId }}</a-descriptions-item>
             <a-descriptions-item label="Trigger">{{ alarm?.trigger }}</a-descriptions-item>
-            <a-descriptions-item label="消息时间">{{ dayjs(alarm?.timestamp).format("YYYY/MM/DD HH:mm:ss")
-                }}</a-descriptions-item>
+            <a-descriptions-item label="消息时间">
+                {{ dayjs(alarm?.timestamp).format("YYYY/MM/DD HH:mm:ss") }}</a-descriptions-item>
             <a-descriptions-item label="记录时间">{{ dayjs(alarm?.createTimestamp).format("YYYY/MM/DD HH:mm:ss")
                 }}</a-descriptions-item>
             <a-descriptions-item label="产生对象">{{ alarm?.linux?.hostname }}</a-descriptions-item>
             <a-descriptions-item label="消息状态">
                 <span v-if="alarm?.ack === true" style="font-weight: bold;color: green;">
-                    <a-tag color="green">已确认</a-tag>
+                    <a-tag color="green">已恢复</a-tag>
                 </span>
                 <span v-else style="font-weight: bold;;color: red;">
-                    <a-tag color="red">未确认</a-tag>
+                    <a-tag color="red">生效中</a-tag>
                 </span>
             </a-descriptions-item>
             <!-- <a-descriptions-item label="" :span="2">
@@ -83,6 +86,12 @@ const pagination = reactive({
 })
 
 const isShowDetail = ref(false)
+
+const disableAlarm = (alarmId: number) => {
+    new Alarm(alarmId).disable().then(() => {
+        loadPage()
+    })
+}
 
 const pgSetting = computed(() => ({
     total: pagination.total,
@@ -138,11 +147,15 @@ const showAlarmDetail = (record: any) => {
     alarm.value = a
 }
 
-onMounted(() => {
+const loadPage = () => {
     Alarm.loadPage(pagination).then((resp) => {
         alarmData.value = resp["data"]["lst"];
         pagination.total = resp["data"]["total"];
     })
+}
+
+onMounted(() => {
+    loadPage()
 })
 </script>
 <style lang="css" scoped>
