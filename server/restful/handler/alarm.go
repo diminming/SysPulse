@@ -65,7 +65,7 @@ func GetAlarmLstByPage(ctx *gin.Context) {
 }
 
 func GetAlarmById(alarmId int64) map[string]any {
-	sql := "select a.`id`, a.`timestamp`, a.`linux_id`, a.`trigger`, a.`trigger_id`, a.`msg`, a.`ack`, a.`create_timestamp`, l.`id` as linuxId, l.`hostname` from (select * from alarm where id = ?) a inner join linux l where l.id = a.linux_id"
+	sql := "select a.`id`, a.`timestamp`, a.`linux_id`, a.`trigger`, a.`trigger_id`, a.`msg`, a.`ack`, a.`create_timestamp`, l.`id` as linuxId, l.`hostname`, l.`linux_id` from (select * from alarm where id = ?) a inner join linux l where l.id = a.linux_id"
 	alarmInfo := model.DBSelectRow(sql, alarmId)
 
 	return map[string]any{
@@ -79,6 +79,7 @@ func GetAlarmById(alarmId int64) map[string]any {
 		"linux": map[string]any{
 			"id":       alarmInfo["linuxId"].(int64),
 			"hostname": string(alarmInfo["hostname"].([]uint8)),
+			"linuxId":  string(alarmInfo["linux_id"].([]uint8)),
 		},
 	}
 }
@@ -154,4 +155,37 @@ func Stat4Trend(ctx *gin.Context) {
 	to, _ := strconv.ParseInt(ctx.Query("to"), 10, 64)
 	result := GetData4AlarmTrend(from, to)
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "OK", Data: result})
+}
+
+func UpdateAlarmStatusInDB(id int64, status bool) {
+	sqlstr := "update alarm set ack = ? where id = ?"
+	_, err := model.DBUpdate(sqlstr, status, id)
+	if err != nil {
+		log.Default().Panicln("error disable alarm, id: ", id, err)
+	}
+}
+
+func UpdateAlarmStatusInCache(alarmInfo map[string]any) {
+	linux := alarmInfo["linux"].(map[string]any)
+	identity := linux["linuxId"].(string)
+	triggerId := alarmInfo["triggerId"].(string)
+	key := "alarm_" + identity
+
+	model.CacheHSet(key, triggerId, "false")
+}
+
+func UpdateAlarmStatus(id int64, status bool) {
+	alarmInfo := GetAlarmById(id)
+
+	UpdateAlarmStatusInCache(alarmInfo)
+	UpdateAlarmStatusInDB(id, status)
+}
+
+func DisableAlarm(ctx *gin.Context) {
+	alarmId, err := strconv.ParseInt(ctx.Param("alarmId"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "job id is not a number."})
+	}
+	UpdateAlarmStatus(alarmId, true)
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "OK"})
 }

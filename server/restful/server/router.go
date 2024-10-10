@@ -60,6 +60,7 @@ func (ws *WebServer) SetupRoutes() {
 
 	ws.Register4Api(http.MethodGet, "/alarm/page", handler.GetAlarmLstByPage)
 	ws.Register4Api(http.MethodGet, "/alarm/:alarmId", handler.GetAlarm)
+	ws.Register4Api(http.MethodPut, "/alarm/:alarmId/disable", handler.DisableAlarm)
 	ws.Register4Api(http.MethodGet, "/alarm/count", handler.GetAlarmCount)
 	ws.Register4Api(http.MethodGet, "/alarm/stat_heat", handler.Stat4HeatMap)
 	ws.Register4Api(http.MethodGet, "/alarm/stat_trend", handler.Stat4Trend)

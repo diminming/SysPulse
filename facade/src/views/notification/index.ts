@@ -16,6 +16,13 @@ export class Alarm {
         this.id = id
     }
 
+    disable() {
+        return request({
+            url: `/alarm/${this.id}/disable`,
+            method: "PUT"
+        })
+    }
+
     load() {
         return request({
             url: `/alarm/${this.id}`,

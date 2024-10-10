@@ -251,14 +251,16 @@ func CreateAlarmRecord(timestamp int64, linux *model.Linux, trigger_id, trigger,
 	timeTag := timestamp2timeTag(timestamp)
 	model.DBInsert(sql, timestamp, timeTag, linux.Id, linux.Biz.Id, trigger_id, trigger, false, msg, time.Now().UnixMilli())
 	key := fmt.Sprintf("alarm_%s", linux.LinuxId)
-	model.CacheHSet(key, trigger, "true")
+	model.CacheHSet(key, trigger_id, "true")
 
 }
 
-func CheckTargetIsActive(identity, trigger string) bool {
+func CheckTargetIsActive(identity, triggerId string) bool {
+
 	key := fmt.Sprintf("alarm_%s", identity)
-	value := model.CacheHGet(key, trigger)
+	value := model.CacheHGet(key, triggerId)
 	return value == "true"
+
 }
 
 var BUILDIN_MACROS = map[string]func(*model.Linux) string{
