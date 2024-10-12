@@ -217,7 +217,7 @@ func GetLinuxByPage(page int, pageSize int) []model.Linux {
     a.id, 
     a.hostname, 
     a.linux_id, 
-    a.biz_id,
+    b.id as biz_id,
     b.biz_name, 
     a.create_timestamp, 
     a.update_timestamp
@@ -241,7 +241,7 @@ FROM
 
 		var biz model.Business
 
-		if o["biz_id"].(int64) == 0 {
+		if o["biz_id"] == nil || o["biz_id"].(int64) == 0 {
 			biz = model.Business{}
 		} else {
 			biz = model.Business{
