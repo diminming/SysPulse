@@ -2,27 +2,35 @@ import {
     DashboardOutlined,
     GroupOutlined,
     DesktopOutlined,
-  } from "@ant-design/icons-vue";
+} from "@ant-design/icons-vue";
+
 
 export default [
     {
         name: "Dashboard",
-        text: "首页",
+        text: "仪表盘",
         href: "/main/dashboard",
         icon: DashboardOutlined
     },
     {
-        name: "Biz",
-        text: "业务系统",
-        href: "/main/biz",
-        icon: GroupOutlined
+        name: "Infra",
+        text: "基础设施",
+        type: "group",
+        children: [
+            {
+                name: "Biz",
+                text: "业务系统",
+                href: "/main/biz",
+                icon: GroupOutlined
+            },
+            {
+                name: "Linux",
+                text: "Linux",
+                href: "/main/linux",
+                icon: DesktopOutlined
+            },]
     },
-    {
-        name: "Linux",
-        text: "Linux",
-        href: "/main/linux",
-        icon: DesktopOutlined
-    },
+
     // {
     //     name: "Database",
     //     text: "数据库",
@@ -41,11 +49,20 @@ export default [
     //     href: "/main/queue",
     //     icon: DesktopOutlined
     // },
-    {    name: "Notification",
+    {
+        name: "Notification",
         text: "消息中心",
-        href: "/main/notification",
-        icon: DesktopOutlined
+        type: "group",
+        children: [
+            {
+                name: "Alarm",
+                text: "事件告警",
+                href: "/main/notification",
+                icon: DesktopOutlined
+            },
+        ]
     },
+    
     // {
     //     name: "Users",
     //     text: "用户管理",

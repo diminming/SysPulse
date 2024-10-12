@@ -1,20 +1,63 @@
 <template>
-  <a-menu v-model:selectedKeys="selectedKeys2" v-model:openKeys="openKeys" mode="inline" >
-      <a-menu-item v-for="item in MenuLst" :key="item.name">
-        <RouterLink :to="item.href">
-          <icon :component="item.icon" />
-          {{ item.text }}
-        </RouterLink>
-      </a-menu-item>
-    </a-menu>
+  <a-menu 
+    v-model:selectedKeys="selectedKeys2" 
+    v-model:openKeys="openKeys" 
+    mode="inline" 
+    :items="items" 
+    @click="handleClick"
+  >
+  </a-menu>
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive } from "vue";
+import { reactive, ref, watch, VueElement, h } from 'vue';
+import {useRouter} from "vue-router"
+import type { MenuProps, ItemType } from 'ant-design-vue';
 import MenuLst from "./MenuLst"
-import Icon from '@ant-design/icons-vue';
+
 const selectedKeys2 = ref<string[]>(["1"]);
 const openKeys = ref<string[]>(["sub1"]);
+const router = useRouter()
+
+function getItem(label: VueElement | string, key: string, icon?: any, children?: ItemType[], type?: 'group', href?: string): ItemType {
+  let subMenu = undefined
+
+  if(children) {
+    subMenu = []
+    for(let i = 0; i < children.length; i++) {
+      const child = children[i]
+      subMenu.push(getItem(child.text, child.name, h(child.icon), child.children, child.type, child.href))
+    }
+  }
+  
+  return {
+    key,
+    icon,
+    label,
+    href,
+    type,
+    children: subMenu
+  } as ItemType;
+}
+
+const handleClick: MenuProps['onClick'] = e => {
+  const item = e.item
+  router.push(item.href)
+};
+
+const items: ItemType[] = reactive(
+  MenuLst.map(item => {
+    return getItem(
+      item.text, 
+      item.name, 
+      h(item.icon), 
+      item.children, 
+      item.type, 
+      item.href
+    )
+  })
+)
+
 </script>
 
 <style scoped>
