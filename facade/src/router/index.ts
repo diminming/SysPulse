@@ -42,7 +42,7 @@ const router = createRouter({
               name: "bizMgr",
               component: () => import("../views/biz/Business.vue"),
               meta: {
-                text: "资源分组",
+                text: "业务系统",
               },
               children: [],
             },
@@ -83,7 +83,7 @@ const router = createRouter({
               name: "linuxAdd",
               component: () => import("@/views/linux/LinuxEdit.vue"),
               meta: {
-                text: "新增",
+                text: "新增 Linux 记录",
               },
             },
             {
@@ -91,7 +91,7 @@ const router = createRouter({
               name: "linuxEdit",
               component: () => import("@/views/linux/LinuxEdit.vue"),
               meta: {
-                text: "编辑",
+                text: "编辑 Linux 记录",
               },
             },
             {
@@ -163,7 +163,7 @@ const router = createRouter({
               name: "notification",
               component: () => import("../views/notification/AlarmLst.vue"),
               meta: {
-                text: "消息中心",
+                text: "事件告警",
               },
             },
           ],

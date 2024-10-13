@@ -3,7 +3,7 @@
     v-model:selectedKeys="selectedKeys2" 
     v-model:openKeys="openKeys" 
     mode="inline" 
-    :items="items" 
+    :items="items"
     @click="handleClick"
   >
   </a-menu>
