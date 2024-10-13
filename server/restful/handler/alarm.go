@@ -25,12 +25,13 @@ func GetAlarmByPage(page int, pageSize int) []model.Alarm {
 		"        alarm\n" +
 		"    ORDER BY `timestamp` DESC\n" +
 		"    LIMIT ? , ?) a\n" +
-		"        LEFT JOIN\n" +
+		"        INNER JOIN\n" +
 		"    linux ON a.linux_id = linux.id;"
 	first := page * pageSize
 	result := make([]model.Alarm, 0)
 	lst := model.DBSelect(sql, first, pageSize)
 	for _, item := range lst {
+
 		result = append(result, model.Alarm{
 			Id:              item["id"].(int64),
 			Timestamp:       item["timestamp"].(int64),
@@ -41,6 +42,7 @@ func GetAlarmByPage(page int, pageSize int) []model.Alarm {
 				Hostname: string(item["hostname"].([]uint8)),
 			},
 		})
+
 	}
 	return result
 }
@@ -85,7 +87,7 @@ func GetAlarmById(alarmId int64) map[string]any {
 }
 
 func GetAlarmCount(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "OK", Data: model.GetTotalofAlarm()})
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "OK", Data: model.GetTotalofActiveAlarm()})
 }
 
 func GetAlarm(ctx *gin.Context) {
