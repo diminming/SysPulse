@@ -149,7 +149,6 @@ onMounted(() => {
             }
         })
     })
-
     linux.value = l
 })
 </script>

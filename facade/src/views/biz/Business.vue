@@ -6,20 +6,19 @@
         @search="onSearch" />
     </div>
 
-    <a-table :data-source="tabData" :columns="columns" size="small"
-      :pagination="pgSetting" @change="onChange">
+    <a-table :data-source="tabData" :columns="columns" size="small" :pagination="pgSetting" @change="onChange">
       <template #bodyCell="{ text, column, record }">
         <template v-if="column.key === 'bizName'">
-          <a @click="isSelectingStage() ? selectBiz(record) : gotoBizDetail(record)">
+          <a-button type="link" size="small" @click="isSelectingStage() ? selectBiz(record) : gotoBizDetail(record)">
             {{ record.bizName }}
-          </a>
+          </a-button>
         </template>
         <template v-else-if="column.dataIndex === 'operation' && !isSelectingStage()">
           <span>
-            <a-button type="link" @click="onEdite(record)">编辑</a-button>
+            <a-button type="link" @click="onEdite(record)" size="small">编辑</a-button>
             <a-divider type="vertical" />
             <a-popconfirm title="是否确认删除该记录?" ok-text="确认" cancel-text="取消" @confirm="onDelete(record.id)">
-              <a-button danger type="link">删除</a-button>
+              <a-button danger type="link" size="small">删除</a-button>
             </a-popconfirm>
           </span>
         </template>
@@ -133,7 +132,7 @@ const isSelectingStage = () => {
 
 const emit = defineEmits(["selectBiz"])
 
-const selectBiz = (record: any) =>{
+const selectBiz = (record: any) => {
   emit("selectBiz", new Business(record.id, record.bizName))
 }
 

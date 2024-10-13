@@ -287,6 +287,34 @@ FOR t IN deployment
 	})
 }
 
+func QueryLinuxDesc(id int64) map[string]any {
+	aql := `
+for h in host
+  filter h.host_identity == @id 
+  return {
+    "base": h.info,
+    "ifLst": h.interface,
+    "cpu": h.cpu_lst
+  }
+`
+	ctx := context.Background()
+	cur, err := GraphDB.Query(ctx, aql, map[string]interface{}{
+		"id": id,
+	})
+	if err != nil {
+		log.Default().Panicln("error load linux description: ", err)
+	}
+	defer cur.Close()
+
+	result := make(map[string]interface{})
+	_, err = cur.ReadDocument(context.Background(), &result)
+	if err != nil {
+		log.Default().Panicln("error load linux description: ", err)
+	}
+
+	return result
+}
+
 func QueryLinuxTopo(linuxId int64) ([]map[string]interface{}, error) {
 	aql := `
 for h in host

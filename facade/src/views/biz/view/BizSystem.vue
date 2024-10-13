@@ -7,7 +7,6 @@
   }">
     <a-form
         ref="formRef"
-
         :label-col="labelCol"
         :wrapper-col="wrapperCol"
     >

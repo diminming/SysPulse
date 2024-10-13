@@ -46,6 +46,19 @@ func GetLinuxTopo(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: infoLst, Msg: "success"})
 }
 
+func GetLinuxDesc(ctx *gin.Context) {
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
+	}
+	desc := model.QueryLinuxDesc(id)
+	if err != nil {
+		log.Default().Println(err)
+		ctx.JSON(http.StatusInternalServerError, response.JsonResponse{Status: http.StatusInternalServerError, Msg: err.Error()})
+	}
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: desc, Msg: "success"})
+}
+
 func GetLinuxInfoById(ctx *gin.Context) {
 	idOfLinux, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {

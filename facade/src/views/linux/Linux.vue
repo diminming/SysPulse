@@ -10,7 +10,7 @@
       <a-input-search class="op-item" v-model:value="keyword" placeholder="请输入检索内容" enter-button @search="onSearch"/>
     </div>
 
-    <a-table :data-source="tabData" :columns="columns" size="small" :row-selection="rowSelection"
+    <a-table :data-source="tabData" :columns="columns" size="small" 
              :pagination="pgSetting"
              @change="onChange">
       <template #bodyCell="{ text, column, record }">
@@ -24,10 +24,10 @@
         </template>
         <template v-else-if="column.dataIndex === 'operation'">
           <span>
-            <a-button type="link" @click="onEdite(record)">编辑</a-button>
+            <a-button type="link" @click="onEdite(record)" size="small">编辑</a-button>
             <a-divider type="vertical"/>
             <a-popconfirm title="是否确认删除该记录?" ok-text="确认" cancel-text="取消" @confirm="onDelete(record.id)">
-              <a-button danger type="link">删除</a-button>
+              <a-button danger type="link" size="small">删除</a-button>
             </a-popconfirm>
           </span>
         </template>

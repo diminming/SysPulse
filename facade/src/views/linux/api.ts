@@ -1,4 +1,4 @@
-import echarts from '@/utils/echarts';
+import * as echarts from "echarts/core";
 import { CustomChart, GraphChart } from 'echarts/charts';
 
 import { JsonResponse } from "@/utils/common";
@@ -457,6 +457,13 @@ export class Linux {
     this.agent_conn = agentConn;
     this.createTimestamp = createTimestamp;
     this.updateTimestamp = updateTimestamp;
+  }
+
+  loadDescription() {
+    return request({
+      url: `/linux/${this.id}/desc`,
+      method: "GET"
+    })
   }
 
   load() {

@@ -15,6 +15,7 @@ func (ws *WebServer) SetupRoutes() {
 	ws.Register4Api(http.MethodGet, "/linux/:id/procLst", handler.GetProcessLst)
 	ws.Register4Api(http.MethodGet, "/linux/:id/proc/:pid/analyze", handler.GetProcAnalJobLst)
 	ws.Register4Api(http.MethodGet, "/linux/:id/topo", handler.GetLinuxTopo)
+	ws.Register4Api(http.MethodGet, "/linux/:id/desc", handler.GetLinuxDesc)
 	ws.Register4Api(http.MethodGet, "/linux/:id/if/lst", handler.GetInterfaceLst)
 	ws.Register4Api(http.MethodGet, "/linux/count", handler.GetLinuxCount)
 

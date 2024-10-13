@@ -13,7 +13,9 @@
             <a-tab-pane key="traffic" tab="流量分析" :force-render="false">
                 <Traffic></Traffic>
             </a-tab-pane>
-            <a-tab-pane key="summary" tab="基本信息">Content of Tab Pane 3</a-tab-pane>
+            <a-tab-pane key="summary" tab="基本信息">
+                <Description></Description>
+            </a-tab-pane>
         </a-tabs>
     </a-layout-content>
 </template>
@@ -24,6 +26,7 @@ import Overview from "@/views/linux/Overview.vue"
 import Profiling from "@/views/linux/Profiling.vue"
 import Topological from "@/views/linux/Topological.vue"
 import Traffic from '@/views/linux/Traffic.vue';
+import Description from '@/views/linux/Description.vue';
 
 const activeKey = ref('overview');
 </script>
