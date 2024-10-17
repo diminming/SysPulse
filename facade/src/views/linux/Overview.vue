@@ -3,7 +3,7 @@
         <a-space>
             <a-range-picker style="width: 400px" show-time :format="dateTimeFormat" :presets="rangePresets"
                 v-model:value="dateTimeRange" @change="onRangeChange" size="small" />
-            自动刷新
+            <!-- 自动刷新
             <a-switch v-model:checked="autoRefreshSetting.enable" size="small" @change="changeAutoRefreshStat" />
             <a-select size="small" style="width: 8rem" @select="autoRefresh" v-model:value="autoRefreshSetting.option"
                 :disabled="!autoRefreshSetting.enable" :options="autoRefreshOptions.map(item => {
@@ -12,7 +12,7 @@
                         label: item.label
                     }
                 })">
-            </a-select>
+            </a-select> -->
         </a-space>
     </div>
     <a-row style="margin-bottom: 8px;">

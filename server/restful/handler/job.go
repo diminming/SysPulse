@@ -542,6 +542,9 @@ func Transform(connLst []*Connection) []map[string]interface{} {
 
 func TrafficJobHandler(job *model.Job) map[string]interface{} {
 	info := strings.Split(job.Extend, ":")
+	if len(info) != 2 {
+		log.Default().Panicln("job.Extend is wrong: ", job.Extend)
+	}
 	filePath := component.DownloadFromFileServer(info[0], info[1])
 	res, count := ParsePcapFile(filePath)
 	return map[string]any{

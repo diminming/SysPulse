@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"path"
+	"strings"
 
 	"github.com/syspulse/common"
 
@@ -23,6 +25,15 @@ var (
 )
 
 func init() {
+
+	if strings.HasPrefix(accessKeyID, "env:") {
+		accessKeyID = os.Getenv(accessKeyID[3:])
+	}
+
+	if strings.HasPrefix(secretAccessKey, "env:") {
+		secretAccessKey = os.Getenv(secretAccessKey[3:])
+	}
+
 	// Initialize minio client object.
 	minioClient, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),

@@ -1,3 +1,3 @@
 FROM arangodb
 
-COPY insight /docker-entrypoint-initdb.d/dumps/insight
+COPY syspulse /docker-entrypoint-initdb.d/dumps/syspulse

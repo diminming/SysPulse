@@ -468,6 +468,8 @@ const getResult = (job: Job) => {
                 "throughput": item["throughput"]
             }
         }))
+    }).catch((resp)=>{
+        console.log(resp)
     })
 }
 </script>

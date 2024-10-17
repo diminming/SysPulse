@@ -22,8 +22,8 @@ storage:
     db_name: "insight"
   file_server:
     endpoint: "localhost:9000"
-    access_key: "cDoXKjZh2YJldhpTHoED"
-    secret_key: "jHXn5JDCRAVRLM1LQabigy9watpFQviyIPWC5myf"
+    access_key: "2Y43IaoIbhV8ik0qjAkz"
+    secret_key: "qlvFSXYRMD4iu2cvBlVBhdeDwOUJbyMFyJGbudJS"
     useSSL: false
   file:
     path: "/tmp"
