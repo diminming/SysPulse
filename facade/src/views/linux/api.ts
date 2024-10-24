@@ -930,7 +930,7 @@ export class Linux {
 
         item['vertices'].forEach((v: any) => {
           const key = v['_id']
-
+          const info = v["info"]
           if (!verteies.has(key)) {
             let category = -1, name = "", symbolSize = 5, detail = {}
 
@@ -948,14 +948,14 @@ export class Linux {
             } else if (key.startsWith("host/")) {
               category = 0
               symbolSize = 40
-              name = v['info']['hostname']
-              detail = {
-                "_id": v["_id"],
-                "pid": v["pid"],
-                "name": v['info']['name'],
-                "exec": v["info"]['exec'],
-                "timestamp": v['info']['create_time']
-              }
+              name = info ? v['info']['hostname'] : `[${v['name']}]`
+              // detail = {
+              //   "_id": v["_id"],
+              //   "pid": v["pid"],
+              //   "name": v['info']['name'],
+              //   "exec": v["info"]['exec'],
+              //   "timestamp": v['info']['create_time']
+              // }
             } else if (key.startsWith("business/")) {
               category = 2
               symbolSize = 60

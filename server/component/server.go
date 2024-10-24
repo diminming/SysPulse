@@ -19,6 +19,7 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/shirou/gopsutil/v3/net"
 	"github.com/shirou/gopsutil/v3/process"
+	"go.uber.org/zap"
 
 	ants "github.com/panjf2000/ants/v2"
 	gnet "github.com/panjf2000/gnet/v2"
@@ -516,7 +517,7 @@ func saveData(arg interface{}) {
 				if !ok {
 					break
 				}
-				log.Default().Println(file, line)
+				zap.L().Error(fmt.Sprintf("file: %s, line: %d", file, line))
 			}
 		}
 	}()

@@ -8,6 +8,7 @@ import (
 
 	"github.com/syspulse/component"
 	"github.com/syspulse/housekeeper"
+	"github.com/syspulse/logging"
 	rest "github.com/syspulse/restful/server"
 
 	"github.com/panjf2000/gnet/v2"
@@ -19,6 +20,8 @@ func init() {
 
 func main() {
 	var wg sync.WaitGroup
+
+	logging.InitLogger()
 
 	wg.Add(1)
 	go func() {

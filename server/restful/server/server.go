@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/syspulse/common"
+	"github.com/syspulse/logging"
 	"github.com/syspulse/model"
 	"github.com/syspulse/restful/server/response"
 
@@ -14,12 +15,13 @@ import (
 
 func NewRestfulServer() (*WebServer, error) {
 	router := gin.Default()
+	router.Use(logging.GinLogger(), logging.GinRecovery(true))
 	apiGrp := router.Group(common.SysArgs.Server.Restful.BasePath)
 	callbackGrp := router.Group(common.SysArgs.Server.Restful.BasePathCallback)
 
 	apiGrp.Use(func(c *gin.Context) {
-		path := c.FullPath()
 
+		path := c.FullPath()
 		token := c.Request.Header.Get("token")
 
 		if (len(token) < 1 || len(model.CacheGet(token)) < 1) && path != fmt.Sprintf("%s/login", common.SysArgs.Server.Restful.BasePath) {
@@ -30,6 +32,17 @@ func NewRestfulServer() (*WebServer, error) {
 			model.CacheExpire(token, common.SysArgs.Session.Expiration*time.Minute)
 		}
 
+		c.Next()
+	})
+
+	apiGrp.Use(func(c *gin.Context) {
+		defer func() {
+			if err := recover(); err != nil {
+				// 简单返回友好提示，具体可自定义发生错误后处理逻辑
+				c.JSON(http.StatusInternalServerError, response.JsonResponse{Status: http.StatusInternalServerError, Msg: err.(string)})
+				c.Abort()
+			}
+		}()
 		c.Next()
 	})
 

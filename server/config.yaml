@@ -7,6 +7,13 @@ server:
     base_path_callback: "/callback"
 session:
   expiration: 30
+logging:
+  redirect: "stdout"
+  level: "debug"
+  output: "/tmp/syspulse_server.log"
+  maxAge: 14
+  maxSize: 10
+  maxBackups: 3
 storage:
   db:
     host: "localhost"

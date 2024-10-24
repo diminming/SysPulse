@@ -31,7 +31,8 @@
 import { onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router'
 
-import { message } from 'ant-design-vue';
+// import { message } from 'ant-design-vue';
+import { notification } from 'ant-design-vue';
 
 import { Business as BizObj, Linux } from "@/views/linux/api"
 import Business from '../biz/Business.vue';
@@ -58,9 +59,17 @@ function onSelect() {
 
 function onSave() {
   linux.save().then(() => {
-    message.success('保存完成，将返回列表页...', 3, () => {
-      router.push("/main/linux")
+
+    notification.success({
+      message: '保存成功',
+      description:
+        '记录已保存。',
+      duration: 2,
+      onClick: () => {
+        // console.log('Notification Clicked!');
+      },
     });
+    router.push("/main/linux")
   })
 }
 

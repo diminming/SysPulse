@@ -445,6 +445,7 @@ func UpdateConsumptionRelation(linux *Linux) {
   FOR linux IN host
     FILTER linux.host_identity == @linuxId
     LIMIT 1
+	UPDATE linux._key with {"name": @name} IN host
     UPSERT {"_to": linux._id} 
       INSERT {
         "timestamp": @timestamp,
@@ -460,6 +461,7 @@ func UpdateConsumptionRelation(linux *Linux) {
 	meta, err := GraphDB.Query(ctx, aql, map[string]any{
 		"bizId":     linux.Biz.Id,
 		"linuxId":   linux.Id,
+		"name":      linux.LinuxId,
 		"timestamp": time.Now().UnixMilli(),
 	})
 

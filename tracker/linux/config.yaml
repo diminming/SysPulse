@@ -1,4 +1,11 @@
 identity: "dev.env"
+logging:
+  redirect: "stdout"
+  level: "debug"
+  output: "/tmp/syspulse_tracker.log"
+  maxAge: 14
+  maxSize: 10
+  maxBackups: 3
 restful:
   addr: "0.0.0.0:24161"
   base_path: "/api"

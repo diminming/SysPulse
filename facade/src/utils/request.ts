@@ -70,8 +70,8 @@ service.interceptors.response.use(
       // location.href = LOGIN_LOCATION
     } else {
       notification.error({
-        message: "服务端错误",
-        description: "服务端错误，错误代码: " + status,
+        message: `服务端错误: ${data["status"]}`,
+        description: data["msg"],
         icon: () => h(AlertOutlined, { style: "color: #ff4d4f" }),
         onClick: () => {
           notification.destroy()

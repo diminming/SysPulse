@@ -95,9 +95,16 @@ func Insert2SqlDB(linux *model.Linux) {
 }
 
 func InsertLinuxRecord(linux *model.Linux) {
+
+	if LinuxIdExist(linux.Id, linux.LinuxId) {
+		log.Default().Panicf("Linux id: \"%s\" exist", linux.LinuxId)
+		return
+	}
+
 	Insert2SqlDB(linux)
 	model.UpsertHost(map[string]any{
 		"host_identity": linux.Id,
+		"name":          linux.LinuxId,
 		"timestamp":     time.Now().UnixMilli(),
 	})
 }
@@ -133,19 +140,30 @@ func UpdateLinuxInSqlDB(linux *model.Linux) {
 func UpdateLinuxRecord(linux *model.Linux, id int64) {
 
 	if id != linux.Id {
-		log.Default().Println("The two records that need to be updated have inconsistent ID values.")
+		log.Default().Panicln("The two records that need to be updated have inconsistent ID values.")
 		return
 	}
 
 	linux0 := GetLinuxById(id)
 	if linux0 == nil {
-		log.Default().Printf("Can't get linux record by id: %d", id)
+		log.Default().Panicf("Can't get linux record by id: %d", id)
+		return
+	}
+
+	if LinuxIdExist(linux.Id, linux.LinuxId) {
+		log.Default().Panicf("Linux id: \"%s\" exist", linux.LinuxId)
 		return
 	}
 
 	UpdateLinuxInSqlDB(linux)
 	model.UpdateConsumptionRelation(linux)
 
+}
+
+func LinuxIdExist(id int64, s string) bool {
+	sqlstr := "select count(id) as total from linux where id != ? and linux_id = ?"
+	result := model.DBSelectRow(sqlstr, id, s)
+	return (result["total"]).(int64) > 0
 }
 
 func ModifyLinuxRecord(ctx *gin.Context) {

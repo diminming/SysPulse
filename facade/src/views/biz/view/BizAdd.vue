@@ -38,21 +38,11 @@
 </template>
 
 <script lang="ts" setup>
-import { Dayjs } from 'dayjs';
-import { reactive, ref, toRaw } from 'vue';
-import type { UnwrapRef } from 'vue';
+import { reactive, ref } from 'vue';
+import { notification } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import {useRouter} from "vue-router";
 import request from "@/utils/request";
-
-interface Business {
-  id: number;
-  bizName: string;
-  bizId: string;
-  bizDesc: string;
-  createTimestamp: number;
-  updateTimestamp: number;
-}
 
 const bizObj = reactive({
       id: 0,
@@ -98,6 +88,16 @@ const createBizInfo = () => {
       bizDesc: bizObj.bizDesc,
     },
   }).then((resp) => {
+
+    notification.success({
+      message: '保存成功',
+      description:
+        '记录已保存。',
+      duration: 2,
+      onClick: () => {
+        // console.log('Notification Clicked!');
+      },
+    });
     // 接口返回数据之后的操作
     let data = resp.data;
     bizObj.id = 0;

@@ -9,6 +9,7 @@ import (
 
 	"github.com/syspulse/tracker/linux/client"
 	"github.com/syspulse/tracker/linux/common"
+	"github.com/syspulse/tracker/linux/logging"
 	"github.com/syspulse/tracker/linux/task"
 	"github.com/syspulse/tracker/linux/task/kernel"
 	"github.com/syspulse/tracker/linux/task/network"
@@ -38,6 +39,7 @@ type Executor struct {
 
 func (ws *Executor) init(client *client.Courier) {
 	router := gin.Default()
+	router.Use(logging.GinLogger(), logging.GinRecovery(true))
 	appSrv := router.Group(common.SysArgs.Restful.BasePath)
 
 	// appSrv.Use(func(c *gin.Context) {

@@ -20,6 +20,15 @@ type Config struct {
 		}
 	} `yaml:"server"`
 
+	Logging struct {
+		Redirect   string `yaml:"redirect"`
+		Level      string `yaml:"level"`
+		Output     string `yaml:"output"`
+		MaxSize    int    `yaml:"maxSize"`
+		MaxAge     int    `yaml:"maxAge"`
+		MaxBackups int    `yaml:"maxBackups"`
+	} `yaml:"logging"`
+
 	Session struct {
 		Expiration time.Duration `yaml:"expiration"`
 	} `yaml:"session"`
