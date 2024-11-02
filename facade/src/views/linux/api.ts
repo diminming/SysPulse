@@ -34,10 +34,6 @@ export class Business {
   constructor(id: number, bizName?: string) {
     this.id = id;
     this.bizName = bizName;
-    // this.bizId = bizId;
-    // this.bizDesc = bizDesc;
-    // this.createTimestamp = createTimestamp;
-    // this.updateTimestamp = updateTimestamp;
   }
 };
 
@@ -45,6 +41,7 @@ const JOB_STATUS_MAPPING = new Map<number, string>()
 JOB_STATUS_MAPPING.set(1, "已创建")
 JOB_STATUS_MAPPING.set(2, "运行中")
 JOB_STATUS_MAPPING.set(3, "已完成")
+JOB_STATUS_MAPPING.set(100, "已超时")
 
 const JOB_TYPE_MAPPING = new Map<string, string>()
 JOB_TYPE_MAPPING.set("oncpu", "On CPU")

@@ -145,12 +145,7 @@ const saveBizInfo = () => {
 };
 
 const onEdite = (biz: Business) => {
-  // debugger;
-  bizObj.id = biz["id"];
-  bizObj.bizName = biz["bizName"] || "";
-  bizObj.bizId = biz["bizId"] || "";
-  bizObj.bizDesc = biz["bizDesc"] || "";
-  showEditeDialog.value = true;
+  router.push({path: "/main/biz/edit", query: {bizId: biz.id}});
 };
 
 const createBizInfo = () => {

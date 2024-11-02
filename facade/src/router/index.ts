@@ -63,6 +63,14 @@ const router = createRouter({
               },
             },
             {
+              path: "/main/biz/edit",
+              name: "bizEdit",
+              component: () => import("../views/biz/view/BizAdd.vue"),
+              meta: {
+                text: "编辑业务系统",
+              },
+            },
+            {
               path: "/main/linux",
               name: "linux",
               component: () => import("../views/linux/Linux.vue"),
@@ -83,7 +91,7 @@ const router = createRouter({
               name: "linuxAdd",
               component: () => import("@/views/linux/LinuxEdit.vue"),
               meta: {
-                text: "新增 Linux 记录",
+                text: "新增“Linux”记录",
               },
             },
             {
@@ -91,7 +99,7 @@ const router = createRouter({
               name: "linuxEdit",
               component: () => import("@/views/linux/LinuxEdit.vue"),
               meta: {
-                text: "编辑 Linux 记录",
+                text: "编辑“Linux”记录",
               },
             },
             {

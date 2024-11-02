@@ -1,34 +1,23 @@
 <template>
-  <a-layout-content
-      :style="{
-      background: '#fff',
-      padding: '24px',
-      margin: 0,
-      minHeight: '800px',
-    }"
-  >
+  <a-layout-content :style="{
+    background: '#fff',
+    padding: '24px',
+    margin: 0,
+    minHeight: '800px',
+  }">
     <div class="systemPage ">
-      <a-form
-          ref="formRef"
-          :model="bizObj"
-          :rules="rules"
-          :label-col="labelCol"
-          :wrapper-col="wrapperCol"
-      >
-        <a-form-item >
-          <span class="ant-form-text">新增业务</span>
-        </a-form-item>
+      <a-form ref="formRef" :model="bizObj" :rules="rules" :label-col="labelCol" :wrapper-col="wrapperCol">
         <a-form-item label="业务名称">
-          <a-input v-model:value="bizObj.bizName" placeholder="请输入业务名称"/>
+          <a-input v-model:value="bizObj.bizName" placeholder="请输入业务名称" />
         </a-form-item>
         <a-form-item label="业务标识">
-          <a-input v-model:value="bizObj.bizId" placeholder="请输入业务标识"/>
+          <a-input v-model:value="bizObj.bizId" placeholder="请输入业务标识" />
         </a-form-item>
         <a-form-item label="备注">
-          <a-textarea v-model:value="bizObj.bizDesc" placeholder="请输入备注"/>
+          <a-textarea v-model:value="bizObj.bizDesc" placeholder="请输入备注" />
         </a-form-item>
         <a-form-item :wrapper-col="{ span: 6, offset: 2 }">
-          <a-button type="primary" @click="createBizInfo">确定</a-button>
+          <a-button type="primary" @click="saveBizInfo">确定</a-button>
           <a-button style="margin-left: 10px" @click="resetForm">返回</a-button>
         </a-form-item>
       </a-form>
@@ -38,23 +27,22 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { notification } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
-import {useRouter} from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import request from "@/utils/request";
 
 const bizObj = reactive({
-      id: 0,
-      bizName: "",
-      bizId: "",
-      bizDesc: "",
-    });
-
+  id: 0,
+  bizName: "",
+  bizId: "",
+  bizDesc: "",
+});
+const route = useRoute()
 const router = useRouter();
 const resetForm = () => {
   router.push("/main/biz/");
-
 };
 
 const formRef = ref();
@@ -78,15 +66,11 @@ const rules: Record<string, Rule[]> = {
   resource: [{ required: true, message: 'Please select activity resource', trigger: 'change' }],
   desc: [{ required: true, message: 'Please input activity form', trigger: 'blur' }],
 };
-const createBizInfo = () => {
+const saveBizInfo = () => {
   request({
     url: "/biz",
-    method: "POST",
-    data: {
-      bizName: bizObj.bizName,
-      bizId: bizObj.bizId,
-      bizDesc: bizObj.bizDesc,
-    },
+    method: bizObj.id === 0 ? "POST" : "PUT",
+    data: bizObj,
   }).then((resp) => {
 
     notification.success({
@@ -107,13 +91,34 @@ const createBizInfo = () => {
     router.push("/main/biz");
   });
 };
+
+onMounted(() => {
+  if (route.query.bizId) {
+    let id = parseInt(route.query.bizId as string)
+    bizObj.id = id
+  }
+
+  request({
+    url: `/biz/${bizObj.id}`,
+    method: "get",
+  }).then(resp=>{
+    const data = resp["data"]
+    bizObj.id = data['id']
+    bizObj.bizId = data['bizId']
+    bizObj.bizName = data['bizName']
+    bizObj.bizDesc = data['bizDesc']
+  })
+
+})
+
 </script>
 
 <style>
 .systemPage {
   width: 100%;
 }
-.ant-form-text{
+
+.ant-form-text {
   font-weight: bold;
 }
 </style>
