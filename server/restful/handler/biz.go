@@ -11,6 +11,7 @@ import (
 
 	"github.com/syspulse/model"
 	"github.com/syspulse/restful/server/response"
+	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
 )
@@ -82,7 +83,7 @@ func UpdateBizRecord(ctx *gin.Context) {
 		fmt.Println(err)
 		return
 	}
-	biz.UpdateTimestamp = time.Now().Unix()
+	biz.UpdateTimestamp = time.Now().UnixMilli()
 	UpdateBiz(&biz)
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: &biz, Msg: "success"})
 }
@@ -117,4 +118,28 @@ func DeleteBizRecord(ctx *gin.Context) {
 
 func GetBizCount(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: model.GetBizTotal(), Msg: "success"})
+}
+
+func QueryBizById(id int64) *model.Business {
+	sqlstr := "select biz_name, biz_id, biz_desc from biz where id = ?"
+	result := model.DBSelectRow(sqlstr, id)
+	biz := new(model.Business)
+
+	biz.Id = id
+	biz.BizId = string(result["biz_id"].([]uint8))
+	biz.BizDesc = string(result["biz_desc"].([]uint8))
+	biz.BizName = string(result["biz_name"].([]uint8))
+
+	return biz
+
+}
+
+func GetBizById(ctx *gin.Context) {
+	bizId, err := strconv.ParseInt(ctx.Param("bizId"), 10, 64)
+	if err != nil {
+		zap.L().Error("can't process parameter biz_id from request: ", zap.Error(err))
+	}
+	biz := QueryBizById(int64(bizId))
+
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: biz, Msg: "success"})
 }

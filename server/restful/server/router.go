@@ -7,6 +7,13 @@ import (
 )
 
 func (ws *WebServer) SetupRoutes() {
+	ws.Register4Api(http.MethodPost, "/biz", handler.NewBizRecord)
+	ws.Register4Api(http.MethodPut, "/biz", handler.UpdateBizRecord)
+	ws.Register4Api(http.MethodGet, "/biz/page", handler.GetBizLstByPage)
+	ws.Register4Api(http.MethodDelete, "/biz", handler.DeleteBizRecord)
+	ws.Register4Api(http.MethodGet, "/biz/count", handler.GetBizCount)
+	ws.Register4Api(http.MethodGet, "/biz/:bizId", handler.GetBizById)
+
 	ws.Register4Api(http.MethodGet, "/linux/:id", handler.GetLinuxInfoById)
 	ws.Register4Api(http.MethodGet, "/linux/page", handler.GetLinuxLstByPage)
 	ws.Register4Api(http.MethodPost, "/linux", handler.CreateLinuxRecord)
@@ -23,12 +30,6 @@ func (ws *WebServer) SetupRoutes() {
 	ws.Register4Api(http.MethodGet, "/job/:jobId/result", handler.GetJobResult)
 	ws.Register4Api(http.MethodGet, "/job/traffic/page", handler.GetTrafficJobLst)
 	ws.Register4Api(http.MethodGet, "/job/count", handler.GetJobCount)
-
-	ws.Register4Api(http.MethodPost, "/biz", handler.NewBizRecord)
-	ws.Register4Api(http.MethodPut, "/biz", handler.UpdateBizRecord)
-	ws.Register4Api(http.MethodGet, "/biz/page", handler.GetBizLstByPage)
-	ws.Register4Api(http.MethodDelete, "/biz", handler.DeleteBizRecord)
-	ws.Register4Api(http.MethodGet, "/biz/count", handler.GetBizCount)
 
 	ws.Register4Api(http.MethodGet, "/cache/page", handler.GetCacheRecordLstByPage)
 	ws.Register4Api(http.MethodPost, "/cache", handler.NewCacheRecord)

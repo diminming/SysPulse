@@ -15,7 +15,7 @@ import (
 
 func NewRestfulServer() (*WebServer, error) {
 	router := gin.Default()
-	router.Use(logging.GinLogger(), logging.GinRecovery(true))
+	router.Use(logging.GinLogger(), logging.GinRecovery(common.SysArgs.Logging.Level == "debug"))
 	apiGrp := router.Group(common.SysArgs.Server.Restful.BasePath)
 	callbackGrp := router.Group(common.SysArgs.Server.Restful.BasePathCallback)
 
@@ -35,16 +35,16 @@ func NewRestfulServer() (*WebServer, error) {
 		c.Next()
 	})
 
-	apiGrp.Use(func(c *gin.Context) {
-		defer func() {
-			if err := recover(); err != nil {
-				// 简单返回友好提示，具体可自定义发生错误后处理逻辑
-				c.JSON(http.StatusInternalServerError, response.JsonResponse{Status: http.StatusInternalServerError, Msg: err.(string)})
-				c.Abort()
-			}
-		}()
-		c.Next()
-	})
+	// apiGrp.Use(func(c *gin.Context) {
+	// 	defer func() {
+	// 		if err := recover(); err != nil {
+	// 			// 简单返回友好提示，具体可自定义发生错误后处理逻辑
+	// 			c.JSON(http.StatusInternalServerError, response.JsonResponse{Status: http.StatusInternalServerError, Msg: err.(string)})
+	// 			c.Abort()
+	// 		}
+	// 	}()
+	// 	c.Next()
+	// })
 
 	return &WebServer{
 		router:      router,

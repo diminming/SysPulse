@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/syspulse/common"
+	"go.uber.org/zap"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -31,9 +32,9 @@ func init() {
 	SqlDB.SetConnMaxLifetime(time.Minute * 60) // mysql default conn timeout=8h, should < mysql_timeout
 	err := SqlDB.Ping()
 	if err != nil {
-		log.Fatal("database init failed, err: ", err)
+		zap.L().Error("database init failed, err: ", zap.Error(err))
 	}
-	log.Println("mysql conn pool has initiated.")
+	zap.L().Info("mysql conn pool has initiated.")
 }
 
 func DBSelectRow(sql string, args ...interface{}) map[string]interface{} {
@@ -42,9 +43,9 @@ func DBSelectRow(sql string, args ...interface{}) map[string]interface{} {
 	if length == 1 {
 		return lst[0]
 	} else if length == 0 {
-		log.Default().Println("no result...")
+		zap.L().Error("no result...")
 	} else {
-		log.Default().Println("got more than 1 record...")
+		zap.L().Error("got more than 1 record...")
 	}
 	return nil
 }
@@ -85,7 +86,7 @@ func DBSelect(sql string, args ...interface{}) []map[string]interface{} {
 
 	rows, err := SqlDB.Query(sql, args...)
 	if err != nil {
-		log.Default().Println("failed: ", err)
+		zap.L().Error("failed: ", zap.Error(err))
 	}
 
 	defer rows.Close()
@@ -102,7 +103,7 @@ func DBSelect(sql string, args ...interface{}) []map[string]interface{} {
 	for rows.Next() {
 		err = rows.Scan(values...)
 		if err != nil {
-			log.Default().Println("failed: ", err)
+			zap.L().Error("failed: ", zap.Error(err))
 		}
 
 		item := make(map[string]interface{})
