@@ -31,6 +31,8 @@ facade/.env.prod
 docker/syspulse_graphdb/insight
 docker/syspulse_graphdb/syspulse
 
+server/syspulse
+
 *.log
 .vscode
 **/__debug_*
