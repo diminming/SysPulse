@@ -30,6 +30,8 @@ facade/.env.prod
 
 docker/syspulse_graphdb/insight
 docker/syspulse_graphdb/syspulse
+docker/**/*.tar
+docker/**/*.tar.gz
 
 server/syspulse
 
