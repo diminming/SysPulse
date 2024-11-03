@@ -50,9 +50,7 @@ import { Business } from "@/views/linux/api";
 
 const props = defineProps({
   stage: String
-})
-
-const showEditeDialog = ref<boolean>(false),
+}), showEditeDialog = ref<boolean>(false),
   bizObj = reactive({
     id: 0,
     bizName: "",
@@ -69,7 +67,7 @@ const showEditeDialog = ref<boolean>(false),
     searchText: "",
     searchedColumn: "",
   }),
-  keyword = ref();
+  keyword = ref("");
 
 const pgSetting = computed(() => ({
   total: pagination.total,
@@ -145,7 +143,7 @@ const saveBizInfo = () => {
 };
 
 const onEdite = (biz: Business) => {
-  router.push({path: "/main/biz/edit", query: {bizId: biz.id}});
+  router.push({ path: "/main/biz/edit", query: { bizId: biz.id } });
 };
 
 const createBizInfo = () => {
@@ -196,6 +194,7 @@ const getPage = () => {
     params: {
       page: pagination.page,
       pageSize: pagination.pageSize,
+      kw: keyword.value,
     },
   }).then((resp) => {
     tabData.value = resp["data"]["lst"];
@@ -223,6 +222,8 @@ const onDelete = (bizId: number) => {
 };
 
 const onSearch = () => {
+  pagination.page = 0
+  getPage()
 };
 
 

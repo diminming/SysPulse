@@ -38,3 +38,4 @@ server/syspulse
 *.log
 .vscode
 **/__debug_*
+*.tsbuildinfo

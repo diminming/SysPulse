@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/syspulse/model"
@@ -31,10 +32,22 @@ func UpdateBiz(biz *model.Business) {
 	log.Printf("affected: %d", affected)
 }
 
-func GetBizByPage(page int, pageSize int) []model.Business {
+func GetBizByPage(page int, pageSize int, keyword string) []model.Business {
 	first := page * pageSize
-	sql := "select id, biz_name, biz_id,biz_desc, create_timestamp, update_timestamp from biz order by update_timestamp desc, id desc limit ?, ?"
-	lst := model.DBSelect(sql, first, pageSize)
+	sqlstr := new(strings.Builder)
+	sqlArgs := make([]any, 0, 10)
+	sqlstr.WriteString("select id, biz_name, biz_id,biz_desc, create_timestamp, update_timestamp from biz\n")
+	if keyword != "" && !(strings.TrimSpace(keyword) == "") {
+		sqlstr.WriteString("where biz_name like ? or biz_id like ? or biz_desc like ?\n")
+		likeArg := "%" + keyword + "%"
+		sqlArgs = append(sqlArgs, likeArg)
+		sqlArgs = append(sqlArgs, likeArg)
+		sqlArgs = append(sqlArgs, likeArg)
+	}
+	sqlstr.WriteString("order by update_timestamp desc, id desc limit ?, ?")
+	sqlArgs = append(sqlArgs, first)
+	sqlArgs = append(sqlArgs, pageSize)
+	lst := model.DBSelect(sqlstr.String(), sqlArgs...)
 	result := []model.Business{}
 	for _, o := range lst {
 		item := model.Business{Id: o["id"].(int64), BizName: string(o["biz_name"].([]uint8)), BizId: string(o["biz_id"].([]uint8)), BizDesc: string(o["biz_desc"].([]uint8)), CreateTimestamp: o["create_timestamp"].(int64), UpdateTimestamp: o["update_timestamp"].(int64)}
@@ -98,7 +111,11 @@ func GetBizLstByPage(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "pageSize is not a number."})
 	}
-	lst := GetBizByPage(page, pageSize)
+
+	keyword := values.Get("kw")
+	zap.L().Info("biz page query: ", zap.String("keyword", keyword))
+
+	lst := GetBizByPage(page, pageSize, keyword)
 	total := GetBizTotal()
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: map[string]interface{}{
 		"lst":   lst,
