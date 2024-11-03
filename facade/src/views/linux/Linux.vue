@@ -7,7 +7,7 @@
   }">
     <div class="opBar">
       <a-button type="primary" class="op-item" @click="pathTo1">新增</a-button>
-      <a-input-search class="op-item" v-model:value="keyword" placeholder="请输入检索内容" enter-button @search="onSearch"/>
+      <a-input-search class="op-item keyword" v-model:value="keyword" placeholder="请输入检索内容" enter-button @search="onSearch"/>
     </div>
 
     <a-table :data-source="tabData" :columns="columns" size="small" 
@@ -69,7 +69,7 @@ const showEditeDialog = ref<boolean>(false),
       searchText: "",
       searchedColumn: "",
     }),
-    keyword = ref();
+    keyword = ref("");
 
 
 const columns: TableColumnType<Linux>[] = [
@@ -131,6 +131,8 @@ const onChange = (pg: { pageSize: number; current: number }) => {
 };
 
 const onSearch = () => {
+  pagination.page = 0
+  getPage()
 };
 
 const getPage = () => {
@@ -140,6 +142,7 @@ const getPage = () => {
     params: {
       page: pagination.page,
       pageSize: pagination.pageSize,
+      kw: keyword.value,
     },
   }).then((resp) => {
     tabData.value = resp["data"]["lst"];
@@ -230,11 +233,15 @@ const saveLinuxInfo = () => {
 .opBar {
   display: flex;
   margin-bottom: 1rem;
-  width: 25%;
-  justify-content: space-between;
+  width: 100%;
+  /* justify-content: space-between; */
 }
 
 .op-item {
   margin-right: 1rem;
+}
+
+.keyword {
+  width: 30%;
 }
 </style>

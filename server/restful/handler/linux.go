@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/syspulse/common"
@@ -80,7 +81,8 @@ func GetLinuxLstByPage(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "pageSize is not a number."})
 		return
 	}
-	lst := GetLinuxByPage(page, pageSize)
+	keyword := values.Get("kw")
+	lst := GetLinuxByPage(page, pageSize, keyword)
 	total := GetLinuxTotal()
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: map[string]interface{}{
 		"lst":   lst,
@@ -242,9 +244,11 @@ func GetProcAnalJobLst(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: jobLst, Msg: "success"})
 }
 
-func GetLinuxByPage(page int, pageSize int) []model.Linux {
+func GetLinuxByPage(page int, pageSize int, keyword string) []model.Linux {
 	first := page * pageSize
-	sql := `SELECT 
+	sqlbuf := new(strings.Builder)
+	sqlArgs := make([]any, 0)
+	sqlbuf.WriteString(`SELECT 
     a.id, 
     a.hostname, 
     a.linux_id, 
@@ -261,12 +265,22 @@ FROM
             create_timestamp,
             update_timestamp
     FROM
-        linux
+        linux`)
+	sqlbuf.WriteString("\n")
+	if keyword != "" && !(strings.TrimSpace(keyword) == "") {
+		sqlbuf.WriteString("where hostname like ? or linux_id like ?\n")
+		likeArg := "%" + keyword + "%"
+		sqlArgs = append(sqlArgs, likeArg)
+		sqlArgs = append(sqlArgs, likeArg)
+	}
+	sqlbuf.WriteString(`
     ORDER BY update_timestamp DESC , id DESC
     LIMIT ?, ?) a
         LEFT JOIN
-    biz b ON a.biz_id = b.id`
-	lst := model.DBSelect(sql, first, pageSize)
+    biz b ON a.biz_id = b.id`)
+	sqlArgs = append(sqlArgs, first)
+	sqlArgs = append(sqlArgs, pageSize)
+	lst := model.DBSelect(sqlbuf.String(), sqlArgs...)
 	result := []model.Linux{}
 	for _, o := range lst {
 
