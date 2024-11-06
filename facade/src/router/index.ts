@@ -73,7 +73,7 @@ const router = createRouter({
             {
               path: "/main/linux",
               name: "linux",
-              component: () => import("../views/linux/Linux.vue"),
+              component: () => import("../views/linux/LinuxLst.vue"),
               meta: {
                 text: "Linux资源列表",
               },

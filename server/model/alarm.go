@@ -154,18 +154,6 @@ type Alarm struct {
 	PerfData        PerfData `json:"perfData"`
 }
 
-func GetTotalofAlarm() uint32 {
-	s := "select count(id) from alarm"
-	var row *sql.Row
-	var count uint32
-	row = SqlDB.QueryRow(s)
-	err := row.Scan(&count)
-	if err != nil {
-		log.Default().Printf("%v", err)
-	}
-	return count
-}
-
 func GetTotalofActiveAlarm() uint32 {
 	s := "select count(id) from alarm where ack = 0"
 	var row *sql.Row

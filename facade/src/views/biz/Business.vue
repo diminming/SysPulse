@@ -93,9 +93,9 @@ const gotoAddBiz = () => {
 
 const gotoBizDetail = (data: any) => {
   // router.push({ name: "bizSystem", query: { ...data } });
-  router.push({
-    path: `/main/biz/${data.id}/detail`,
-  });
+  // router.push({
+  //   path: `/main/biz/${data.id}/detail`,
+  // });
 };
 
 const columns: TableColumnType<Business>[] = [

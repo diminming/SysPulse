@@ -6,13 +6,38 @@
         minHeight: '800px',
     }">
         <div class="opBar" v-if="stage !== 'dashboard'">
-            <label class="search_label">时间范围</label>
-            <a-range-picker style="width: 400px" show-time :format="dateTimeFormat" :presets="rangePresets"
-                v-model:value="dateTimeRange" @change="onRangeChange" size="small" />
+            <a-form ref="formRef" class="searchForm" :model="formState" size="small" @finish="onFinish">
+                <a-row :gutter="12">
+                    <a-col :span="6">
+                        <a-form-item name="timeRange" label="告警时间">
+                            <a-range-picker v-model:value="formState['timeRange']" show-time
+                                format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" />
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="6">
+                        <a-form-item name="" label="告警对象">
+                            <a-tag closable v-for="linux in formState.linuxLst" :key="linux.id" color="blue">{{
+                                linux.hostname }}</a-tag>
+                            <a-button @click="showLinuxLst = !showLinuxLst">选择</a-button>
+                        </a-form-item>
+                    </a-col>
+                    <a-col :span="4">
+                        <a-form-item name="" label="告警状态">
+                            <a-select v-model:value="formState['status']">
+                                <a-select-option value="inactive">已恢复</a-select-option>
+                                <a-select-option value="active">告警中</a-select-option>
+                            </a-select>
+                        </a-form-item>
+                    </a-col>
+
+                    <a-col :span="1">
+                        <a-button type="primary" html-type="submit">检索</a-button>
+                    </a-col>
+                </a-row>
+            </a-form>
         </div>
         <div>
-            <a-table :data-source="alarmData" :columns="columns" size="small" :row-selection="rowSelection"
-                :pagination="pgSetting" @change="onChange">
+            <a-table :data-source="alarmData" :columns="columns" size="small" :pagination="pgSetting">
                 <template #bodyCell="{ text, column, record }">
                     <template v-if="column.key === 'linux'">
                         {{ record.linux.hostname }}
@@ -35,7 +60,7 @@
                         <span v-else style="font-weight: bold;;color: red;">
                             <a-popconfirm title="您正在手动关闭一个告警，是否确认？" ok-text="确认" cancel-text="取消"
                                 @confirm="disableAlarm(record.id)">
-                                <a-tag color="red">生效中</a-tag>
+                                <a-tag color="red">告警中</a-tag>
                             </a-popconfirm>
                         </span>
                     </template>
@@ -68,28 +93,76 @@
             </a-descriptions-item> -->
         </a-descriptions>
     </a-modal>
+    <a-modal v-model:open="showLinuxLst" title="选择Linux对象" @ok="showLinuxLst = false" width="1000px">
+        <LinuxLst stage="select" @select="onSelectLinux"></LinuxLst>
+    </a-modal>
 </template>
 <script lang="ts" setup>
 import { computed, onMounted, reactive, defineProps, ref } from 'vue';
 import { Alarm } from '.';
 import dayjs from 'dayjs';
+import type { FormInstance } from 'ant-design-vue';
 import { Linux } from '../linux/api';
+import LinuxLst from "@/views/linux/LinuxLst.vue"
 
 const props = defineProps({
     stage: String
 })
 
+const showLinuxLst = ref(false)
+
+const formRef = ref<FormInstance>()
 const pagination = reactive({
     page: 0,
-    pageSize: props["stage"] == "dashboard" ? 200 : 20,
+    pageSize: props["stage"] == "dashboard" ? 200 : 15,
     total: 0,
 })
+
+const formState = reactive<{
+    timeRange: number[],
+    status: String,
+    linuxLst: Linux[]
+}>({
+    "timeRange": [0, 0],
+    status: "",
+    "linuxLst": []
+}), onSelectLinux = (linuxLst: Linux[]) => {
+    console.log(linuxLst)
+    formState.linuxLst = linuxLst
+}
+const onFinish = () => {
+    console.log(formState)
+    Alarm.loadPage({
+        page: 0,
+        pageSize: pagination.pageSize,
+        from: (() => formState.timeRange[0] !== 0 ? dayjs(formState.timeRange[0], "YYYY/MM/DD HH:mm:ss").valueOf() : undefined)(),
+        util: (() => formState.timeRange[1] !== 0 ? dayjs(formState.timeRange[1], "YYYY/MM/DD HH:mm:ss").valueOf() : undefined)(),
+        status: (() => formState.status === "" ? undefined : formState.status)(),
+        target: (() =>
+            formState.linuxLst.length === 0 ?
+                undefined :
+                formState.linuxLst.map(linux => {
+                    return linux.id
+                }).join(",")
+        )()
+    }).then((resp) => {
+        console.log(resp)
+        alarmData.value = resp["data"]["lst"];
+        pagination.total = resp["data"]["total"];
+    })
+}
 
 const isShowDetail = ref(false)
 
 const disableAlarm = (alarmId: number) => {
     new Alarm(alarmId).disable().then(() => {
-        loadPage()
+        Alarm.loadPage({
+            page: pagination.page,
+            pageSize: pagination.pageSize
+        }).then((resp) => {
+            alarmData.value = resp["data"]["lst"];
+            pagination.total = resp["data"]["total"];
+        })
     })
 }
 
@@ -109,21 +182,21 @@ const alarm = ref<Alarm>()
 
 const columns = [
     {
-        title: "消息时间",
+        title: "告警时间",
         dataIndex: "timestamp",
         key: "timestamp",
         width: 160
     }, {
-        title: "产生对象",
+        title: "告警对象",
         dataIndex: "linux",
         key: "linux",
         width: 160
     }, {
-        title: "消息",
+        title: "告警内容",
         dataIndex: "msg",
         key: "msg",
     }, {
-        title: "消息状态",
+        title: "告警状态",
         dataIndex: "ack",
         key: "ack",
         width: 100
@@ -147,23 +220,26 @@ const showAlarmDetail = (record: any) => {
     alarm.value = a
 }
 
-const loadPage = () => {
-    Alarm.loadPage(pagination).then((resp) => {
+onMounted(() => {
+    Alarm.loadPage({
+        page: pagination.page,
+        pageSize: pagination.pageSize
+    }).then((resp) => {
         alarmData.value = resp["data"]["lst"];
         pagination.total = resp["data"]["total"];
     })
-}
-
-onMounted(() => {
-    loadPage()
 })
 </script>
 <style lang="css" scoped>
 .opBar {
     display: flex;
     margin-bottom: 1rem;
-    width: 25%;
-    justify-content: space-between;
+    width: 100%;
+    /* justify-content: space-between; */
+}
+
+.searchForm {
+    width: 100%;
 }
 
 .op-item {

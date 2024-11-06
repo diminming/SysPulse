@@ -1,20 +1,14 @@
 <template>
-  <a-layout-content :style="{
-    background: '#fff',
-    padding: '24px',
-    margin: 0,
-    minHeight: '800px',
-  }">
+  <a-layout-content :style="style">
     <div class="opBar">
-      <a-button type="primary" class="op-item" @click="pathTo1">新增</a-button>
-      <a-input-search class="op-item keyword" v-model:value="keyword" placeholder="请输入检索内容" enter-button @search="onSearch"/>
+      <a-button v-if="stage === 'edition'" type="primary" class="op-item" @click="pathTo1">新增</a-button>
+      <a-input-search class="op-item keyword" v-model:value="keyword" placeholder="请输入检索内容" enter-button
+        @search="onSearch" />
     </div>
 
-    <a-table :data-source="tabData" :columns="columns" size="small" 
-             :pagination="pgSetting"
-             @change="onChange">
+    <a-table :data-source="tabData" :columns="columns" size="small" @change="onChange" :pagination="pgSetting" :row-selection=rowSelection>
       <template #bodyCell="{ text, column, record }">
-        <template v-if="column.key === 'hostname'">
+        <template v-if="column.key === 'hostname' && stage==='edition'">
           <a @click="gotoLinuxDetail(record)">
             {{ record.hostname }}
           </a>
@@ -25,7 +19,7 @@
         <template v-else-if="column.dataIndex === 'operation'">
           <span>
             <a-button type="link" @click="onEdite(record)" size="small">编辑</a-button>
-            <a-divider type="vertical"/>
+            <a-divider type="vertical" />
             <a-popconfirm title="是否确认删除该记录?" ok-text="确认" cancel-text="取消" @confirm="onDelete(record.id)">
               <a-button danger type="link" size="small">删除</a-button>
             </a-popconfirm>
@@ -38,39 +32,68 @@
 
 
 <script setup lang="ts">
-import {computed, onMounted, reactive, ref} from "vue";
-import {useRouter} from "vue-router";
+import { computed, onMounted, reactive, ref, defineProps } from "vue";
+import { useRouter } from "vue-router";
 import request from "@/utils/request";
-import type {TableColumnType, TableProps} from "ant-design-vue";
-import type {Linux} from "@/views/linux/api"
+import type { TableColumnType, TableProps } from "ant-design-vue";
+import { Linux } from "@/views/linux/api"
+
+const props = defineProps({
+  "stage": {
+    type: String,
+    default: "edition"
+  }
+})
+
+const style = reactive<{
+  background: String,
+  padding: String,
+  margin: number,
+  minHeight: string|number|undefined
+}>({
+    background: '#fff',
+    padding: '24px',
+    margin: 0,
+    minHeight: undefined
+  })
+if(props.stage === "edition"){
+  style.minHeight = '800px'
+}
+
+const emit = defineEmits(["select"])
+const selected = ref<number[]>()
+const onSelectChange = (selectedRowKeys: number[], selectedRows: any[]) => {
+  selected.value = selectedRowKeys
+  if(props.stage === "select") {
+    emit("select", selectedRows.map(linux => {
+      return new Linux(linux.id, linux.hostname)
+    }))
+  }
+}
+const rowSelection = props.stage == "select" ? { selectedRowKeys: selected, onChange: onSelectChange } : undefined
 
 const showEditeDialog = ref<boolean>(false),
-    linuxObj = reactive({
-      id: 0,
-      hostname: "",
-      linux_id: "",
-      biz: {
-        id: "",
-        bizName: "",
-        bizId: "",
-        bizDesc: "",
-      },
-      agent_conn: "",
-      createTimestamp: "",
-      updateTimestamp: ""
-    }),
-    pagination = reactive({
-      page: 0,
-      pageSize: 10,
-      total: 0,
-    }),
-    tabData = ref([]),
-    state = reactive({
-      searchText: "",
-      searchedColumn: "",
-    }),
-    keyword = ref("");
-
+  linuxObj = reactive({
+    id: 0,
+    hostname: "",
+    linux_id: "",
+    biz: {
+      id: "",
+      bizName: "",
+      bizId: "",
+      bizDesc: "",
+    },
+    agent_conn: "",
+    createTimestamp: "",
+    updateTimestamp: ""
+  }),
+  pagination = reactive({
+    page: 0,
+    pageSize: 10,
+    total: 0,
+  }),
+  tabData = ref([]),
+  keyword = ref("");
 
 const columns: TableColumnType<Linux>[] = [
   {
@@ -91,15 +114,16 @@ const columns: TableColumnType<Linux>[] = [
     key: "bizName",
     width: 300,
   },
-  {
+];
+
+if (props.stage === 'edition') {
+  columns.push({
     title: "操作",
     dataIndex: "operation",
     key: "operation",
     width: 100,
-  },
-];
-
-const rowSelection: TableProps["rowSelection"] = {};
+  })
+}
 
 const router = useRouter();
 const pathTo1 = () => {
@@ -145,7 +169,10 @@ const getPage = () => {
       kw: keyword.value,
     },
   }).then((resp) => {
-    tabData.value = resp["data"]["lst"];
+    tabData.value = resp["data"]["lst"].map((item: any) => {
+      item['key'] = item["id"]
+      return item
+    });
     pagination.total = resp["data"]["total"];
   });
 };
@@ -155,7 +182,7 @@ onMounted(() => {
 });
 
 const onEdite = (linux: Linux) => {
-  router.push({path: "/main/linux/edit", query: {linuxId: linux.id}});
+  router.push({ path: "/main/linux/edit", query: { linuxId: linux.id } });
 };
 
 const onDelete = (linux_id: number) => {

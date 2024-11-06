@@ -30,14 +30,11 @@ export class Alarm {
         })
     }
 
-    static loadPage(pagination: any) {
+    static loadPage(params: any) {
         return request({
             url: "/alarm/page",
             method: "GET",
-            params: {
-                page: pagination.page,
-                pageSize: pagination.pageSize,
-            },
+            params
         })
     }
 }
