@@ -100,7 +100,7 @@ export class TrafficAnalyzationJob extends Job {
   }
 }
 
-export function GetTrafficJobLst(page: Number, pageSize: Number, linuxId: Number) {
+export function GetTrafficJobLst(page: Number, pageSize: Number, linuxId: Number|undefined) {
   return request({
     url: "/job/traffic/page",
     method: "get",

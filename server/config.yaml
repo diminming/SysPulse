@@ -28,9 +28,10 @@ storage:
     password: "123qweASD"
     db_name: "insight"
   file_server:
-    endpoint: "localhost:9000"
+    endpoint: "localhost:9001"
     access_key: "2Y43IaoIbhV8ik0qjAkz"
     secret_key: "qlvFSXYRMD4iu2cvBlVBhdeDwOUJbyMFyJGbudJS"
+    bucket: "syspulse"
     useSSL: false
   file:
     path: "/tmp"

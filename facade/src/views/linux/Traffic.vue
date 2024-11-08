@@ -131,6 +131,7 @@ import { useRoute } from 'vue-router';
 import { Linux } from './api';
 import type { TableColumnType, TableProps } from "ant-design-vue";
 import echarts from '@/utils/echarts';
+import { notification } from 'ant-design-vue';
 
 const countTcp = ref<Number>(0),
     countConn = ref<Number>(0),
@@ -201,7 +202,17 @@ const openCreateJobDialog = () => {
 
 const handleOk = () => {
     jobObj.createJob().then((resp => {
-        console.log(resp)
+        notification.success({
+            message: '创建成功',
+            description:
+                '流量分析任务已创建。',
+            duration: 2,
+            onClick: () => {
+                // console.log('Notification Clicked!');
+            },
+        });
+        showCreateJobDialog.value = false
+        getJobList()
     }))
 };
 
@@ -213,6 +224,22 @@ const changeIPLst = () => {
         return {
             "value": item.split("/")[0]
         }
+    })
+}
+
+const getJobList = () => {
+    GetTrafficJobLst(pagination.page, pagination.pageSize, jobObj.linux_id).then((resp) => {
+        jobLst.value = resp.data.lst.map((item: any) => {
+            const job = new TrafficAnalyzationJob(item.id)
+            job.port = item.port
+            job.count = item.count
+            job.job_name = item.job_name
+            job.direction = item.direction
+            job.ifName = item.ifName
+            job.ipAddr = item.ipAddr
+            job.status = item.status
+            return job
+        })
     })
 }
 
@@ -235,19 +262,7 @@ onMounted(() => {
     })
     jobObj.linux_id = parseInt(route.params.linuxId as string)
 
-    GetTrafficJobLst(pagination.page, pagination.pageSize, jobObj.linux_id).then((resp) => {
-        jobLst.value = resp.data.lst.map((item: any) => {
-            const job = new TrafficAnalyzationJob(item.id)
-            job.port = item.port
-            job.count = item.count
-            job.job_name = item.job_name
-            job.direction = item.direction
-            job.ifName = item.ifName
-            job.ipAddr = item.ipAddr
-            job.status = item.status
-            return job
-        })
-    })
+    getJobList()
 
 })
 
@@ -343,7 +358,7 @@ function RenderRespTimeStatChart(dataLst) {
                         fontSize: 10,
                         formatter: (params) => {
                             let name = params.name
-                            if(name.length > 25) {
+                            if (name.length > 25) {
                                 return params.value + "ms  " + name.slice(0, 20) + "..." + name.slice(-5)
                             }
                             return params.value + "ms  " + name
@@ -395,7 +410,7 @@ function RenderThroughputStatChart(dataLst) {
                         fontSize: 10,
                         formatter: (params) => {
                             let name = params.name
-                            if(name.length > 25) {
+                            if (name.length > 25) {
                                 return params.value + "kb  " + name.slice(0, 20) + "..." + name.slice(-5)
                             }
                             return params.value + "kb  " + name
@@ -468,7 +483,7 @@ const getResult = (job: Job) => {
                 "throughput": item["throughput"]
             }
         }))
-    }).catch((resp)=>{
+    }).catch((resp) => {
         console.log(resp)
     })
 }

@@ -28,9 +28,10 @@ storage:
     password: "123qweASD"
     db_name: "syspulse"
   file_server:
-    endpoint: "192.168.26.105:9000"
+    endpoint: "192.168.26.105:9001"
     access_key: "env:FS_ACCESS_KEY"
     secret_key: "env:FS_SECRET_KEY"
+    bucket: "syspulse"
     useSSL: false
   file:
     path: "/tmp"

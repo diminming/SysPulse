@@ -11,6 +11,7 @@ import (
 
 	"github.com/syspulse/tracker/linux/client"
 	"github.com/syspulse/tracker/linux/common"
+	"go.uber.org/zap"
 
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
@@ -146,6 +147,8 @@ func UpdateJobStatus(jobId int64, status int32) {
 
 func UploadOutcome(fPath string) (string, string) {
 	objName := fmt.Sprintf("%s_%s", common.SysArgs.Identity, time.Now().Format("20060102_1504"))
+	zap.L().Info("start upload to fileserver.", zap.String("local", fPath), zap.String("target object:", objName))
+
 	client.Upload2FileServer("syspulse", objName, fPath, "application/octet-stream")
 	return "syspulse", objName
 }

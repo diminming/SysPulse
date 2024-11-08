@@ -18,7 +18,7 @@ order:
   listening_addr: ""
 storage:
   file_server:
-    endpoint: "192.168.26.105:9000"
+    endpoint: "192.168.26.105:9001"
     access_key: "g0ipu3vpDkZhTOVmIBkd"
     secret_key: "gN6o0V5sO2fzZQ1lUe2gcddM6G6sViDBUF6o9NGb"
     useSSL: false

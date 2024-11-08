@@ -45,10 +45,11 @@ type Config struct {
 			Path string `yaml:"path"`
 		} `yaml:"file"`
 		FileServer struct {
-			Endpoint  string `yaml:"endpoint"`
-			AccessKey string `yaml:"access_key"`
-			SecretKey string `yaml:"secret_key"`
-			UseSSL    bool   `yaml:"useSSL"`
+			Endpoint   string `yaml:"endpoint"`
+			AccessKey  string `yaml:"access_key"`
+			SecretKey  string `yaml:"secret_key"`
+			BucketName string `yaml:"bucket"`
+			UseSSL     bool   `yaml:"useSSL"`
 		} `yaml:"file_server"`
 		GraphDB struct {
 			Endpoints []string `yaml:"endpoints"`

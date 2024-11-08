@@ -21,18 +21,23 @@ var (
 	accessKeyID     string          = common.SysArgs.Storage.FileServer.AccessKey
 	secretAccessKey string          = common.SysArgs.Storage.FileServer.SecretKey
 	useSSL          bool            = common.SysArgs.Storage.FileServer.UseSSL
+	bucketName      string          = common.SysArgs.Storage.FileServer.BucketName
 	client          *minio.Client
 )
 
 func init() {
 
 	if strings.HasPrefix(accessKeyID, "env:") {
-		accessKeyID = os.Getenv(accessKeyID[3:])
+		log.Printf("key 4 accessKeyID: %s", accessKeyID[4:])
+		accessKeyID = os.Getenv(accessKeyID[4:])
 	}
+	log.Printf("file server accessKey:%s\n", accessKeyID)
 
 	if strings.HasPrefix(secretAccessKey, "env:") {
-		secretAccessKey = os.Getenv(secretAccessKey[3:])
+		log.Printf("key 4 accessKeyID: %s", secretAccessKey[4:])
+		secretAccessKey = os.Getenv(secretAccessKey[4:])
 	}
+	log.Printf("file server secretAccessKey:%s\n", secretAccessKey)
 
 	// Initialize minio client object.
 	minioClient, err := minio.New(endpoint, &minio.Options{
@@ -42,7 +47,16 @@ func init() {
 	if err != nil {
 		log.Default().Fatalln(err)
 	}
+
+	exists, err := minioClient.BucketExists(context.Background(), bucketName)
+	if err != nil {
+		log.Fatalln("Failed to check bucket existence:", err)
+	}
 	client = minioClient
+	if !exists {
+		CreateBucket(bucketName)
+	}
+
 }
 
 func CreateBucket(bucketName string) {

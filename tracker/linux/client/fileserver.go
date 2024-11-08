@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/syspulse/tracker/linux/common"
+	"go.uber.org/zap"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -16,6 +17,7 @@ var (
 	accessKeyID     string          = common.SysArgs.Storage.FileServer.AccessKey
 	secretAccessKey string          = common.SysArgs.Storage.FileServer.SecretKey
 	useSSL          bool            = common.SysArgs.Storage.FileServer.UseSSL
+	bucketName      string          = common.SysArgs.Storage.FileServer.BucketName
 	client          *minio.Client
 )
 
@@ -29,6 +31,14 @@ func init() {
 		log.Default().Fatalln(err)
 	}
 	client = minioClient
+	exists, err := minioClient.BucketExists(context.Background(), bucketName)
+	if err != nil {
+		log.Fatalln("Failed to check bucket existence:", err)
+	}
+
+	if !exists {
+		log.Fatalf("target bucket '%s' is not exists.", bucketName)
+	}
 }
 
 func CreateBucket(bucketName string) {
@@ -50,8 +60,8 @@ func Upload2FileServer(bucketName, objectName, filePath, contentType string) {
 	// Upload the test file with FPutObject
 	info, err := client.FPutObject(ctx, bucketName, objectName, filePath, minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
-		log.Fatalln(err)
+		zap.L().Error("error upload to fileserver.", zap.Error(err))
 	}
 
-	log.Printf("Successfully uploaded %s of size %d\n", objectName, info.Size)
+	zap.L().Info("Successfully uploaded %s of size %d\n", zap.String("target name", objectName), zap.Int64("size", info.Size))
 }
