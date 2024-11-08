@@ -6,6 +6,11 @@ import (
 	"go.uber.org/zap"
 )
 
+// 1, "已创建"
+// 2, "运行中"
+// 3, "已完成"
+// 100, "已超时"
+
 func GetJobTotal() int64 {
 	s := "select count(id) from job"
 	var row *sql.Row
@@ -19,7 +24,7 @@ func GetJobTotal() int64 {
 }
 
 func JobMarkOverdue(timestamp int64) {
-	s := "update job set `status` = 100 where `status` != 100 and `create_timestamp` < ?"
+	s := "update job set `status` = 100 where `status` = 1 or `status` = 2 and `create_timestamp` < ?"
 	result, err := SqlDB.Exec(s, timestamp)
 	if err != nil {
 		zap.L().Error("error makr overdue: ", zap.Error(err))

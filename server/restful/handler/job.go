@@ -60,8 +60,8 @@ func CreateAnalJob(job *model.Job) (*model.Job, error) {
 	}
 
 	job.Status = model.JOB_STATUS_CREATED
-	job.CreateTimestamp = time.Now().Unix()
-	job.UpdateTimestamp = time.Now().Unix()
+	job.CreateTimestamp = time.Now().UnixMilli()
+	job.UpdateTimestamp = time.Now().UnixMilli()
 
 	tx, err := model.SqlDB.Begin()
 	if err != nil {
@@ -102,8 +102,8 @@ func CreateTrafficJob(job *model.Job) (*model.Job, error) {
 	}
 
 	job.Status = model.JOB_STATUS_CREATED
-	job.CreateTimestamp = time.Now().Unix()
-	job.UpdateTimestamp = time.Now().Unix()
+	job.CreateTimestamp = time.Now().UnixMilli()
+	job.UpdateTimestamp = time.Now().UnixMilli()
 
 	tx, err := model.SqlDB.Begin()
 	if err != nil {

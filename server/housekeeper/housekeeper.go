@@ -11,7 +11,7 @@ func NewHouseKeeper() *Housekeeper {
 	housekeeper.topoCleaningInterval = 10 * time.Second
 	housekeeper.topoTimeout = 1 * time.Hour
 	housekeeper.markOverdueInterval = 10 * time.Second
-	housekeeper.makrOverdueTimeout = 1 * time.Hour
+	housekeeper.makrOverdueTimeout = -1 * time.Hour
 	return housekeeper
 }
 
@@ -37,7 +37,7 @@ func (housekeeper *Housekeeper) clearTopo() {
 
 func (housekeeper *Housekeeper) MarkOverdue() {
 	for {
-		timestamp := time.Now().Add(-1 * housekeeper.makrOverdueTimeout)
+		timestamp := time.Now().Add(housekeeper.makrOverdueTimeout)
 		model.JobMarkOverdue(timestamp.UnixMilli())
 		ticker := time.NewTicker(housekeeper.markOverdueInterval)
 		<-ticker.C
