@@ -18,6 +18,7 @@ import (
 	"github.com/syspulse/component"
 	"github.com/syspulse/model"
 	"github.com/syspulse/restful/server/response"
+	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/gopacket"
@@ -400,12 +401,19 @@ func (conn *Connection) PushPacket(packet *layers.TCP) {
 }
 
 func ParsePcapFile(filePath string) ([]*Connection, uint32) {
-	f, _ := os.Open(filePath)
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		zap.L().Panic("can't open pcap file.", zap.String("file", filePath))
+	}
 	defer f.Close()
+
 	handle, err := pcap.OpenOfflineFile(f)
 	if err != nil {
-		log.Fatal(err)
+		zap.L().Panic("error open pcap file.", zap.Error(err))
 	}
+	defer handle.Close()
+
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
 	connLst := make([]*Connection, 0)
 	count := uint32(0)
@@ -477,9 +485,6 @@ func ParsePcapFile(filePath string) ([]*Connection, uint32) {
 			}
 		}
 	}
-
-	defer handle.Close()
-
 	return connLst, count
 }
 
