@@ -15,8 +15,9 @@ var client *redis.Client
 
 func init() {
 	client = redis.NewClient(&redis.Options{
-		Addr: fmt.Sprintf("%s:%d", common.SysArgs.Cache.Host, common.SysArgs.Cache.Port),
-		DB:   common.SysArgs.Cache.DBIndex,
+		Addr:     fmt.Sprintf("%s:%d", common.SysArgs.Cache.Host, common.SysArgs.Cache.Port),
+		DB:       common.SysArgs.Cache.DBIndex,
+		Password: common.SysArgs.Cache.Passwd,
 	})
 	pong, err := client.Ping(context.Background()).Result()
 	if err != nil {
