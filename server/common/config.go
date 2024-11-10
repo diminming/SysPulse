@@ -55,7 +55,7 @@ type Config struct {
 			Endpoints []string `yaml:"endpoints"`
 			Username  string   `yaml:"user"`
 			Password  string   `yaml:"password"`
-			DbName    string   `yaml:"db_name"`
+			DBName    string   `yaml:"db_name"`
 		} `yaml:"graph_db"`
 	} `yaml:"storage"`
 
@@ -63,6 +63,7 @@ type Config struct {
 		Host    string `yaml:"host"`
 		Port    int    `yaml:"port"`
 		DBIndex int    `yaml:"index"`
+		Passwd  string `yaml:"passwd"`
 	} `yaml:"cache"`
 
 	TriggerCfg string `yaml:"trigger_cfg"`

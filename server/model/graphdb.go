@@ -11,38 +11,151 @@ import (
 	"github.com/arangodb/go-driver/http"
 )
 
-var Client driver.Client
-var GraphDB driver.Database
+// var graphClient driver.Client
 
 var (
-	Endpoints = common.SysArgs.Storage.GraphDB.Endpoints
-	Username  = common.SysArgs.Storage.GraphDB.Username
-	Password  = common.SysArgs.Storage.GraphDB.Password
-	DbName    = common.SysArgs.Storage.GraphDB.DbName
+	graphClient driver.Client
+	graphDB     driver.Database
+	Endpoints   = common.SysArgs.Storage.GraphDB.Endpoints
+	Username    = common.SysArgs.Storage.GraphDB.Username
+	Password    = common.SysArgs.Storage.GraphDB.Password
+	DBName      = common.SysArgs.Storage.GraphDB.DBName
 )
 
-func init() {
+func initConn() {
 	conn, err := http.NewConnection(http.ConnectionConfig{
 		Endpoints: Endpoints,
 	})
 	if err != nil {
 		panic(err)
 	}
-	client, err := driver.NewClient(driver.ClientConfig{
+	newClient, err := driver.NewClient(driver.ClientConfig{
 		Connection:     conn,
 		Authentication: driver.BasicAuthentication(Username, Password),
 	})
 	if err != nil {
 		panic(err)
 	}
+	graphClient = newClient
+}
 
+func initDB() {
 	ctx := context.Background()
-	db, err := client.Database(ctx, DbName)
+	// 检查数据库是否存在
+	dbExists, err := graphClient.DatabaseExists(ctx, DBName)
 	if err != nil {
-		panic(err)
+		log.Fatalf("error check DB: %v", err)
 	}
-	Client = client
-	GraphDB = db
+	db, err := graphClient.Database(ctx, DBName)
+	if err != nil {
+		log.Fatalf("error get DB: %v", err)
+	}
+	graphDB = db
+
+	// 如果数据库不存在，创建它
+	if !dbExists {
+		// 创建数据库
+		db, err := graphClient.CreateDatabase(ctx, DBName, nil)
+		if err != nil {
+			log.Fatalf("error create graph db: %v", err)
+		}
+		graphDB = db
+	}
+}
+
+var LST_COLLECTION_SETTING = []map[string]string{
+	{
+		"name": "business",
+		"type": "doc",
+	},
+	{
+		"name": "host",
+		"type": "doc",
+	},
+	{
+		"name": "process",
+		"type": "doc",
+	},
+	{
+		"name": "conn_tcp",
+		"type": "edge",
+	},
+	{
+		"name": "deployment",
+		"type": "edge",
+	},
+	{
+		"name": "res_consumption",
+		"type": "edge",
+	},
+}
+
+func initCollection() {
+	ctx := context.Background()
+	for _, setting := range LST_COLLECTION_SETTING {
+		collName := setting["name"]
+		exists, err := graphDB.CollectionExists(ctx, collName)
+		if err != nil {
+			log.Fatalf("error check collection: %v", err)
+		}
+		if !exists {
+			switch setting["type"] {
+			case "doc":
+				_, err := graphDB.CreateCollection(ctx, collName, &driver.CreateCollectionOptions{
+					Type: driver.CollectionTypeDocument, // 设置为 Document 类型
+				})
+				if err != nil {
+					log.Fatalf("error create collection '%s': %v", collName, err)
+				}
+			case "edge":
+				_, err := graphDB.CreateCollection(ctx, collName, &driver.CreateCollectionOptions{
+					Type: driver.CollectionTypeEdge, // 设置为 Document 类型
+				})
+				if err != nil {
+					log.Fatalf("error create collection '%s': %v", collName, err)
+				}
+			}
+		}
+	}
+}
+
+func initGraph() {
+	ctx := context.Background()
+	exists, err := graphDB.GraphExists(ctx, "graph_demployment")
+	if err != nil {
+		log.Fatalf("error check graph 'graph_demployment', %v", err)
+	}
+	if !exists {
+		_, err := graphDB.CreateGraph(ctx, "graph_demployment", &driver.CreateGraphOptions{
+			EdgeDefinitions: []driver.EdgeDefinition{
+				{
+					Collection: "conn_tcp",
+					From:       []string{"process"},
+					To:         []string{"process"},
+				},
+				{
+					Collection: "deployment",
+					From:       []string{"process"},
+					To:         []string{"host"},
+				},
+				{
+					Collection: "res_consumption",
+					From:       []string{"business"},
+					To:         []string{"host"},
+				},
+			},
+		})
+		if err != nil {
+			log.Fatalf("error create graph 'graph_demployment', %v", err)
+		}
+	}
+}
+
+func init() {
+	initConn()
+	initDB()
+	initCollection()
+	initGraph()
 }
 
 func UpdateCPUInfo(doc interface{}) error {
@@ -51,7 +164,7 @@ func UpdateCPUInfo(doc interface{}) error {
 FOR h IN host
 FILTER h.host_identity == doc.host_identity
 UPDATE h with doc IN host`
-	cur, err := GraphDB.Query(ctx, aql, map[string]interface{}{})
+	cur, err := graphDB.Query(ctx, aql, map[string]interface{}{})
 	if err != nil {
 		return err
 	}
@@ -68,7 +181,7 @@ UPSERT {"host_identity": doc.host_identity}
 	IN host
 RETURN NEW._key
 `
-	cur, err := GraphDB.Query(ctx, aql, map[string]interface{}{
+	cur, err := graphDB.Query(ctx, aql, map[string]interface{}{
 		"doc": doc,
 	})
 	if err != nil {
@@ -89,7 +202,7 @@ UPSERT {"host_identity": doc.host_identity, "pid": doc.pid}
 RETURN NEW._key
 `
 
-	cur, err := GraphDB.Query(ctx, aql, map[string]interface{}{
+	cur, err := graphDB.Query(ctx, aql, map[string]interface{}{
 		"doc": doc,
 	})
 	if err != nil {
@@ -117,7 +230,7 @@ func UpdateInterface(doc interface{}) error {
 FOR h IN host
 FILTER h.host_identity == doc.host_identity
 UPDATE h with doc IN host`
-	cur, err := GraphDB.Query(ctx, aql, map[string]interface{}{
+	cur, err := graphDB.Query(ctx, aql, map[string]interface{}{
 		"doc": doc,
 	})
 	if err != nil {
@@ -149,7 +262,7 @@ FOR h IN host
 			IN deployment
 `
 	ctx := context.Background()
-	_, err := GraphDB.Query(ctx, aql, map[string]interface{}{
+	_, err := graphDB.Query(ctx, aql, map[string]interface{}{
 		"doc": doc,
 	})
 	if err != nil {
@@ -219,7 +332,7 @@ UPDATE {
 IN conn_tcp
 `
 	ctx := context.Background()
-	cur, err := GraphDB.Query(ctx, aql, map[string]interface{}{
+	cur, err := graphDB.Query(ctx, aql, map[string]interface{}{
 		"localId":   localLinuxId,
 		"localPid":  localPid,
 		"remoteId":  remoteLinuxId,
@@ -259,7 +372,7 @@ FOR t IN process
 	REMOVE { _key: t._key } IN process
 `
 	ctx := context.Background()
-	GraphDB.Query(ctx, aql, map[string]interface{}{
+	graphDB.Query(ctx, aql, map[string]interface{}{
 		"timestamp": timestamp,
 	})
 }
@@ -271,7 +384,7 @@ FOR t IN conn_tcp
 	REMOVE { _key: t._key } IN conn_tcp
 `
 	ctx := context.Background()
-	GraphDB.Query(ctx, aql, map[string]interface{}{
+	graphDB.Query(ctx, aql, map[string]interface{}{
 		"timestamp": timestamp,
 	})
 }
@@ -282,7 +395,7 @@ FOR t IN deployment
 	REMOVE { _key: t._key } IN deployment
 `
 	ctx := context.Background()
-	GraphDB.Query(ctx, aql, map[string]interface{}{
+	graphDB.Query(ctx, aql, map[string]interface{}{
 		"timestamp": timestamp,
 	})
 }
@@ -298,7 +411,7 @@ for h in host
   }
 `
 	ctx := context.Background()
-	cur, err := GraphDB.Query(ctx, aql, map[string]interface{}{
+	cur, err := graphDB.Query(ctx, aql, map[string]interface{}{
 		"id": id,
 	})
 	if err != nil {
@@ -323,7 +436,7 @@ for h in host
   return p
 `
 	ctx := context.Background()
-	cur, err := GraphDB.Query(ctx, aql, map[string]interface{}{
+	cur, err := graphDB.Query(ctx, aql, map[string]interface{}{
 		"linuxId": linuxId,
 	})
 	if err != nil {
@@ -361,7 +474,7 @@ for h in host
 `
 		result := false
 		ctx := context.Background()
-		cur, err := GraphDB.Query(ctx, aql, map[string]any{
+		cur, err := graphDB.Query(ctx, aql, map[string]any{
 			"offset": times * batchSize,
 			"size":   batchSize,
 		})
@@ -396,7 +509,7 @@ for h in host
 
 func SaveBiz(biz *Business) {
 	ctx := context.Background()
-	coll, err := GraphDB.Collection(ctx, "business")
+	coll, err := graphDB.Collection(ctx, "business")
 	if err != nil {
 		log.Default().Println("can't get business collection: ", err)
 	}
@@ -426,7 +539,7 @@ for biz in business
   }
   into res_consumption
 `
-	_, err := GraphDB.Query(ctx, aql, map[string]any{
+	_, err := graphDB.Query(ctx, aql, map[string]any{
 		"bizId":     linux.Biz.Id,
 		"linuxId":   linux.Id,
 		"timestamp": time.Now().UnixMilli(),
@@ -458,7 +571,7 @@ func UpdateConsumptionRelation(linux *Linux) {
       }  
       IN res_consumption`
 
-	meta, err := GraphDB.Query(ctx, aql, map[string]any{
+	meta, err := graphDB.Query(ctx, aql, map[string]any{
 		"bizId":     linux.Biz.Id,
 		"linuxId":   linux.Id,
 		"name":      linux.LinuxId,

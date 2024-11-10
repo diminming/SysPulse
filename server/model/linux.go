@@ -78,7 +78,7 @@ return {
     "if_lst": h.interface
 }`
 	ctx := context.Background()
-	cur, err := GraphDB.Query(ctx, aql, map[string]interface{}{
+	cur, err := graphDB.Query(ctx, aql, map[string]interface{}{
 		"host_identity": id,
 	})
 	if err != nil {

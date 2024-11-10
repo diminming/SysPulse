@@ -26,11 +26,11 @@ storage:
       - "http://localhost:8529"
     user: "root"
     password: "123qweASD"
-    db_name: "insight"
+    db_name: "syspulse"
   file_server:
     endpoint: "localhost:9001"
-    access_key: "2Y43IaoIbhV8ik0qjAkz"
-    secret_key: "qlvFSXYRMD4iu2cvBlVBhdeDwOUJbyMFyJGbudJS"
+    access_key: "8VQtYwI69LQWFILvlIwr"
+    secret_key: "I67hoY6kegwwe2GcePmRO26kfkZscdZyLahiaeER"
     bucket: "syspulse"
     useSSL: false
   file:
@@ -39,4 +39,5 @@ cache:
   host: "localhost"
   port: 6379
   index: 0
+  passwd: "syspulse1!"
 trigger_cfg: "/workspace/SysPulse/server/trigger.yaml"
