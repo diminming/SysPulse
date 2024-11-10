@@ -26,8 +26,8 @@ order:
 storage:
   file_server:
     endpoint: "localhost:9001"
-    access_key: "2Y43IaoIbhV8ik0qjAkz"
-    secret_key: "qlvFSXYRMD4iu2cvBlVBhdeDwOUJbyMFyJGbudJS"
+    access_key: "8VQtYwI69LQWFILvlIwr"
+    secret_key: "I67hoY6kegwwe2GcePmRO26kfkZscdZyLahiaeER"
     bucket: "syspulse"
     useSSL: false
   temp_dir: "/tmp"

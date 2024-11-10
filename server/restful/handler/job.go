@@ -561,9 +561,8 @@ func GetJobResult(ctx *gin.Context) {
 		return
 	}
 	job := GetJobById(jobId)
-	data := make(map[string]interface{})
 	switch job.Category {
-	case "profiling":
+	case "proc_profiling":
 		filename := fmt.Sprintf("%s/insight_%d.json", common.SysArgs.Storage.File.Path, jobId)
 		ctn, err := ReadFromFile(filename)
 		if err != nil {
@@ -577,9 +576,10 @@ func GetJobResult(ctx *gin.Context) {
 			ctx.JSON(http.StatusInternalServerError, response.JsonResponse{Status: http.StatusInternalServerError, Msg: err.Error()})
 			return
 		}
+		ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "ok", Data: data})
 	case "traffic":
-		data = TrafficJobHandler(job)
+		data := TrafficJobHandler(job)
+		ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "ok", Data: data})
 	}
 
-	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "ok", Data: data})
 }
