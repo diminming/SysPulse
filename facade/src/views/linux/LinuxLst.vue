@@ -134,6 +134,9 @@ const gotoLinuxDetail = (data: Linux) => {
   // router.push({path: "/main/linux/detail", query: {linuxId: data.id}});
   router.push({
     path: `/main/linux/${data.id}/detail`,
+    query: {
+      "targetName": data.hostname
+    }
   });
 };
 

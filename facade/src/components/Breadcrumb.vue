@@ -9,7 +9,7 @@
 
       <a-breadcrumb style="margin: 1rem 0; height: 1rem;">
         <a-breadcrumb-item v-for="(item, index) in breadcrumbs" :key="index">
-          <template v-if="item.isActive">
+          <template v-if="item.isActive || index == (breadcrumbs.length - 1)">
             <span>{{ item.title }}</span>
           </template>
           <template v-else>
@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { sidebarCollapsed } from "@/stores/sidebarStatus"
 
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons-vue';
@@ -38,7 +38,7 @@ const breadcrumbs = ref(),
     return router.currentRoute.value.matched.slice(1).map((route) => {
       return {
         isActive: route.path === router.currentRoute.value.fullPath,
-        title: route.meta.text,
+        title: typeof route.meta.text === 'function' ? route.meta.text(useRoute()) : route.meta.text,
         url: `${router.options.history.base}${route.path}`,
       }
     })

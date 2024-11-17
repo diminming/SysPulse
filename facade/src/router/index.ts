@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHistory, } from "vue-router";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -107,7 +107,10 @@ const router = createRouter({
               name: "linuxDetail",
               component: () => import("../views/linux/Detail.vue"),
               meta: {
-                text: "Linux详情",
+                // text: "Linux详情",
+                text: (route: any) => {
+                  return `Linux详情: ${route.query.targetName}`
+                },
               },
             },
             {
