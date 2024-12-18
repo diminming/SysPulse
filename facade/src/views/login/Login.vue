@@ -73,14 +73,14 @@ const activeKey = ref('1'),
     remember: true,
   });
 const onFinish = (values: any) => {
-  let params = {
+  let data = {
     "username": values.username,
     "passwd": values.password
   }
   request({
     url: "/login",
     method: "POST",
-    params
+    data
   }).then((resp) => {
     if (401 === resp['status']) {
       Modal.confirm({

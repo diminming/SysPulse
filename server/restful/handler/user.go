@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/syspulse/common"
 	"github.com/syspulse/model"
 	"github.com/syspulse/restful/server/response"
+	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -38,7 +40,7 @@ func login(username string, passwd string) (string, *model.User, error) {
 	return token, &user, nil
 }
 
-func UserLogin(c *gin.Context) {
+func UserLogin(ctx *gin.Context) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("Recovered from: ", r)
@@ -46,14 +48,26 @@ func UserLogin(c *gin.Context) {
 		}
 	}()
 
-	username := c.Query("username")
-	passwd := c.Query("passwd")
+	body, err := io.ReadAll(ctx.Request.Body)
+	if err != nil {
+		zap.L().Error("error read body at user login.", zap.Error(err))
+		return
+	}
+	var info = make(map[string]string)
+	err = json.Unmarshal(body, &info)
+	if err != nil {
+		zap.L().Error("error parse json body at user login.", zap.Error(err))
+		return
+	}
+
+	username := info["username"]
+	passwd := info["passwd"]
 	token, user, err := login(username, passwd)
 
 	if err != nil {
-		c.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusUnauthorized, Msg: err.Error()})
+		ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusUnauthorized, Msg: err.Error()})
 	} else {
-		c.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: map[string]interface{}{
+		ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: map[string]interface{}{
 			"token": token,
 			"user":  user,
 		}, Msg: "success"})
