@@ -34,7 +34,7 @@ func init() {
 	gob.Register(net.InterfaceStat{})
 	gob.Register([]net.ConnectionStat{})
 	gob.Register(net.InterfaceStatList{})
-	gob.Register([]*process.Process{})
+	gob.Register([]mutual.ProcessInfo{})
 	gob.Register(mutual.CpuUtilization{})
 }
 
@@ -69,7 +69,6 @@ func (m *Monitor) Send(data interface{}) {
 
 	payload := buffer.Bytes()
 	m.client.Write(payload)
-	// m.client.SendPipe <- buffer.Bytes()
 }
 
 func (m *Monitor) Run() {
@@ -104,8 +103,31 @@ func (m *Monitor) Run() {
 			connLst, _ := net.Connections("all")
 			m.Send(connLst)
 		case <-tickerRTProc.C:
-			procLst, _ := process.Processes()
-			m.Send(procLst)
+
+			procLst0, _ := process.Processes()
+			procLst1 := make([]mutual.ProcessInfo, len(procLst0))
+
+			for _, proc := range procLst0 {
+
+				ppid, _ := proc.Ppid()
+				procName, _ := proc.Name()
+				exe, _ := proc.Exe()
+				cmd, _ := proc.Cmdline()
+				createTime, _ := proc.CreateTime()
+
+				procInfo := mutual.ProcessInfo{
+					Pid:        proc.Pid,
+					Name:       procName,
+					Ppid:       ppid,
+					CreateTime: createTime,
+					Exe:        exe,
+					Cmd:        cmd,
+				}
+				procLst1 = append(procLst1, procInfo)
+			}
+
+			m.Send(procLst1)
+
 		case <-tickerPerfCpu.C:
 			timeStat1, _ := cpu.Times(false)
 			perc, _ := cpu.Percent(time.Second, false)
