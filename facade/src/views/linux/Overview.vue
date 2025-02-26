@@ -2,7 +2,10 @@
     <div style="text-align: right;margin-bottom: 8px;">
         <a-space>
             <a-range-picker style="width: 400px" show-time :format="dateTimeFormat" :presets="rangePresets"
-                v-model:value="dateTimeRange" @change="onRangeChange" size="small" />
+                v-model:value="dateTimeRange" size="small" />
+            <a-tooltip title="search">
+                <a-button type="primary" size="small" shape="circle" :icon="h(SearchOutlined)" @click="onRangeChange" />
+            </a-tooltip>
             <!-- 自动刷新
             <a-switch v-model:checked="autoRefreshSetting.enable" size="small" @change="changeAutoRefreshStat" />
             <a-select size="small" style="width: 8rem" @select="autoRefresh" v-model:value="autoRefreshSetting.option"
@@ -110,12 +113,13 @@
 </template>
 <script setup lang="ts">
 
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, h, } from 'vue';
 import { useRoute } from 'vue-router';
 import dayjs, { Dayjs } from 'dayjs';
-
 import LinuxAPI, { CaclUsage, Linux } from "@/views/linux/api"
 import { JsonResponse } from '@/utils/common';
+
+import { SearchOutlined } from '@ant-design/icons-vue';
 
 type RangeValue = [Dayjs, Dayjs];
 type AutoRefreshSetting = { option: string | undefined, handler: number | undefined, enable: boolean }
@@ -140,10 +144,12 @@ const linuxId = ref<number>(0),
     })
 
 
-const onRangeChange = (dates: RangeValue, dateStrings: string[]) => {
-    if (dates) {
-        render(dates[0].valueOf() * 1000, dates[1].valueOf() * 1000)
-    }
+const onRangeChange = () => {
+    // console.log(dateTimeRange.value)
+    render(dateTimeRange.value[0].valueOf(), dateTimeRange.value[1].valueOf())
+    // if (dates) {
+    // render(dates[0].valueOf() * 1000, dates[1].valueOf() * 1000)
+    // }
 };
 
 const rangePresets = ref([
@@ -210,6 +216,7 @@ onMounted(() => {
 })
 
 const render = (start: number, end: number) => {
+
     const linux = new Linux(linuxId.value)
     linux.RenderCpuPerfChart(start, end)
     linux.RenderMemoryChart(start, end)
@@ -220,35 +227,39 @@ const render = (start: number, end: number) => {
     linux.RenderNetIOPerfChart(start, end)
 
     LinuxAPI.GetCpuUsageLine(linuxId.value, start, end).then((resp: any) => {
+        lastCpuUsage.value = '0'
         if (resp.data && resp.data != null) {
             let item1 = resp.data[resp.data.length - 1]
             let item2 = resp.data[resp.data.length - 2]
             lastCpuUsage.value = CaclUsage(item1, item2)
-            LinuxAPI.RenderCpuUsageLine(new JsonResponse(resp.data, resp.msg, resp.status))
         }
+        LinuxAPI.RenderCpuUsageLine(new JsonResponse(resp.data, resp.msg, resp.status))
     })
     LinuxAPI.GetLoad1Line(linuxId.value, start, end).then((resp: any) => {
+        lastLoad.value = 0
         if (resp.data && resp.data != null) {
-            let jsonResp = new JsonResponse(resp.data, resp.msg, resp.status);
             lastLoad.value = resp.data[resp.data.length - 1].load1
-            LinuxAPI.RenderLoad1Line(jsonResp)
         }
+        LinuxAPI.RenderLoad1Line(new JsonResponse(resp.data, resp.msg, resp.status))
     })
     LinuxAPI.GetAvailableMemoryLine(linuxId.value, start, end).then((resp: any) => {
+        lastAvailableMemory.value = 0
         if (resp.data && resp.data != null) {
-            let jsonResp = new JsonResponse(resp.data, resp.msg, resp.status);
             lastAvailableMemory.value = resp.data[resp.data.length - 1].available
-            LinuxAPI.RenderAvailableMemoryLine(jsonResp)
         }
+        LinuxAPI.RenderAvailableMemoryLine(new JsonResponse(resp.data, resp.msg, resp.status))
     })
     LinuxAPI.GetSwapUsedLine(linuxId.value, start, end).then((resp: any) => {
+        lastSwapUsed.value = 0
         if (resp.data && resp.data != null) {
-            let jsonResp = new JsonResponse(resp.data, resp.msg, resp.status);
             lastSwapUsed.value = resp.data[resp.data.length - 1].used
-            LinuxAPI.RenderSwapUsedLine(jsonResp)
         }
+        LinuxAPI.RenderSwapUsedLine(new JsonResponse(resp.data, resp.msg, resp.status))
     })
     LinuxAPI.GetDiskIOLine(linuxId.value, start, end).then((resp: any) => {
+        let lst = []
+        lastDiskWrite.value = 0
+        lastDiskRead.value = 0
         if (resp.data && resp.data != null) {
             let mapping: Map<string, any[]> = new Map()
             resp.data.forEach((item: any) => {
@@ -259,7 +270,6 @@ const render = (start: number, end: number) => {
                 }
             })
             let writecount = 0, readcount = 0
-            let lst = []
             for (const [key, valLst] of mapping) {
                 let last = valLst[valLst.length - 1]
                 writecount += last["writecount"]
@@ -278,11 +288,13 @@ const render = (start: number, end: number) => {
             }
             lastDiskWrite.value = writecount
             lastDiskRead.value = readcount
-            let jsonResp = new JsonResponse(lst, resp.msg, resp.status);
-            LinuxAPI.RenderDiskIOCounterLine(jsonResp)
         }
+        LinuxAPI.RenderDiskIOCounterLine(new JsonResponse(lst, resp.msg, resp.status))
     })
     LinuxAPI.GetIfIOLine(linuxId.value, start, end).then((resp: any) => {
+        let lst = []
+        lastSent.value = 0
+        lastRecv.value = 0
         if (resp.data && resp.data != null) {
             let mapping: Map<string, any[]> = new Map()
             resp.data.forEach((item: any) => {
@@ -293,7 +305,6 @@ const render = (start: number, end: number) => {
                 }
             })
             let bytessent = 0, bytesrecv = 0
-            let lst = []
             for (const [key, valLst] of mapping) {
                 let last = valLst[valLst.length - 1]
                 bytessent += last["bytessent"]
@@ -312,10 +323,8 @@ const render = (start: number, end: number) => {
             }
             lastSent.value = bytessent
             lastRecv.value = bytesrecv
-
-            let jsonResp = new JsonResponse(lst, resp.msg, resp.status);
-            LinuxAPI.RenderIfIOCounterLine(jsonResp)
         }
+        LinuxAPI.RenderIfIOCounterLine(new JsonResponse(lst, resp.msg, resp.status))
     })
 
 }

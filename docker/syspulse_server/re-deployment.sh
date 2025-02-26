@@ -4,7 +4,7 @@ IMG_ID=$(docker images|awk 'NR>1'|awk '/syspulse_server/ {print $3}')
 docker stop $CONTAINER_ID
 docker rm $CONTAINER_ID
 docker image rm $IMG_ID
-docker load -i syspulse_server.tar
+docker load -i /tmp/syspulse_server.tar
 
 docker run -d \
 --name syspulse_server \

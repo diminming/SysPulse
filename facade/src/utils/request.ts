@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { notification, Modal } from 'ant-design-vue';
-import { AlertOutlined, ExclamationCircleOutlined } from "@ant-design/icons-vue";
+import { AlertOutlined, ExclamationCircleOutlined, StopOutlined } from "@ant-design/icons-vue";
 import { h } from 'vue';
 import { lock403Store } from "@/stores/lock403"
 
@@ -68,7 +68,15 @@ service.interceptors.response.use(
       });
       console.error("request without login info.")
       // location.href = LOGIN_LOCATION
-    } else {
+    } else if(status === 401) {
+      Modal.warning({
+        title: '权限不足',
+        icon: h(StopOutlined, {}),
+        content: `您没有权限访问此数据或功能，如有疑问请联系管理员。`,
+        class: 'test',
+      });
+      console.error(error)
+    }else {
       notification.error({
         message: `服务端错误: ${data["status"]}`,
         description: data["msg"],

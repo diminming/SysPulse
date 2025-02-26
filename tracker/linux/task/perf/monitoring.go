@@ -12,6 +12,7 @@ import (
 	"github.com/shirou/gopsutil/v3/load"
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/shirou/gopsutil/v3/net"
+	"go.uber.org/zap"
 
 	"github.com/syspulse/mutual"
 	"github.com/syspulse/tracker/linux/client"
@@ -36,6 +37,7 @@ func init() {
 	gob.Register(net.InterfaceStatList{})
 	gob.Register([]mutual.ProcessInfo{})
 	gob.Register(mutual.CpuUtilization{})
+	gob.Register(mutual.ProcessSnapshot{})
 }
 
 type Callback func()
@@ -71,23 +73,28 @@ func (m *Monitor) Send(data interface{}) {
 	m.client.Write(payload)
 }
 
+func getDuration(item string) time.Duration {
+	duration, err := time.ParseDuration(item)
+	if err != nil {
+		zap.L().Error("Failed to parse duration", zap.Error(err))
+	}
+	return duration
+}
+
 func (m *Monitor) Run() {
 
 	monitor := common.SysArgs.Monitor
+	tickerCFGHost := time.NewTicker(getDuration(monitor.Frequency.CFGHost))
+	tickerCFGCpu := time.NewTicker(getDuration(monitor.Frequency.CFGCpu))
+	tickerCFGIf := time.NewTicker(getDuration(monitor.Frequency.CFGIf))
+	tickerRuntime := time.NewTicker(getDuration(monitor.Frequency.Runtime))
+	tickerPerfCpu := time.NewTicker(getDuration(monitor.Frequency.PerfCpu))
+	tickerPerfLoad := time.NewTicker(getDuration(monitor.Frequency.PerfLoad))
+	tickerPerfMemory := time.NewTicker(getDuration(monitor.Frequency.PerfMemory))
+	tickerPerfNetInterface := time.NewTicker(getDuration(monitor.Frequency.PerfNetInterface))
+	tickerPerfDisk := time.NewTicker(getDuration(monitor.Frequency.PerfDisk))
+	tickerPerfFileSystem := time.NewTicker(getDuration(monitor.Frequency.PerfFileSystem))
 
-	tickerCFGHost := time.NewTicker(time.Duration(monitor.Frequency.CFGHost) * time.Second)
-	tickerCFGCpu := time.NewTicker(time.Duration(monitor.Frequency.CFGCpu) * time.Second)
-	tickerCFGIf := time.NewTicker(time.Duration(monitor.Frequency.CFGIf) * time.Second)
-
-	tickerRTNetConn := time.NewTicker(time.Duration(monitor.Frequency.RTNetConn) * time.Second)
-	tickerRTProc := time.NewTicker(time.Duration(monitor.Frequency.RTProc) * time.Second)
-
-	tickerPerfCpu := time.NewTicker(time.Duration(monitor.Frequency.PerfCpu) * time.Second)
-	tickerPerfLoad := time.NewTicker(time.Duration(monitor.Frequency.PerfLoad) * time.Second)
-	tickerPerfMemory := time.NewTicker(time.Duration(monitor.Frequency.PerfMemory) * time.Second)
-	tickerPerfNetInterface := time.NewTicker(time.Duration(monitor.Frequency.PerfNetInterface) * time.Second)
-	tickerPerfDisk := time.NewTicker(time.Duration(monitor.Frequency.PerfDisk) * time.Second)
-	tickerPerfFileSystem := time.NewTicker(time.Duration(monitor.Frequency.PerfFileSystem) * time.Second)
 	for {
 		select {
 		case <-tickerCFGHost.C:
@@ -99,13 +106,10 @@ func (m *Monitor) Run() {
 		case <-tickerCFGIf.C:
 			ifStatLst, _ := net.Interfaces()
 			m.Send(ifStatLst)
-		case <-tickerRTNetConn.C:
-			connLst, _ := net.Connections("all")
-			m.Send(connLst)
-		case <-tickerRTProc.C:
+		case <-tickerRuntime.C:
 
 			procLst0, _ := process.Processes()
-			procLst1 := make([]mutual.ProcessInfo, len(procLst0))
+			procLst1 := make([]mutual.ProcessInfo, 0, len(procLst0))
 
 			for _, proc := range procLst0 {
 
@@ -126,7 +130,12 @@ func (m *Monitor) Run() {
 				procLst1 = append(procLst1, procInfo)
 			}
 
-			m.Send(procLst1)
+			connLst, _ := net.Connections("all")
+
+			m.Send(mutual.ProcessSnapshot{
+				ProcessLst: procLst1,
+				ConnLst:    connLst,
+			})
 
 		case <-tickerPerfCpu.C:
 			timeStat1, _ := cpu.Times(false)

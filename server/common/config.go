@@ -11,12 +11,15 @@ import (
 type Config struct {
 	Server struct {
 		Hub struct {
-			Addr string `yaml:"addr"`
+			Addr      string `yaml:"addr"`
+			BatchSize uint32 `yaml:"batch_size"`
+			QueueSize uint32 `yaml:"queue_size"`
 		} `yaml:"hub"`
 		Restful struct {
-			Addr             string `yaml:"addr"`
-			BasePath         string `yaml:"base_path"`
-			BasePathCallback string `yaml:"base_path_callback"`
+			Addr             string   `yaml:"addr"`
+			BasePath         string   `yaml:"base_path"`
+			BasePathCallback string   `yaml:"base_path_callback"`
+			WhiteLst         []string `yaml:"white_list"`
 		}
 	} `yaml:"server"`
 

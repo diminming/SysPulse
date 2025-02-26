@@ -1,9 +1,9 @@
 <template>
   <a-layout-content :style="{ background: '#fff', padding: '24px', margin: 0, minHeight: '800px' }">
     <div class="opBar">
-      <a-button type="primary" class="op-item" @click="gotoAddBiz" v-if="!isSelectingStage()">新增</a-button>
+      <a-button type="primary" class="op-item" @click="gotoAddBiz" v-if="!isSelectingStage()" size="small">添加</a-button>
       <a-input-search class="op-item keyword" v-model:value="keyword" placeholder="请输入检索内容" enter-button
-        @search="onSearch" />
+        @search="onSearch" size="small"/>
     </div>
 
     <a-table :data-source="tabData" :columns="columns" size="small" :pagination="pgSetting" @change="onChange">
@@ -93,9 +93,9 @@ const gotoAddBiz = () => {
 
 const gotoBizDetail = (data: any) => {
   // router.push({ name: "bizSystem", query: { ...data } });
-  // router.push({
-  //   path: `/main/biz/${data.id}/detail`,
-  // });
+  router.push({
+    path: `/main/biz/${data.id}/detail`,
+  });
 };
 
 const columns: TableColumnType<Business>[] = [

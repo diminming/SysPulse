@@ -1,7 +1,9 @@
 FROM nginx
 
+ARG ENVIRONMENT=staging
+
 RUN mkdir -p /app/syspulse/ui
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY env_conf/${ENVIRONMENT}/nginx.conf /etc/nginx/nginx.conf
 COPY dist /app/syspulse/ui
 
 EXPOSE 80

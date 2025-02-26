@@ -146,24 +146,41 @@ func DBDelete(sql string, args ...interface{}) {
 func BulkInsert(sql string, values [][]interface{}) {
 	stmt, err := SqlDB.Prepare(sql)
 	if err != nil {
-		log.Default().Println(err)
+		zap.L().Error("can't get statement obj: ", zap.Error(err))
 	}
+	defer stmt.Close()
 	tx, err := SqlDB.Begin()
 	if err != nil {
-		log.Default().Println(err)
+		zap.L().Error("can't start transaction: ", zap.Error(err))
 	}
 	defer tx.Rollback()
 
 	for _, value := range values {
 		_, err := tx.Stmt(stmt).Exec(value...)
 		if err != nil {
-			log.Default().Println(err)
+			zap.L().Error("can't exec dml statement: ", zap.Error(err))
 		}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		log.Default().Println(err)
+		zap.L().Error("can't commit transaction: ", zap.Error(err))
+	}
+
+}
+
+func ExecInTransaction(business func(tx *sql.Tx) bool) {
+	tx, err := SqlDB.Begin()
+	if err != nil {
+		zap.L().Error("can't start transaction: ", zap.Error(err))
+	}
+	defer tx.Rollback()
+
+	if business(tx) {
+		err = tx.Commit()
+		if err != nil {
+			zap.L().Error("can't commit transaction: ", zap.Error(err))
+		}
 	}
 
 }

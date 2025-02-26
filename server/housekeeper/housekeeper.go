@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/syspulse/model"
+	"go.uber.org/zap"
 )
 
 func NewHouseKeeper() *Housekeeper {
@@ -37,8 +38,9 @@ func (housekeeper *Housekeeper) clearTopo() {
 
 func (housekeeper *Housekeeper) MarkOverdue() {
 	for {
-		timestamp := time.Now().Add(housekeeper.makrOverdueTimeout)
-		model.JobMarkOverdue(timestamp.UnixMilli())
+		timestamp := time.Now().Add(housekeeper.makrOverdueTimeout).UnixMilli()
+		zap.L().Debug("mark overdue by: ", zap.Int64("timestamp", timestamp))
+		model.JobMarkOverdue(timestamp)
 		ticker := time.NewTicker(housekeeper.markOverdueInterval)
 		<-ticker.C
 	}

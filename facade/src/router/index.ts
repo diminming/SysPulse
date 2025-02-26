@@ -32,7 +32,7 @@ const router = createRouter({
             {
               path: "/main/dashboard",
               name: "dashboard",
-              component: () => import("../views/dashboard/Dashboard.vue"),
+              component: () => import("@/views/dashboard/Dashboard.vue"),
               meta: {
                 text: "仪表盘",
               },
@@ -40,7 +40,7 @@ const router = createRouter({
             {
               path: "/main/biz",
               name: "bizMgr",
-              component: () => import("../views/biz/Business.vue"),
+              component: () => import("@/views/biz/Business.vue"),
               meta: {
                 text: "业务系统",
               },
@@ -48,16 +48,16 @@ const router = createRouter({
             },
             {
               path: "/main/biz/:bizId/detail",
-              name: "bizSystem",
-              component: () => import("../views/biz/view/BizSystem.vue"),
+              name: "bizDetail",
+              component: () => import("@/views/biz/BizDetail.vue"),
               meta: {
-                text: "系统详情",
+                text: "业务系统详情",
               },
             },
             {
               path: "/main/biz/bizAdd",
               name: "bizAdd",
-              component: () => import("../views/biz/view/BizAdd.vue"),
+              component: () => import("@/views/biz/view/BizAdd.vue"),
               meta: {
                 text: "新增业务系统",
               },
@@ -65,7 +65,7 @@ const router = createRouter({
             {
               path: "/main/biz/edit",
               name: "bizEdit",
-              component: () => import("../views/biz/view/BizAdd.vue"),
+              component: () => import("@/views/biz/view/BizAdd.vue"),
               meta: {
                 text: "编辑业务系统",
               },
@@ -73,7 +73,7 @@ const router = createRouter({
             {
               path: "/main/linux",
               name: "linux",
-              component: () => import("../views/linux/LinuxLst.vue"),
+              component: () => import("@/views/linux/LinuxLst.vue"),
               meta: {
                 text: "Linux资源列表",
               },
@@ -81,7 +81,7 @@ const router = createRouter({
             {
               path: "/main/linux/linuxSystem",
               name: "linuxSystem",
-              component: () => import("../views/linux/view/LinuxSystem.vue"),
+              component: () => import("@/views/linux/view/LinuxSystem.vue"),
               meta: {
                 text: "Linux资源详情",
               },
@@ -105,7 +105,7 @@ const router = createRouter({
             {
               path: "/main/linux/:linuxId/detail",
               name: "linuxDetail",
-              component: () => import("../views/linux/Detail.vue"),
+              component: () => import("@/views/linux/Detail.vue"),
               meta: {
                 // text: "Linux详情",
                 text: (route: any) => {
@@ -116,7 +116,7 @@ const router = createRouter({
             {
               path: "/main/database",
               name: "database",
-              component: () => import("../views/database/Database.vue"),
+              component: () => import("@/views/database/Database.vue"),
               meta: {
                 text: "数据库",
               },
@@ -124,7 +124,7 @@ const router = createRouter({
             {
               path: "/main/database/dbSystem",
               name: "dbSystem",
-              component: () => import("../views/database/view/DBSystem.vue"),
+              component: () => import("@/views/database/view/DBSystem.vue"),
               meta: {
                 text: "数据库详情",
               },
@@ -132,7 +132,7 @@ const router = createRouter({
             {
               path: "/main/database/dbAdd",
               name: "dbAdd",
-              component: () => import("../views/database/view/DBAdd.vue"),
+              component: () => import("@/views/database/view/DBAdd.vue"),
               meta: {
                 text: "新增",
               },
@@ -140,7 +140,7 @@ const router = createRouter({
             {
               path: "/main/cache",
               name: "cache",
-              component: () => import("../views/cache/Cache.vue"),
+              component: () => import("@/views/cache/Cache.vue"),
               meta: {
                 text: "缓存",
               },
@@ -148,23 +148,63 @@ const router = createRouter({
             {
               path: "/main/queue",
               name: "queue",
-              component: () => import("../views/queue/Queue.vue"),
+              component: () => import("@/views/queue/Queue.vue"),
               meta: {
                 text: "队列",
               },
             },
             {
-              path: "/main/users",
-              name: "users",
-              component: () => import("../views/users/Users.vue"),
+              path: "/main/user",
+              name: "user",
+              component: () => import("@/views/users/UserLst.vue"),
               meta: {
                 text: "用户管理",
               },
             },
             {
+              path: "/main/user/add",
+              name: "userAdd",
+              component: () => import("@/views/users/UserEdit.vue"),
+              meta: {
+                text: "新建用户",
+              },
+            },
+            {
+              path: "/main/permission",
+              name: "permission",
+              component: () => import("@/views/users/PermissionLst.vue"),
+              meta: {
+                text: "权限管理",
+              },
+            },
+            {
+              path: "/main/permission/add",
+              name: "permissionAdd",
+              component: () => import("@/views/users/PermissionEdit.vue"),
+              meta: {
+                text: "新建权限",
+              },
+            },
+            {
+              path: "/main/role",
+              name: "role",
+              component: () => import("@/views/users/RoleLst.vue"),
+              meta: {
+                text: "角色管理",
+              },
+            },
+            {
+              path: "/main/role/add",
+              name: "roleAdd",
+              component: () => import("@/views/users/RoleEdit.vue"),
+              meta: {
+                text: "新建角色",
+              },
+            },
+            {
               path: "/main/setting",
               name: "setting",
-              component: () => import("../views/setting/Setting.vue"),
+              component: () => import("@/views/setting/Setting.vue"),
               meta: {
                 text: "系统设置",
               },
@@ -172,9 +212,25 @@ const router = createRouter({
             {
               path: "/main/notification",
               name: "notification",
-              component: () => import("../views/notification/AlarmLst.vue"),
+              component: () => import("@/views/notification/AlarmLst.vue"),
               meta: {
                 text: "事件告警",
+              },
+            },
+            {
+              path: "/main/menu",
+              name: "menu",
+              component: () => import("@/views/users/MenuLst.vue"),
+              meta: {
+                text: "菜单管理",
+              },
+            },
+            {
+              path: "/main/menu/add",
+              name: "menuAdd",
+              component: () => import("@/views/users/MenuEdit.vue"),
+              meta: {
+                text: "添加菜单",
               },
             },
           ],

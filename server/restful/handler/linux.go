@@ -13,6 +13,7 @@ import (
 	"github.com/syspulse/common"
 	"github.com/syspulse/model"
 	"github.com/syspulse/restful/server/response"
+	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,11 +23,14 @@ func GetLinuxCount(ctx *gin.Context) {
 }
 
 func GetInterfaceLst(ctx *gin.Context) {
-	linuxId, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
 	}
-	infoLst, err := model.GetInterfaceLst(linuxId)
+
+	linux := GetLinuxById(id)
+
+	infoLst, err := model.GetInterfaceLst(linux.LinuxId)
 	if err != nil {
 		log.Default().Println(err)
 		ctx.JSON(http.StatusInternalServerError, response.JsonResponse{Status: http.StatusInternalServerError, Msg: err.Error()})
@@ -39,9 +43,12 @@ func GetLinuxTopo(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
 	}
-	infoLst, err := model.QueryLinuxTopo(linuxId)
+	showAll := ctx.Query("showAll") == "true"
+
+	linux := GetLinuxById(linuxId)
+	infoLst, err := model.QueryLinuxTopo(linux.LinuxId, showAll)
 	if err != nil {
-		log.Default().Println(err)
+		zap.L().Error("error get topo by linux id.", zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, response.JsonResponse{Status: http.StatusInternalServerError, Msg: err.Error()})
 	}
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: infoLst, Msg: "success"})
@@ -52,7 +59,8 @@ func GetLinuxDesc(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "linux id is not a number."})
 	}
-	desc := model.QueryLinuxDesc(id)
+	linux := GetLinuxById(id)
+	desc := model.QueryLinuxDesc(linux.LinuxId)
 	if err != nil {
 		log.Default().Println(err)
 		ctx.JSON(http.StatusInternalServerError, response.JsonResponse{Status: http.StatusInternalServerError, Msg: err.Error()})
@@ -91,9 +99,14 @@ func GetLinuxLstByPage(ctx *gin.Context) {
 }
 
 func Insert2SqlDB(linux *model.Linux) {
-	sql := "insert into linux(`hostname`, `linux_id`, `biz_id`, `agent_conn`, create_timestamp, update_timestamp) value(?, ?, ?, ?, ?, ?)"
-	id := model.DBInsert(sql, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, linux.CreateTimestamp, linux.UpdateTimestamp)
-	linux.Id = id
+	sql := "insert into linux(`hostname`, `linux_id`, `biz_id`, `agent_conn`, `ext_id`, create_timestamp, update_timestamp) value(?, ?, ?, ?, ?, ?, ?)"
+
+	if linux.ExtId == "" {
+		linux.Id = model.DBInsert(sql, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, nil, linux.CreateTimestamp, linux.UpdateTimestamp)
+	} else {
+		linux.Id = model.DBInsert(sql, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, linux.ExtId, linux.CreateTimestamp, linux.UpdateTimestamp)
+	}
+
 }
 
 func InsertLinuxRecord(linux *model.Linux) {
@@ -105,8 +118,8 @@ func InsertLinuxRecord(linux *model.Linux) {
 
 	Insert2SqlDB(linux)
 	model.UpsertHost(map[string]any{
-		"host_identity": linux.Id,
-		"name":          linux.LinuxId,
+		"host_identity": linux.LinuxId,
+		"name":          linux.Hostname,
 		"timestamp":     time.Now().UnixMilli(),
 	})
 }
@@ -117,21 +130,22 @@ func CreateLinuxRecord(ctx *gin.Context) {
 		log.Default().Println(err)
 		return
 	}
-	var linux = model.Linux{}
-	err = json.Unmarshal(body, &linux)
+	var linux = new(model.Linux)
+	err = json.Unmarshal(body, linux)
 	if err != nil {
 		log.Default().Println(err)
 		return
 	}
-	linux.CreateTimestamp = time.Now().Unix()
-	linux.UpdateTimestamp = time.Now().Unix()
+	linux.CreateTimestamp = time.Now().UnixMilli()
+	linux.UpdateTimestamp = time.Now().UnixMilli()
 
-	InsertLinuxRecord(&linux)
+	InsertLinuxRecord(linux)
+	model.SetIdentityAndIdMappingInCache(linux)
 
 	if linux.Biz.Id > 0 {
-		model.SaveConsumptionRelation(&linux)
+		model.SaveConsumptionRelation(linux)
 	}
-	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: &linux, Msg: "success"})
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: linux, Msg: "success"})
 }
 
 func UpdateLinuxInSqlDB(linux *model.Linux) {
@@ -142,23 +156,24 @@ func UpdateLinuxInSqlDB(linux *model.Linux) {
 func UpdateLinuxRecord(linux *model.Linux, id int64) {
 
 	if id != linux.Id {
-		log.Default().Panicln("The two records that need to be updated have inconsistent ID values.")
+		zap.L().Panic("The two records that need to be updated have inconsistent ID values.")
 		return
 	}
 
 	linux0 := GetLinuxById(id)
 	if linux0 == nil {
-		log.Default().Panicf("Can't get linux record by id: %d", id)
+		zap.L().Panic("Can't get linux record by id: %d", zap.Int64("Id of Linux", id))
 		return
 	}
 
 	if LinuxIdExist(linux.Id, linux.LinuxId) {
-		log.Default().Panicf("Linux id: \"%s\" exist", linux.LinuxId)
+		zap.L().Panic("Linux id: \"%s\" exist: ", zap.String("Identity of Linux", linux.LinuxId))
 		return
 	}
 
 	UpdateLinuxInSqlDB(linux)
-	model.UpdateConsumptionRelation(linux)
+	model.SetIdentityAndIdMappingInCache(linux)
+	model.UpdateLinuxInGraphDB(linux0, linux)
 
 }
 
@@ -185,19 +200,37 @@ func ModifyLinuxRecord(ctx *gin.Context) {
 		return
 	}
 
-	linux.UpdateTimestamp = time.Now().Unix()
+	linux.UpdateTimestamp = time.Now().UnixMilli()
 	UpdateLinuxRecord(linux, idOfLinux)
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: &linux, Msg: "success"})
 }
 
+func removeLinuxFromCache(linux *model.Linux) {
+	keys := model.CacheGetKeysByPattern(linux.LinuxId + "*")
+	keys = append(keys, "port_"+linux.LinuxId)
+	keys = append(keys, "proc_"+linux.LinuxId)
+	model.CacheDeleteByKey(keys...)
+}
+
 func DeleteLinuxRecord(ctx *gin.Context) {
 	values := ctx.Request.URL.Query()
-	linuxId, err := strconv.Atoi(values.Get("linux_id"))
+	id, err := strconv.ParseInt(values.Get("id"), 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "page is not a number."})
 		return
 	}
-	DeleteLinux(linuxId)
+	linux0 := GetLinuxById(id)
+	if linux0 == nil {
+		zap.L().Panic("Can't get linux record by id: %d", zap.Int64("Id of Linux", id))
+		return
+	}
+
+	DeleteLinuxInSqlDB(linux0, func(linux *model.Linux) bool {
+		removeLinuxFromCache(linux)
+		model.DeleteLinuxInGraphDB(linux)
+		return true
+	})
+
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "success"})
 }
 
@@ -312,9 +345,38 @@ func GetLinuxTotal() int64 {
 	return model.GetLinuxTotal()
 }
 
-func DeleteLinux(linuxId int) {
+func DeleteLinuxInSqlDB(linux *model.Linux, inTransaction func(linux *model.Linux) bool) bool {
 	sql := "delete from linux where id = ?"
-	model.DBDelete(sql, linuxId)
+
+	tx, err := model.SqlDB.Begin()
+	if err != nil {
+		zap.L().Error("can't start transaction: ", zap.Error(err))
+	}
+	defer tx.Rollback()
+
+	stmt, err := model.SqlDB.Prepare(sql)
+	if err != nil {
+		zap.L().Error("can't get statement obj: ", zap.Error(err))
+	}
+	defer stmt.Close()
+
+	_, err = tx.Stmt(stmt).Exec(linux.Id)
+	if err != nil {
+		zap.L().Error("can't exec dml statement: ", zap.Error(err))
+	}
+
+	if inTransaction != nil {
+		result := inTransaction(linux)
+		if !result {
+			return false
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		zap.L().Error("can't commit transaction: ", zap.Error(err))
+	}
+	return true
 }
 
 func GetLinuxById(id int64) *model.Linux {
@@ -399,9 +461,31 @@ func UpdateProcCache(id int64, procLst []interface{}, timestamp int64) {
 	entryLst := map[string]interface{}{}
 	for _, procInfo := range procLst {
 		proc := procInfo.(map[string]interface{})
-		entryLst[strconv.FormatInt(int64(proc["pid"].(float64)), 10)] = common.ToString(procInfo)
+		entryLst[strconv.FormatInt(int64(proc["pid"].(float64)), 10)] = common.Stringfy(procInfo)
 	}
 	entryLst["timestamp"] = strconv.FormatInt(timestamp, 10)
 
 	model.CacheHMSet(key, entryLst)
+}
+
+func GetLinuxGraph(ctx *gin.Context) {
+	limitStr := ctx.Query("limit")
+	depthStr := ctx.Query("depth")
+	start := ctx.Query("start")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		limit = 100
+	}
+	depth, err := strconv.Atoi(depthStr)
+	if err != nil {
+		depth = 4
+	}
+	if start == "" {
+		result := model.GetLinuxGraph(limit)
+		ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: result, Msg: "success"})
+	} else {
+		result := model.GetLinuxGraphWithStart(start, depth)
+		ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: result, Msg: "success"})
+	}
+
 }

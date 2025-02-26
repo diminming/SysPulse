@@ -2,8 +2,17 @@
     <a-row>
         <a-col :span="12">
             <div class="topo" style="height: 600px;"></div>
+            <a-collapse v-model:activeKey="showGraphSetting">
+                <a-collapse-panel key="1" header="拓扑图设置">
+                    <a-form size="small">
+                        <a-form-item label="显示所有进程">
+                            <a-switch size="small" v-model:checked="showAll" @change="renderGraph()" />
+                        </a-form-item>
+                    </a-form>
+                </a-collapse-panel>
+            </a-collapse>
         </a-col>
-        <a-col :span="12">
+        <a-col :span="12" style="padding: 1rem;">
             <a-tabs v-model:activeKey="activeKey">
                 <a-tab-pane key="nodes" tab="节点" :force-render="false">
                     <a-table size="small" :dataSource="nodeLst" :columns="nodeColumns">
@@ -29,7 +38,7 @@
                             </template>
                             <template v-if="column.key === 'action'">
                                 <span>
-                                    <a @click="showNodeDetail(record)">详情</a>
+                                    <a @click="showEdgeDetail(record)">详情</a>
                                 </span>
                             </template>
                         </template>
@@ -40,51 +49,29 @@
     </a-row>
     <a-modal v-model:open="nodeDetailIsOpen" title="节点详情" @ok="closeNodeDetail">
         <a-descriptions bordered size="small" :column=1>
-            <a-descriptions-item label="PID">{{ activeNode.pid}}</a-descriptions-item>
-            <a-descriptions-item label="名称">{{ activeNode.name}}</a-descriptions-item>
-            <a-descriptions-item label="执行程序">{{ activeNode.exec}}</a-descriptions-item>
-            <a-descriptions-item label="启动时间">{{ activeNode.timestamp}}</a-descriptions-item>
+            <a-descriptions-item label="PID">{{ activeNode.pid }}</a-descriptions-item>
+            <a-descriptions-item label="名称">{{ activeNode.name }}</a-descriptions-item>
+            <a-descriptions-item label="执行程序">{{ activeNode.exec }}</a-descriptions-item>
+            <a-descriptions-item label="启动时间">{{ timestamp2DateString(activeNode.timestamp) }}</a-descriptions-item>
         </a-descriptions>
     </a-modal>
-    <a-modal v-model:open="edgeDetailIsOpen" title="Basic Modal" @ok="handleOk">
-        <a-descriptions bordered title="Custom Size" size="small">
-            <template #extra>
-                <a-button type="primary">Edit</a-button>
-            </template>
-            <a-descriptions-item label="Product">Cloud Database</a-descriptions-item>
-            <a-descriptions-item label="Billing">Prepaid</a-descriptions-item>
-            <a-descriptions-item label="Time">18:00:00</a-descriptions-item>
-            <a-descriptions-item label="Amount">$80.00</a-descriptions-item>
-            <a-descriptions-item label="Discount">$20.00</a-descriptions-item>
-            <a-descriptions-item label="Official">$60.00</a-descriptions-item>
-            <a-descriptions-item label="Config Info">
-                Data disk type: MongoDB
-                <br />
-                Database version: 3.4
-                <br />
-                Package: dds.mongo.mid
-                <br />
-                Storage space: 10 GB
-                <br />
-                Replication factor: 3
-                <br />
-                Region: East China 1
-                <br />
-            </a-descriptions-item>
-        </a-descriptions>
-    </a-modal>
-
 </template>
 <script lang="ts" setup>
+import { timestamp2DateString } from '@/utils/common';
 import { useRoute } from 'vue-router';
 import { onMounted, ref } from 'vue';
 import { Linux } from '@/views/linux/api'
 
-const linux = ref<Linux>(new Linux(-1))
-const activeKey = ref('nodes'),
+const linux = ref<Linux>(new Linux(-1)),
+    activeKey = ref('nodes'),
+    route = useRoute(),
+    l = new Linux(parseInt(route.params.linuxId as string)),
+    showGraphSetting = ref<Boolean>(false),
+    showAll = ref<Boolean>(false),
     nodeDetailIsOpen = ref<Boolean>(false),
     edgeDetailIsOpen = ref<Boolean>(false),
     activeNode = ref({}),
+    activeEdge = ref({}),
     nodeLst = ref([]),
     edgeLst = ref([]),
     nodeColumns = [{
@@ -119,28 +106,31 @@ const activeKey = ref('nodes'),
 const closeNodeDetail = () => {
     nodeDetailIsOpen.value = false
     activeNode.value = {}
- }
+}, closeEdgeDetail = () => {
+    edgeDetailIsOpen.value = false
+}
 
 const showNodeDetail = (record: any) => {
     const detail = record["_detail"]
     activeNode.value = detail
     nodeDetailIsOpen.value = true
+}, showEdgeDetail = (record: any) => {
+    const detail = record["_detail"]
+    activeEdge.value = detail
+    edgeDetailIsOpen.value = true
 }
 
-onMounted(() => {
-    let route = useRoute()
-    let l = new Linux(parseInt(route.params.linuxId as string))
-    l.RenderTopological((chart: any, verteies: any, links: any) => {
-        const nodeLst1 = [...verteies.values()]
-        l.RenderTopoGraph(chart, nodeLst1, links)
-        nodeLst.value = nodeLst1.map((item, idx) => {
+const renderGraph = () => {
+    
+    l.RenderTopological(showAll.value).then(({ verteies, edges }) => {
+        nodeLst.value = verteies.map((item, idx) => {
             return {
                 "idx": idx + 1,
                 "name": item["name"] || item['value']["name"],
-                "_detail": item['_detail']
+                "_detail": item['detail']
             }
         })
-        edgeLst.value = links.map((link: any, idx: Number) => {
+        edgeLst.value = edges.map((link: any, idx: Number) => {
             return {
                 "from": link.source,
                 "to": link.target,
@@ -150,6 +140,10 @@ onMounted(() => {
         })
     })
     linux.value = l
+}
+
+onMounted(() => {
+    renderGraph()
 })
 </script>
 <style lang="css" scoped>

@@ -1,0 +1,632 @@
+[
+  {
+    "id": 1,
+    "identity": "create_biz",
+    "name": "新建业务系统",
+    "method": "POST",
+    "url": "/api/biz",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 2,
+    "identity": "update_biz",
+    "name": "修改业务系统",
+    "method": "PUT",
+    "url": "/api/biz",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 3,
+    "identity": "get_biz_by_page",
+    "name": "分页获取业务系统列表",
+    "method": "GET",
+    "url": "/api/biz/page",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 4,
+    "identity": "remove_biz",
+    "name": "删除业务系统",
+    "method": "DELETE",
+    "url": "/api/biz",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 5,
+    "identity": "get_biz_count",
+    "name": "获取业务系统计数",
+    "method": "GET",
+    "url": "/api/biz/count",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 6,
+    "identity": "get_biz_detail",
+    "name": "获取业务系统详情",
+    "method": "GET",
+    "url": "/api/biz/:bizId",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 7,
+    "identity": "get_biz_topo",
+    "name": "获取业务系统拓扑",
+    "method": "POST",
+    "url": "/api/biz/:bizId/topo",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 8,
+    "identity": "get_inst_count_by_biz",
+    "name": "获取业务系统实例计数",
+    "method": "GET",
+    "url": "/api/biz/:bizId/count_inst",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 9,
+    "identity": "get_linux_detail",
+    "name": "获取Linux详情",
+    "method": "GET",
+    "url": "/api/linux/:id",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 10,
+    "identity": "get_linux_by_page",
+    "name": "分页获取Linux列表",
+    "method": "GET",
+    "url": "/api/linux/page",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 11,
+    "identity": "create_linux",
+    "name": "创建Linux记录",
+    "method": "POST",
+    "url": "/api/linux",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 12,
+    "identity": "update_linux",
+    "name": "修改Linux记录",
+    "method": "PUT",
+    "url": "/api/linux/:id",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 13,
+    "identity": "remove_linux",
+    "name": "删除Linux记录",
+    "method": "DELETE",
+    "url": "/api/linux",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 14,
+    "identity": "get_proclst_by_linux",
+    "name": "获取Linux进程列表",
+    "method": "GET",
+    "url": "/api/linux/:id/procLst",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 15,
+    "identity": "analyze_proc",
+    "name": "获取Linux进程分析结果",
+    "method": "GET",
+    "url": "/api/linux/:id/proc/:pid/analyze",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 16,
+    "identity": "get_linux_topo",
+    "name": "获取Linux拓扑图",
+    "method": "GET",
+    "url": "/api/linux/:id/topo",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 17,
+    "identity": "get_linux_desc",
+    "name": "获取Linux描述",
+    "method": "GET",
+    "url": "/api/linux/:id/desc",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 18,
+    "identity": "get_if_lst_by_linux",
+    "name": "获取Linux网卡列表",
+    "method": "GET",
+    "url": "/api/linux/:id/if/lst",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 19,
+    "identity": "get_linux_count",
+    "name": "获取Linux记录计数",
+    "method": "GET",
+    "url": "/api/linux/count",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 20,
+    "identity": "create_job",
+    "name": "创建Job",
+    "method": "POST",
+    "url": "/api/job",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 21,
+    "identity": "get_job_result",
+    "name": "获取Job结果",
+    "method": "GET",
+    "url": "/api/job/:jobId/result",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 22,
+    "identity": "get_traffic_job_by_page",
+    "name": "分页获取流量分析任务记录",
+    "method": "GET",
+    "url": "/api/job/traffic/page",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 23,
+    "identity": "get_job_count",
+    "name": "获取Job计数",
+    "method": "GET",
+    "url": "/api/job/count",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 24,
+    "identity": "remove_job",
+    "name": "删除Job记录",
+    "method": "DELETE",
+    "url": "/api/job/:jobId",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 25,
+    "identity": "get_cache_by_page",
+    "name": "get_cache_by_page",
+    "method": "GET",
+    "url": "/api/cache/page",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 26,
+    "identity": "create_cache",
+    "name": "create_cache",
+    "method": "POST",
+    "url": "/api/cache",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 27,
+    "identity": "update_cache",
+    "name": "update_cache",
+    "method": "PUT",
+    "url": "/api/cache",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 28,
+    "identity": "remove_cache",
+    "name": "remove_cache",
+    "method": "DELETE",
+    "url": "/api/cache",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 29,
+    "identity": "get_db_record_by_page",
+    "name": "get_db_record_by_page",
+    "method": "GET",
+    "url": "/api/db/page",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 30,
+    "identity": "create_db_record",
+    "name": "create_db_record",
+    "method": "POST",
+    "url": "/api/db",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 31,
+    "identity": "update_db_record",
+    "name": "update_db_record",
+    "method": "PUT",
+    "url": "/api/db",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 32,
+    "identity": "remove_db_record",
+    "name": "remove_db_record",
+    "method": "DELETE",
+    "url": "/api/db",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 33,
+    "identity": "get_net_perf_data",
+    "name": "获取网络性能数据",
+    "method": "GET",
+    "url": "/api/perf/net",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 34,
+    "identity": "get_disk_perf_data",
+    "name": "获取磁盘性能数据",
+    "method": "GET",
+    "url": "/api/perf/disk",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 35,
+    "identity": "get_usage_cpu_data",
+    "name": "获取CPU使用率",
+    "method": "GET",
+    "url": "/api/perf/cpu/usage",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 36,
+    "identity": "get_load_load_data",
+    "name": "获取Linux Load1数据",
+    "method": "GET",
+    "url": "/api/perf/load/load1",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 37,
+    "identity": "get_available_mem_data",
+    "name": "获取可用内存数据",
+    "method": "GET",
+    "url": "/api/perf/mem/available",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 38,
+    "identity": "get_used_swap_data",
+    "name": "获取swap使用量",
+    "method": "GET",
+    "url": "/api/perf/swap/used",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 39,
+    "identity": "get_iocount_disk_data",
+    "name": "获取磁盘IO数据",
+    "method": "GET",
+    "url": "/api/perf/disk/iocount",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 40,
+    "identity": "get_iocount_if_data",
+    "name": "获取网卡IO数据",
+    "method": "GET",
+    "url": "/api/perf/if/iocount",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 41,
+    "identity": "get_cpu_perf_data",
+    "name": "获取CPU性能数据",
+    "method": "GET",
+    "url": "/api/perf/cpu",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 42,
+    "identity": "get_mem_perf_data",
+    "name": "获取内存性能数据",
+    "method": "GET",
+    "url": "/api/perf/mem",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 43,
+    "identity": "get_load_perf_data",
+    "name": "获取系统Load数据",
+    "method": "GET",
+    "url": "/api/perf/load",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 44,
+    "identity": "get_swap_perf_data",
+    "name": "获取Swap数据",
+    "method": "GET",
+    "url": "/api/perf/swap",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 45,
+    "identity": "get_fs_perf_data",
+    "name": "获取文件系统数据",
+    "method": "GET",
+    "url": "/api/perf/fs",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 46,
+    "identity": "update_job_status",
+    "name": "回调函数_更新任务状态",
+    "method": "PATCH",
+    "url": "/callback/job/updateStatus",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 47,
+    "identity": "callback_on_jobfinish",
+    "name": "回调函数_任务完成后",
+    "method": "PATCH",
+    "url": "/callback/job/:jobId/onFinish",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 48,
+    "identity": "get_alarm_by_page",
+    "name": "分页获取alarm数据",
+    "method": "GET",
+    "url": "/api/alarm/page",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 49,
+    "identity": "get_alarm_detail",
+    "name": "获取alarm详情",
+    "method": "GET",
+    "url": "/api/alarm/:alarmId",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 50,
+    "identity": "disable_alarm",
+    "name": "关闭告警",
+    "method": "PUT",
+    "url": "/api/alarm/:alarmId/disable",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 51,
+    "identity": "get_alarm_count",
+    "name": "获取alarm计数",
+    "method": "GET",
+    "url": "/api/alarm/count",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 52,
+    "identity": "get_alarm_stat_heat",
+    "name": "获取alarm统计_热力图",
+    "method": "GET",
+    "url": "/api/alarm/stat_heat",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 53,
+    "identity": "get_alarm_stat_trend",
+    "name": "获取alarm统计_趋势图",
+    "method": "GET",
+    "url": "/api/alarm/stat_trend",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 54,
+    "identity": "create_alarm",
+    "name": "创建alarm",
+    "method": "POST",
+    "url": "/api/alarm",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 55,
+    "identity": "login",
+    "name": "用户登录",
+    "method": "POST",
+    "url": "/api/login",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 56,
+    "identity": "create_user",
+    "name": "创建用户",
+    "method": "POST",
+    "url": "/api/user",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 57,
+    "identity": "get_user_by_page",
+    "name": "分页获取user信息",
+    "method": "GET",
+    "url": "/api/user/page",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 58,
+    "identity": "remove_user",
+    "name": "删除用户",
+    "method": "DELETE",
+    "url": "/api/user/:userId",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 59,
+    "identity": "create_role",
+    "name": "创建role",
+    "method": "POST",
+    "url": "/api/role",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 60,
+    "identity": "get_role_by_page",
+    "name": "分页获取role记录",
+    "method": "GET",
+    "url": "/api/role/page",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 61,
+    "identity": "remove_role",
+    "name": "移除role记录",
+    "method": "DELETE",
+    "url": "/api/role/:roleId",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 62,
+    "identity": "get_permission_by_page",
+    "name": "分页获取权限信息",
+    "method": "GET",
+    "url": "/api/permission/page",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 63,
+    "identity": "create_permission",
+    "name": "创建permission记录",
+    "method": "POST",
+    "url": "/api/permission",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 64,
+    "identity": "remove_permission",
+    "name": "移除权限记录",
+    "method": "DELETE",
+    "url": "/api/permission/:prmId",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 65,
+    "identity": "create_menu",
+    "name": "创建菜单项",
+    "method": "POST",
+    "url": "/api/menu",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 66,
+    "identity": "remove_menu",
+    "name": "移除菜单项",
+    "method": "DELETE",
+    "url": "/api/menu/:menuId",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 67,
+    "identity": "get_menu_by_page",
+    "name": "分页获取菜单项",
+    "method": "GET",
+    "url": "/api/menu/page",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 68,
+    "identity": "create_nmon_record",
+    "name": "创建NMON记录",
+    "method": "POST",
+    "url": "/api/nmon",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 69,
+    "identity": "get_nmon_detail",
+    "name": "获取NMON详情",
+    "method": "GET",
+    "url": "/api/nmon/:id",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  },
+  {
+    "id": 70,
+    "identity": "get_nmon_by_page",
+    "name": "分页获取NMON记录",
+    "method": "GET",
+    "url": "/api/nmon/page",
+    "createTimestamp": 1740364669000,
+    "updateTimestamp": 1740364669000
+  }
+]

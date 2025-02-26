@@ -40,10 +40,10 @@ const titleList = reactive([
     title: "常规",
     "href": "/main"
   },
-  // {
-  //   title: "拓扑",
-  //   href: "/topo"
-  // }
+  {
+    title: "拓扑",
+    href: "/topo"
+  }
 ]);
 </script>
  
@@ -61,7 +61,8 @@ const titleList = reactive([
 .headerImg {
   width: 60px;
   margin-right: 10px;
-  object-fit: cover;
+  object-fit: contain;
+  background-color: white;
 }
 
 .headerRightUser {

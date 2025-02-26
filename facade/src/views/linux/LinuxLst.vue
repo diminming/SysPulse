@@ -1,9 +1,8 @@
 <template>
   <a-layout-content :style="style">
     <div class="opBar">
-      <a-button v-if="stage === 'edition'" type="primary" class="op-item" @click="pathTo1">新增</a-button>
-      <a-input-search class="op-item keyword" v-model:value="keyword" placeholder="请输入检索内容" enter-button
-        @search="onSearch" />
+      <a-button v-if="stage === 'edition'" type="primary" class="op-item" @click="pathTo1" size="small">添加</a-button>
+      <a-input-search class="op-item keyword" v-model:value="keyword" placeholder="请输入检索内容" enter-button @search="onSearch" size="small"/>
     </div>
 
     <a-table :data-source="tabData" :columns="columns" size="small" @change="onChange" :pagination="pgSetting" :row-selection=rowSelection>
@@ -188,13 +187,13 @@ const onEdite = (linux: Linux) => {
   router.push({ path: "/main/linux/edit", query: { linuxId: linux.id } });
 };
 
-const onDelete = (linux_id: number) => {
+const onDelete = (id: number) => {
   return new Promise((resolve) => {
     request({
       url: "/linux",
       method: "delete",
       params: {
-        linux_id: linux_id,
+        id: id,
       },
     }).then(() => {
       resolve(true);

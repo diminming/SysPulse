@@ -39,3 +39,5 @@ server/syspulse
 .vscode
 **/__debug_*
 *.tsbuildinfo
+facade/env_conf/**
+server/env_conf/**

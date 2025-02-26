@@ -44,19 +44,17 @@ type Config struct {
 	Monitor struct {
 		Enable    bool `yaml:"enable"`
 		Frequency struct {
-			CFGHost int32 `yaml:"cfg_host"`
-			CFGCpu  int32 `yaml:"cfg_cpu"`
-			CFGIf   int32 `yaml:"cfg_interface"`
+			CFGHost string `yaml:"cfg_host"`
+			CFGCpu  string `yaml:"cfg_cpu"`
+			CFGIf   string `yaml:"cfg_interface"`
+			Runtime string `yaml:"runtime"`
 
-			RTNetConn int32 `yaml:"rt_net_conn"`
-			RTProc    int32 `yaml:"rt_proc"`
-
-			PerfCpu          int32 `yaml:"perf_cpu"`
-			PerfLoad         int32 `yaml:"perf_load"`
-			PerfMemory       int32 `yaml:"perf_memory"`
-			PerfNetInterface int32 `yaml:"perf_interface"`
-			PerfDisk         int32 `yaml:"perf_disk"`
-			PerfFileSystem   int32 `yaml:"perf_filesystem"`
+			PerfCpu          string `yaml:"perf_cpu"`
+			PerfLoad         string `yaml:"perf_load"`
+			PerfMemory       string `yaml:"perf_memory"`
+			PerfNetInterface string `yaml:"perf_interface"`
+			PerfDisk         string `yaml:"perf_disk"`
+			PerfFileSystem   string `yaml:"perf_filesystem"`
 		} `yaml:"frequency"`
 	} `yaml:"monitor"`
 

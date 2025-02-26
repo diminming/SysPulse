@@ -15,8 +15,8 @@ import {useRouter} from "vue-router"
 import type { MenuProps, ItemType } from 'ant-design-vue';
 import MenuLst from "./MenuLst"
 
-const selectedKeys2 = ref<string[]>(["1"]);
-const openKeys = ref<string[]>(["sub1"]);
+const selectedKeys2 = ref<string[]>(["Dashboard"]);
+const openKeys = ref<string[]>(["Dashboard"]);
 const router = useRouter()
 
 function getItem(label: VueElement | string, key: string, icon?: any, children?: ItemType[], type?: 'group', href?: string): ItemType {
@@ -50,7 +50,7 @@ const items: ItemType[] = reactive(
     return getItem(
       item.text, 
       item.name, 
-      h(item.icon), 
+      item.icon ? h(item.icon) : undefined, 
       item.children, 
       item.type, 
       item.href

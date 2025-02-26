@@ -1,51 +1,77 @@
 package server
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/syspulse/common"
 	"github.com/syspulse/logging"
 	"github.com/syspulse/model"
 	"github.com/syspulse/restful/server/response"
+	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
 )
 
 func NewRestfulServer() (*WebServer, error) {
+
+	BuildAuthCache()
+
 	router := gin.Default()
 	router.Use(logging.GinLogger(), logging.GinRecovery(common.SysArgs.Logging.Level == "debug"))
 	apiGrp := router.Group(common.SysArgs.Server.Restful.BasePath)
 	callbackGrp := router.Group(common.SysArgs.Server.Restful.BasePathCallback)
+	whiteLst := common.SysArgs.Server.Restful.WhiteLst
 
-	apiGrp.Use(func(c *gin.Context) {
+	apiGrp.Use(func(ctx *gin.Context) {
+		path := ctx.FullPath()
+		zap.L().Debug("request full path: ", zap.String("path", path))
+		method := strings.ToLower(ctx.Request.Method)
+		token := ctx.Request.Header.Get("token")
 
-		path := c.FullPath()
-		token := c.Request.Header.Get("token")
-
-		if (len(token) < 1 || len(model.CacheGet(token)) < 1) && path != fmt.Sprintf("%s/login", common.SysArgs.Server.Restful.BasePath) {
-			c.JSON(http.StatusForbidden, response.JsonResponse{Status: http.StatusForbidden, Msg: "non-logging"})
-			c.Abort()
+		if slices.Contains(whiteLst, method+":"+path) {
+			ctx.Next()
 			return
-		} else {
-			model.CacheExpire(token, common.SysArgs.Session.Expiration*time.Minute)
+		} else if len(token) < 1 || !model.CacheExists(token) {
+			ctx.JSON(http.StatusForbidden, response.JsonResponse{Status: http.StatusForbidden, Msg: "non-logging"})
+			ctx.Abort()
+			return
 		}
 
-		c.Next()
+		model.CacheExpire(token, common.SysArgs.Session.Expiration*time.Minute)
+		userInfo := model.CacheGet(token)
+		user := new(model.User)
+		err := json.Unmarshal([]byte(userInfo), user)
+		if err != nil {
+			zap.L().Panic("error unmarshalling user info in auth method.", zap.Error(err))
+		}
+
+		if user.ID == 0 {
+			ctx.Next()
+			return
+		} else {
+
+			roleIdentityLst := make([]string, 0)
+			for _, role := range user.RoleLst {
+				roleIdentityLst = append(roleIdentityLst, role.Identity)
+			}
+
+			result := CheckAuth(path, method, roleIdentityLst)
+
+			if result {
+				ctx.Next()
+				return
+			}
+
+			ctx.JSON(http.StatusUnauthorized, response.JsonResponse{Status: http.StatusUnauthorized, Msg: "no-auth"})
+			ctx.Abort()
+			return
+		}
+
 	})
-
-	// apiGrp.Use(func(c *gin.Context) {
-	// 	defer func() {
-	// 		if err := recover(); err != nil {
-	// 			// 简单返回友好提示，具体可自定义发生错误后处理逻辑
-	// 			c.JSON(http.StatusInternalServerError, response.JsonResponse{Status: http.StatusInternalServerError, Msg: err.(string)})
-	// 			c.Abort()
-	// 		}
-	// 	}()
-	// 	c.Next()
-	// })
-
 	return &WebServer{
 		router:      router,
 		ApiGroup:    apiGrp,

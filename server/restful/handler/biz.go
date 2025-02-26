@@ -60,21 +60,26 @@ func GetBizTotal() int64 {
 	return model.GetBizTotal()
 }
 
-func DeleteBiz(bizId int) {
+func DeleteBizFromDB(bizId int) {
 	sql := "delete from biz where id = ?"
 	model.DBDelete(sql, bizId)
+}
+
+func DeleteBiz(bizId int) {
+	model.DeleteBizFromGraphDB(bizId)
+	DeleteBizFromDB(bizId)
 }
 
 func NewBizRecord(ctx *gin.Context) {
 	body, err := io.ReadAll(ctx.Request.Body)
 	if err != nil {
-		fmt.Println(err)
+		zap.L().Error("error parsing request body: ", zap.Error(err))
 		return
 	}
 	var biz = model.Business{}
 	err = json.Unmarshal(body, &biz)
 	if err != nil {
-		fmt.Println(err)
+		zap.L().Error("error unpack request body: ", zap.Error(err))
 		return
 	}
 	biz.CreateTimestamp = time.Now().UnixMilli()
@@ -99,6 +104,15 @@ func UpdateBizRecord(ctx *gin.Context) {
 	biz.UpdateTimestamp = time.Now().UnixMilli()
 	UpdateBiz(&biz)
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: &biz, Msg: "success"})
+}
+
+func CountInst(ctx *gin.Context) {
+	bizId, err := strconv.ParseInt(ctx.Param("bizId"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "bizId is not a number."})
+	}
+	count := model.CountInst(bizId)
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: count, Msg: "success"})
 }
 
 func GetBizLstByPage(ctx *gin.Context) {
@@ -159,4 +173,35 @@ func GetBizById(ctx *gin.Context) {
 	biz := QueryBizById(int64(bizId))
 
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: biz, Msg: "success"})
+}
+
+func QueryBizTopo(ctx *gin.Context) {
+	bizId, err := strconv.ParseInt(ctx.Param("bizId"), 10, 64)
+	if err != nil {
+		zap.L().Error("can't process parameter biz_id from request: ", zap.Error(err))
+	}
+
+	body, err := io.ReadAll(ctx.Request.Body)
+	if err != nil {
+		zap.L().Error("error parsing request body: ", zap.Error(err))
+		return
+	}
+
+	setting := struct {
+		Min  int32    `json:"min"`
+		Max  int32    `json:"max"`
+		VSet []string `json:"vset"`
+		ESet []string `json:"eset"`
+	}{}
+	err = json.Unmarshal(body, &setting)
+	if err != nil {
+		zap.L().Error("error unpack request body: ", zap.Error(err))
+		return
+	}
+
+	result, err := model.QueryBizTopo(bizId, setting.Min, setting.Max, setting.VSet, setting.ESet)
+	if err != nil {
+		zap.L().Error("error query biz topo: ", zap.Error(err))
+	}
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: result, Msg: "success"})
 }

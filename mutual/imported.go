@@ -1,5 +1,12 @@
 package mutual
 
+import (
+	"fmt"
+
+	"github.com/shirou/gopsutil/v3/net"
+	"github.com/syspulse/mutual/common"
+)
+
 type CpuUtilization struct {
 	Percent float64
 }
@@ -16,10 +23,20 @@ type ListenStat struct {
 }
 
 type ProcessInfo struct {
+	Id         string `json:"id"`
 	Pid        int32  `json:"pid"`
 	Name       string `json:"name"`
 	Ppid       int32  `json:"ppid"`
 	CreateTime int64  `json:"create_time"`
 	Exe        string `json:"exe"`
 	Cmd        string `json:"cmd"`
+}
+
+func (p *ProcessInfo) Hash() uint32 {
+	return common.GetStringHash(fmt.Sprintf("%d|%d|%s|%s|%s|%d", p.Pid, p.Ppid, p.Name, p.Exe, p.Cmd, p.CreateTime))
+}
+
+type ProcessSnapshot struct {
+	ProcessLst []ProcessInfo        `json:"process_lst"`
+	ConnLst    []net.ConnectionStat `json:"connection_lst"`
 }

@@ -1,4 +1,4 @@
-identity: "dev.env"
+identity: "test1"
 logging:
   redirect: "stdout"
   level: "debug"
@@ -26,23 +26,21 @@ order:
 storage:
   file_server:
     endpoint: "localhost:9001"
-    access_key: "8VQtYwI69LQWFILvlIwr"
-    secret_key: "I67hoY6kegwwe2GcePmRO26kfkZscdZyLahiaeER"
+    access_key: "er84iy1wjjqTCg5Fwkm9"
+    secret_key: "uEoAWGTpdhcVHstDa7tVRLzx3rxWkEk2kvlgguG2"
     bucket: "syspulse"
     useSSL: false
   temp_dir: "/tmp"
 monitor:
   enable: true
   frequency:
-    cfg_host: 120
-    cfg_cpu: 120
-    cfg_interface: 120
-    rt_proc: 60
-    rt_net_conn: 10
-    perf_cpu: 3
-    perf_load: 3
-    perf_memory: 3
-    perf_disk: 3
-    perf_interface: 3
-    perf_filesystem: 120
-    
+    cfg_host: "10m"
+    cfg_cpu: "10m"
+    cfg_interface: "10m"
+    runtime: "1m"
+    perf_cpu: "1m"
+    perf_load: "1m"
+    perf_memory: "1m"
+    perf_disk: "1m"
+    perf_interface: "1m"
+    perf_filesystem: "30m"

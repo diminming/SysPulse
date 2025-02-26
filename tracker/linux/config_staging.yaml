@@ -1,17 +1,24 @@
 identity: "dev.env"
+logging:
+  redirect: "stdout"
+  level: "debug"
+  output: "/tmp/syspulse_tracker.log"
+  maxAge: 14
+  maxSize: 10
+  maxBackups: 3
 restful:
   addr: "0.0.0.0:24161"
   base_path: "/api"
 server:
   hub:
-    host: "192.168.0.200"
+    host: "192.168.26.100"
     port: 24160
   restful:
-    host: "192.168.0.200"
+    host: "localhost"
     port: 24162
     bash_path: "/callback"
 heartbeat:
-  host: "192.168.0.200"
+  host: "192.168.26.100"
   port: 24164
   bash_path: "/api"
 order:
@@ -19,22 +26,21 @@ order:
 storage:
   file_server:
     endpoint: "192.168.26.105:9001"
-    access_key: "g0ipu3vpDkZhTOVmIBkd"
-    secret_key: "gN6o0V5sO2fzZQ1lUe2gcddM6G6sViDBUF6o9NGb"
+    access_key: "er84iy1wjjqTCg5Fwkm9"
+    secret_key: "uEoAWGTpdhcVHstDa7tVRLzx3rxWkEk2kvlgguG2"
+    bucket: "syspulse"
     useSSL: false
   temp_dir: "/tmp"
 monitor:
   enable: true
   frequency:
-    cfg_host: 120
-    cfg_cpu: 120
-    cfg_interface: 120
-    rt_proc: 60
-    rt_net_conn: 10
-    perf_cpu: 3
-    perf_load: 3
-    perf_memory: 3
-    perf_disk: 3
-    perf_interface: 3
-    perf_filesystem: 120
-    
+    cfg_host: "12h"
+    cfg_cpu: "12h"
+    cfg_interface: "12h"
+    runtime: "15m"
+    perf_cpu: "1m"
+    perf_load: "1m"
+    perf_memory: "1m"
+    perf_disk: "1m"
+    perf_interface: "1m"
+    perf_filesystem: "30m"

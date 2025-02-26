@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "build:dev": "vite build --mode dev",
-    "build:prod": "vite build --mode prod",
+    "build:staging": "vite build --mode staging",
+    "build:cic": "vite build --mode cic",
+    "build:cmcc-xj": "vite build --mode cmcc-xj",
     "type-check": "vue-tsc --build --force"
   },
   "dependencies": {

@@ -16,9 +16,12 @@
                     </a-col>
                     <a-col :span="6">
                         <a-form-item name="" label="告警对象">
-                            <a-tag closable v-for="linux in formState.linuxLst" :key="linux.id" color="blue">{{
-                                linux.hostname }}</a-tag>
-                            <a-button @click="showLinuxLst = !showLinuxLst">选择</a-button>
+                            <a-tag closable v-for="linux in formState.linuxLst" :key="linux.id" color="blue">
+                                {{ linux.hostname }}
+                            </a-tag>
+                            <a-button @click="showLinuxLst = !showLinuxLst">
+                                选择
+                            </a-button>
                         </a-form-item>
                     </a-col>
                     <a-col :span="4">
@@ -47,6 +50,9 @@
                             {{ record.msg }}
                         </a>
                     </template>
+                    <template v-else-if="column.key === 'biz'">
+                        {{ record.biz.bizName }}
+                    </template>
                     <template v-else-if="column.key === 'timestamp'">
                         {{ dayjs(record.timestamp).format("YYYY/MM/DD HH:mm:ss") }}
                     </template>
@@ -62,6 +68,14 @@
                                 @confirm="disableAlarm(record.id)">
                                 <a-tag color="red">告警中</a-tag>
                             </a-popconfirm>
+                        </span>
+                    </template>
+                    <template v-else-if="column.key === 'source'">
+                        <span v-if="record.source === 'self'" style="font-weight: bold;color: green;">
+                            <a-tag color="processing">Agent</a-tag>
+                        </span>
+                        <span v-else-if="record.source === 'zbx'" style="font-weight: bold;;color: red;">
+                            <a-tag color="red">Zabbix</a-tag>
                         </span>
                     </template>
                 </template>
@@ -104,9 +118,11 @@ import dayjs from 'dayjs';
 import type { FormInstance } from 'ant-design-vue';
 import { Linux } from '../linux/api';
 import LinuxLst from "@/views/linux/LinuxLst.vue"
+import { BizUtil } from '../biz/BizAPI';
 
 const props = defineProps({
-    stage: String
+    stage: String,
+    biz: BizUtil
 })
 
 const showLinuxLst = ref(false)
@@ -114,7 +130,7 @@ const showLinuxLst = ref(false)
 const formRef = ref<FormInstance>()
 const pagination = reactive({
     page: 0,
-    pageSize: props["stage"] == "dashboard" ? 200 : 15,
+    pageSize: props["stage"] == "dashboard" ? 50 : 15,
     total: 0,
 })
 
@@ -131,7 +147,6 @@ const formState = reactive<{
     formState.linuxLst = linuxLst
 }
 const onFinish = () => {
-    console.log(formState)
     Alarm.loadPage({
         page: 0,
         pageSize: pagination.pageSize,
@@ -146,7 +161,6 @@ const onFinish = () => {
                 }).join(",")
         )()
     }).then((resp) => {
-        console.log(resp)
         alarmData.value = resp["data"]["lst"];
         pagination.total = resp["data"]["total"];
     })
@@ -192,6 +206,11 @@ const columns = [
         key: "linux",
         width: 160
     }, {
+        title: "业务系统",
+        dataIndex: "biz",
+        key: "biz",
+        width: 160
+    }, {
         title: "告警内容",
         dataIndex: "msg",
         key: "msg",
@@ -199,6 +218,11 @@ const columns = [
         title: "告警状态",
         dataIndex: "ack",
         key: "ack",
+        width: 100
+    }, {
+        title: "来源",
+        dataIndex: "source",
+        key: "source",
         width: 100
     }
 ]
@@ -221,9 +245,11 @@ const showAlarmDetail = (record: any) => {
 }
 
 onMounted(() => {
+    const biz = props.biz
     Alarm.loadPage({
         page: pagination.page,
-        pageSize: pagination.pageSize
+        pageSize: pagination.pageSize,
+        bizId: biz?.id
     }).then((resp) => {
         alarmData.value = resp["data"]["lst"];
         pagination.total = resp["data"]["total"];

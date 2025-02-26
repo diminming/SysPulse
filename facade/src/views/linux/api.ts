@@ -1,5 +1,5 @@
 import * as echarts from "echarts/core";
-import { CustomChart, GraphChart } from 'echarts/charts';
+import { GraphChart } from 'echarts/charts';
 
 import { JsonResponse } from "@/utils/common";
 import request from "@/utils/request"
@@ -9,7 +9,7 @@ import { _cf } from 'ant-design-vue/es/_util/cssinjs/hooks/useStyleRegister';
 import { v4 as uuidv4 } from 'uuid';
 
 
-echarts.use([CustomChart, GraphChart]);
+echarts.use([GraphChart]);
 
 class Node {
   id: string
@@ -61,6 +61,13 @@ export class Job {
     this.category = category
   }
 
+  deleteJob() {
+    return request({
+      url: `/job/${this.id}`,
+      method: "DELETE",
+    })
+  }
+
   getJobStatusTxt() {
     if (this.status) {
       const txt = JOB_STATUS_MAPPING.get(this.status)
@@ -100,7 +107,7 @@ export class TrafficAnalyzationJob extends Job {
   }
 }
 
-export function GetTrafficJobLst(page: Number, pageSize: Number, linuxId: Number|undefined) {
+export function GetTrafficJobLst(page: Number, pageSize: Number, linuxId: Number | undefined) {
   return request({
     url: "/job/traffic/page",
     method: "get",
@@ -135,7 +142,7 @@ export class ProfilingJob extends Job {
 
   getCreateTimestampTxt() {
     if (this.create_timestamp) {
-      return dayjs.unix(this.create_timestamp).format("YYYY/MM/DD hh:mm:ss")
+      return dayjs(this.create_timestamp).format("YYYY/MM/DD hh:mm:ss")
     }
   }
 
@@ -394,6 +401,7 @@ export const CaclUsage = (itemNew: any, itemOld: any) => {
     return ((1 - idle / (totalNew - totalOld)) * 100).toFixed(2)
   } catch (err) {
     console.error(err)
+    throw (err)
   }
 }
 
@@ -516,8 +524,8 @@ export class Linux {
         end
       }
     }).then((resp: any) => {
+      let userData: any = [], systemData: any = [], idleData: any = [], iowaitData: any = [], stealData: any = [], niceData: any = [], irqData: any = [], softirqData: any = [], guestData: any = [], guestniceData: any = []
       if (resp.data && resp.data != null) {
-        let userData: any = [], systemData: any = [], idleData: any = [], iowaitData: any = [], stealData: any = [], niceData: any = [], irqData: any = [], softirqData: any = [], guestData: any = [], guestniceData: any = []
         for (let i = 0; i < resp.data.length - 1; i = i + 2) {
           let item0 = resp.data[i]
           let item1 = resp.data[i + 1]
@@ -532,75 +540,75 @@ export class Linux {
           guestData.push([new Date(item1["timestamp"]), CaclCPUPercent(item1, item0, "guest")])
           guestniceData.push([new Date(item1["timestamp"]), CaclCPUPercent(item1, item0, "guestnice")])
         }
-        
-        renderChartInDashboard(selector, [
-          {
-            name: "user",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: userData
-          }, {
-            name: "system",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: systemData
-          }, {
-            name: "idle",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: idleData
-          }, {
-            name: "nice",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: niceData
-          }, {
-            name: "iowait",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: iowaitData
-          }, {
-            name: "irq",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: irqData
-          }, {
-            name: "softirq",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: softirqData
-          }, {
-            name: "steal",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: stealData
-          },
-
-          {
-            name: "guest",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: guestData
-          },
-
-          {
-            name: "guestnice",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: guestniceData
-          }
-        ])
       }
+
+      renderChartInDashboard(selector, [
+        {
+          name: "user",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: userData
+        }, {
+          name: "system",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: systemData
+        }, {
+          name: "idle",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: idleData
+        }, {
+          name: "nice",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: niceData
+        }, {
+          name: "iowait",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: iowaitData
+        }, {
+          name: "irq",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: irqData
+        }, {
+          name: "softirq",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: softirqData
+        }, {
+          name: "steal",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: stealData
+        },
+
+        {
+          name: "guest",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: guestData
+        },
+
+        {
+          name: "guestnice",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: guestniceData
+        }
+      ])
       chart.hideLoading()
     })
   }
@@ -619,39 +627,39 @@ export class Linux {
         end
       }
     }).then((resp: any) => {
+      let jsonResp = new JsonResponse(resp.data, resp.msg, resp.status);
+      let totalData: any = [], availableData: any = [], freeData: any = []
       if (resp.data && resp.data != null) {
-        let jsonResp = new JsonResponse(resp.data, resp.msg, resp.status);
-        let totalData: any = [], availableData: any = [], freeData: any = []
         jsonResp.Data.forEach((item: any) => {
           let timestamp: Date = new Date(item.timestamp)
           totalData.push([timestamp, item.total])
           availableData.push([timestamp, item.available])
           freeData.push([timestamp, item.free])
         })
-        renderChartInDashboard(".gallery .graph.mem", [
-          {
-            name: "Total",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: totalData
-          },
-          {
-            name: "Available",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: availableData
-          },
-          {
-            name: "Free",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: freeData
-          },
-        ])
       }
+      renderChartInDashboard(".gallery .graph.mem", [
+        {
+          name: "Total",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: totalData
+        },
+        {
+          name: "Available",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: availableData
+        },
+        {
+          name: "Free",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: freeData
+        },
+      ])
       chart.hideLoading()
     })
   }
@@ -670,41 +678,41 @@ export class Linux {
         end
       }
     }).then((resp: any) => {
+      const jsonResp = new JsonResponse(resp.data, resp.msg, resp.status),
+        load1Data: any = [],
+        load5Data: any = [],
+        load15Data: any = []
       if (resp.data && resp.data != null) {
-        const jsonResp = new JsonResponse(resp.data, resp.msg, resp.status),
-          load1Data: any = [],
-          load5Data: any = [],
-          load15Data: any = []
         jsonResp.Data.forEach((item: any) => {
           let timestamp: Date = new Date(item.timestamp)
           load1Data.push([timestamp, item.load1])
           load5Data.push([timestamp, item.load5])
           load15Data.push([timestamp, item.load15])
         })
-        renderChartInDashboard(selector, [
-          {
-            name: "Load 1",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: load1Data
-          },
-          {
-            name: "Load 5",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: load5Data
-          },
-          {
-            name: "Load 15",
-            type: 'line',
-            smooth: false,
-            symbol: 'none',
-            data: load15Data
-          },
-        ])
       }
+      renderChartInDashboard(selector, [
+        {
+          name: "Load 1",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: load1Data
+        },
+        {
+          name: "Load 5",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: load5Data
+        },
+        {
+          name: "Load 15",
+          type: 'line',
+          smooth: false,
+          symbol: 'none',
+          data: load15Data
+        },
+      ])
       chart.hideLoading()
     })
   }
@@ -756,7 +764,9 @@ export class Linux {
       selector2 = ".gallery .graph.inode",
       dom2 = document.querySelector(selector2),
       chart2 = echarts.getInstanceByDom(dom2 as HTMLElement) || echarts.init(dom2 as HTMLElement)
+    chart1.clear()
     chart1.showLoading()
+    chart2.clear()
     chart2.showLoading()
     request({
       url: "/perf/fs",
@@ -787,7 +797,9 @@ export class Linux {
       selector2 = ".gallery .disk.io",
       dom2 = document.querySelector(selector2),
       chart2 = echarts.getInstanceByDom(dom2 as HTMLElement) || echarts.init(dom2 as HTMLElement)
+    chart1.clear()
     chart1.showLoading()
+    chart2.clear()
     chart2.showLoading()
     request({
       url: "/perf/disk",
@@ -822,7 +834,9 @@ export class Linux {
       chart2 = echarts.getInstanceByDom(dom2 as HTMLElement) || echarts.init(dom2 as HTMLElement)
 
     chart1.showLoading()
+    chart1.clear()
     chart2.showLoading()
+    chart2.clear()
 
     request({
       url: "/perf/net",
@@ -877,7 +891,7 @@ export class Linux {
           labelLayout: {
             hideOverlap: true
           },
-          draggable: true,
+          draggable: false,
           data: nodes,
           categories: [{
             "name": "Linux",
@@ -893,14 +907,16 @@ export class Linux {
             "keyword": {}
           }],
           force: {
-            edgeLength: 200,
-            repulsion: 800,
-            gravity: 0.1
+            initLayout: "circular",
+            edgeLength: [50, 100],
+            repulsion: 500,
+            layoutAnimation: false,
+            gravity: 0.3
           },
           lineStyle: {
             width: 0.8,
-            curveness: 0.3,
-            opacity: 0.7
+            // curveness: 0.3,
+            // opacity: 0.7
           },
           edges: links
         }
@@ -908,92 +924,108 @@ export class Linux {
     }
     chart.setOption(option)
   }
-  RenderTopological(callback: any) {
-    const dom = document.querySelector("div.topo"),
-      chart = echarts.getInstanceByDom(dom as HTMLElement) || echarts.init(dom as HTMLElement)
-    chart.showLoading();
-    request({
-      url: `/linux/${this.id}/topo`,
-      method: "get",
-    }).then((resp: any) => {
+  RenderTopological(showAll: Boolean) {
 
-      chart.hideLoading()
+    const genVertex = (v: any) => {
+      const key = v["_id"]
 
-      const verteies = new Map()
-      const links: any[] = []
-      const infoLst = resp["data"]
+      const item = {
+        "id": key,
+        "name": "",
+        "symbolSize": -1,
+        "category": -1,
+        "detail": {}
+      }
 
-      infoLst.forEach((item: any) => {
+      if (key.startsWith("process/")) {
+        item.category = 1
+        item.symbolSize = 20
+        item.name = `${v["pid"]}:${v['info']['name']}`
+        item.detail = {
+          "_id": v["_id"],
+          "pid": v["pid"],
+          "name": v['info']['name'],
+          "exec": v["info"]['exec'],
+          "timestamp": v['info']['create_time']
+        }
+      } else if (key.startsWith("host/")) {
+        item.category = 0
+        item.symbolSize = 40
+        item.name = v['info'] ? v['info']['hostname'] : `[${v['name']}]`
+      } else if (key.startsWith("business/")) {
+        item.category = 2
+        item.symbolSize = 60
+        item.name = v['bizName']
+      }
+      return item
+    }
 
-        item['vertices'].forEach((v: any) => {
-          const key = v['_id']
-          const info = v["info"]
-          if (!verteies.has(key)) {
-            let category = -1, name = "", symbolSize = 5, detail = {}
+    const genEdge = (edge, verteies) => {
+      let color = "", type = ""
+      if (edge["_id"].startsWith("deployment/")) {
+        color = "#1E90FF"
+        type = "depl"
+      } else if (edge["_id"].startsWith("conn_tcp/")) {
+        color = "#FF4500"
+        type = "conn_tcp"
+      }
+      const link = {
+        "source": verteies.findIndex(el => {
+          return el.id == edge['_from']
+        }),
+        "target": verteies.findIndex(el => {
+          return el.id == edge['_to']
+        }),
+        "lineStyle": {
+          "color": color
+        },
+        "_detail": {
+          "type": type
+        }
+      }
+      return link
+    }
 
-            if (key.startsWith("process/")) {
-              category = 1
-              symbolSize = 20
-              name = `${v["pid"]}:${v['info']['name']}`
-              detail = {
-                "_id": v["_id"],
-                "pid": v["pid"],
-                "name": v['info']['name'],
-                "exec": v["info"]['exec'],
-                "timestamp": v['info']['create_time']
-              }
-            } else if (key.startsWith("host/")) {
-              category = 0
-              symbolSize = 40
-              name = info ? v['info']['hostname'] : `[${v['name']}]`
-              // detail = {
-              //   "_id": v["_id"],
-              //   "pid": v["pid"],
-              //   "name": v['info']['name'],
-              //   "exec": v["info"]['exec'],
-              //   "timestamp": v['info']['create_time']
-              // }
-            } else if (key.startsWith("business/")) {
-              category = 2
-              symbolSize = 60
-              name = v['bizName']
-            }
+    return new Promise(resolve => {
+      const dom = document.querySelector("div.topo"),
+        chart = echarts.getInstanceByDom(dom as HTMLElement) || echarts.init(dom as HTMLElement)
+        chart.clear()
+      chart.showLoading();
+      request({
+        url: `/linux/${this.id}/topo?showAll=${showAll}`,
+        method: "get",
+      }).then((resp: any) => {
 
-            verteies.set(key, {
-              "name": name,
-              "symbolSize": symbolSize,
-              "_detail": detail,
-              "category": category
-            })
+        const vertexMap = new Map()
+        const data = resp["data"]
+        data.forEach((element: any) => {
+          if(element.vertex && element.vertex != null) {
+            const v = genVertex(element.vertex)
+            vertexMap.set(v.id, v)
+          }
+        });
+
+        let edges = new Array()
+        
+        const verteies = Array.from(vertexMap.values())
+
+        data.forEach(element => {
+          if (element.edge && element.edge != null) {
+            const edge = genEdge(element.edge, verteies)
+            edges.push(edge)
           }
         })
 
-        item['edges'].forEach((e: any) => {
-          let color = "", type = ""
-          if (e["_id"].startsWith("deployment/")) {
-            color = "#1E90FF"
-            type = "depl"
-          } else if (e["_id"].startsWith("conn_tcp/")) {
-            color = "#FF4500"
-            type = "conn_tcp"
-          }
-          links.push({
-            "source": verteies.get(e['_from'])["name"],
-            "target": verteies.get(e['_to'])["name"],
-            "lineStyle": {
-              "color": color
-            },
-            "_detail": {
-              "type": type
-            }
-          })
-        })
+        chart.hideLoading()
+        this.RenderTopoGraph(chart, verteies, edges)
+        // this.RenderTopoGraph(chart, verteies.filter((item:any) => {
+        //   console.log(item)
+        //   return item.category != 1 || item.count > 1
+        // }), edges)
+
+        resolve({verteies, edges})
 
       })
-
-      if (callback)
-        callback(chart, verteies, links)
-
     })
   }
 }
@@ -1067,20 +1099,22 @@ const RenderNetThroughputPerf = (resp: JsonResponse) => {
 
 const RenderDiskIOPerf = (resp: JsonResponse) => {
   let mapping = new Map<string, Array<any>>()
-  resp.Data.forEach((item: any) => {
-    let timestamp: Date = new Date(item.timestamp),
-      name: string = item.name
-    Object.keys(item).forEach((key: string) => {
-      if (key === "name" || key === "timestamp" || key === "id" || key === "readbytes" || key === "writebytes")
-        return
-      let mapKey = name + " - " + key
-      if (mapping.has(mapKey)) {
-        mapping.get(mapKey)?.push([timestamp, item[key]])
-      } else {
-        mapping.set(mapKey, [])
-      }
+  if (resp && resp.Data && resp.Data != null) {
+    resp.Data.forEach((item: any) => {
+      let timestamp: Date = new Date(item.timestamp),
+        name: string = item.name
+      Object.keys(item).forEach((key: string) => {
+        if (key === "name" || key === "timestamp" || key === "id" || key === "readbytes" || key === "writebytes")
+          return
+        let mapKey = name + " - " + key
+        if (mapping.has(mapKey)) {
+          mapping.get(mapKey)?.push([timestamp, item[key]])
+        } else {
+          mapping.set(mapKey, [])
+        }
+      })
     })
-  })
+  }
 
   const series: Array<any> = []
   mapping.forEach((dataLst, path) => {
@@ -1100,20 +1134,22 @@ const RenderDiskIOPerf = (resp: JsonResponse) => {
 
 const RenderDiskThroughputPerf = (resp: JsonResponse) => {
   let mapping = new Map<string, Array<any>>()
-  resp.Data.forEach((item: any) => {
-    let timestamp: Date = new Date(item.timestamp),
-      key1 = item.name + " - Read", key2 = item.name + " - Write"
-    if (mapping.has(key1)) {
-      mapping.get(key1)?.push([timestamp, item["readbytes"]])
-    } else {
-      mapping.set(key1, [])
-    }
-    if (mapping.has(key2)) {
-      mapping.get(key2)?.push([timestamp, item["writebytes"]])
-    } else {
-      mapping.set(key2, [])
-    }
-  })
+  if (resp && resp.Data && resp.Data != null) {
+    resp.Data.forEach((item: any) => {
+      let timestamp: Date = new Date(item.timestamp),
+        key1 = item.name + " - Read", key2 = item.name + " - Write"
+      if (mapping.has(key1)) {
+        mapping.get(key1)?.push([timestamp, item["readbytes"]])
+      } else {
+        mapping.set(key1, [])
+      }
+      if (mapping.has(key2)) {
+        mapping.get(key2)?.push([timestamp, item["writebytes"]])
+      } else {
+        mapping.set(key2, [])
+      }
+    })
+  }
 
   const series: Array<any> = []
   mapping.forEach((dataLst, path) => {
@@ -1133,15 +1169,17 @@ const RenderDiskThroughputPerf = (resp: JsonResponse) => {
 
 const RenderInodePerf = (resp: JsonResponse) => {
   let mapping = new Map<string, Array<any>>()
-  resp.Data.forEach((item: any) => {
-    let timestamp: Date = new Date(item.timestamp),
-      path = item.path
-    if (mapping.has(path)) {
-      mapping.get(path)?.push([timestamp, item["inodesused"]])
-    } else {
-      mapping.set(path, [])
-    }
-  })
+  if (resp && resp.Data && resp.Data != null) {
+    resp.Data.forEach((item: any) => {
+      let timestamp: Date = new Date(item.timestamp),
+        path = item.path
+      if (mapping.has(path)) {
+        mapping.get(path)?.push([timestamp, item["inodesused"]])
+      } else {
+        mapping.set(path, [])
+      }
+    })
+  }
   const series: Array<any> = []
   mapping.forEach((dataLst, path) => {
     if (path.startsWith("/sys") || path.startsWith("/snap") || path.length === 0) {
@@ -1163,15 +1201,17 @@ const RenderInodePerf = (resp: JsonResponse) => {
 
 const RenderFSPerf = (resp: JsonResponse) => {
   let mapping = new Map<string, Array<any>>()
-  resp.Data.forEach((item: any) => {
-    let timestamp: Date = new Date(item.timestamp),
-      path = item.path
-    if (mapping.has(path)) {
-      mapping.get(path)?.push([timestamp, item["used"]])
-    } else {
-      mapping.set(path, [])
-    }
-  })
+  if (resp && resp.Data && resp.Data != null) {
+    resp.Data.forEach((item: any) => {
+      let timestamp: Date = new Date(item.timestamp),
+        path = item.path
+      if (mapping.has(path)) {
+        mapping.get(path)?.push([timestamp, item["used"]])
+      } else {
+        mapping.set(path, [])
+      }
+    })
+  }
   const series: Array<any> = []
   mapping.forEach((dataLst, path) => {
     if (path.startsWith("/sys") || path.startsWith("/snap") || path.length === 0) {
@@ -1193,12 +1233,14 @@ const RenderFSPerf = (resp: JsonResponse) => {
 
 const RenderSwapPerf = (resp: JsonResponse) => {
   let totalData: any = [], usedData: any = [], freeData: any = []
-  resp.Data.forEach((item: any) => {
-    let timestamp: Date = new Date(item.timestamp)
-    totalData.push([timestamp, item.total])
-    usedData.push([timestamp, item.used])
-    freeData.push([timestamp, item.free])
-  })
+  if (resp && resp.Data && resp.Data != null) {
+    resp.Data.forEach((item: any) => {
+      let timestamp: Date = new Date(item.timestamp)
+      totalData.push([timestamp, item.total])
+      usedData.push([timestamp, item.used])
+      freeData.push([timestamp, item.free])
+    })
+  }
   renderChartInDashboard(".gallery .graph.swap", [
     {
       name: "Total",
@@ -1225,11 +1267,13 @@ const RenderSwapPerf = (resp: JsonResponse) => {
 }
 const RenderSwapExchangePerf = (resp: JsonResponse) => {
   let sinData: any = [], soutData: any = []
-  resp.Data.forEach((item: any) => {
-    let timestamp: Date = new Date(item.timestamp)
-    sinData.push([timestamp, item.sin])
-    soutData.push([timestamp, item.sout])
-  })
+  if (resp && resp.Data && resp.Data != null) {
+    resp.Data.forEach((item: any) => {
+      let timestamp: Date = new Date(item.timestamp)
+      sinData.push([timestamp, item.sin])
+      soutData.push([timestamp, item.sout])
+    })
+  }
   renderChartInDashboard(".gallery .graph.swap.exchange", [
     {
       name: "Swap In",
@@ -1250,13 +1294,14 @@ const RenderSwapExchangePerf = (resp: JsonResponse) => {
 }
 const RenderMemoryExchangePerf = (resp: JsonResponse) => {
   let pginData: any = [], pgoutData: any = [], pgfaultData: any = []
-  resp.Data.forEach((item: any) => {
-    // debugger
-    let timestamp: Date = new Date(item.timestamp)
-    pginData.push([timestamp, item.pgin])
-    pgoutData.push([timestamp, item.pgout])
-    pgfaultData.push([timestamp, item.pgfault])
-  })
+  if (resp && resp.Data && resp.Data != null) {
+    resp.Data.forEach((item: any) => {
+      let timestamp: Date = new Date(item.timestamp)
+      pginData.push([timestamp, item.pgin])
+      pgoutData.push([timestamp, item.pgout])
+      pgfaultData.push([timestamp, item.pgfault])
+    })
+  }
   renderChartInDashboard(".gallery .graph.mem.exchange", [
     {
       name: "Page In",
@@ -1294,9 +1339,12 @@ export default {
     })
   },
   RenderLoad1Line: (resp: JsonResponse) => {
-    let data = resp.Data.map((value: any, index: number, array: any[]) => {
-      return [new Date(value.timestamp), value.load1]
-    })
+    let data = []
+    if (resp.Data && resp.Data != null) {
+      data = resp.Data.map((value: any, index: number, array: any[]) => {
+        return [new Date(value.timestamp), value.load1]
+      })
+    }
     let dom = document.querySelector(".graph.load-mini"),
       myChart = echarts.getInstanceByDom(dom as HTMLElement) || echarts.init(dom as HTMLElement),
       options = {
@@ -1326,6 +1374,7 @@ export default {
           }
         ]
       }
+    myChart.clear()
     myChart.setOption(options)
   },
   GetSwapUsedLine: (linuxId: number, start: number, end: number) => {
@@ -1340,9 +1389,12 @@ export default {
     })
   },
   RenderSwapUsedLine: (resp: JsonResponse) => {
-    let data = resp.Data.map((value: any, index: number, array: any[]) => {
-      return [new Date(value.timestamp), value.used]
-    })
+    let data = []
+    if (resp.Data && resp.Data != null) {
+      data = resp.Data.map((value: any, index: number, array: any[]) => {
+        return [new Date(value.timestamp), value.used]
+      })
+    }
     let dom = document.querySelector(".graph.swap-mini"),
       myChart = echarts.getInstanceByDom(dom as HTMLElement) || echarts.init(dom as HTMLElement),
       options = {
@@ -1372,6 +1424,7 @@ export default {
           }
         ]
       }
+    myChart.clear()
     myChart.setOption(options)
   },
   GetAvailableMemoryLine: (linuxId: number, start: number, end: number) => {
@@ -1386,9 +1439,12 @@ export default {
     })
   },
   RenderAvailableMemoryLine: (resp: JsonResponse) => {
-    let data = resp.Data.map((value: any, index: number, array: any[]) => {
-      return [new Date(value.timestamp), value.available]
-    })
+    let data = []
+    if (resp.Data && resp.Data != null) {
+      data = resp.Data.map((value: any, index: number, array: any[]) => {
+        return [new Date(value.timestamp), value.available]
+      })
+    }
     let dom = document.querySelector(".graph.mem-available-mini"),
       myChart = echarts.getInstanceByDom(dom as HTMLElement) || echarts.init(dom as HTMLElement),
       options = {
@@ -1418,6 +1474,7 @@ export default {
           }
         ]
       }
+    myChart.clear()
     myChart.setOption(options)
   },
   GetCpuUsageLine: (linuxId: number, start: number, end: number) => {
@@ -1433,16 +1490,17 @@ export default {
   },
   RenderCpuUsageLine: (resp: JsonResponse) => {
     let data = []
-    for (let i = 0; i < resp.Data.length - 1; i = i + 2) {
-      let item0 = resp.Data[i]
-      let item1 = resp.Data[i + 1]
-      let usage = CaclUsage(item1, item0)
-      data.push([
-        new Date(item1["timestamp"]),
-        usage
-      ])
+    if (resp.Data && resp.Data != null) {
+      for (let i = 0; i < resp.Data.length - 1; i = i + 2) {
+        let item0 = resp.Data[i]
+        let item1 = resp.Data[i + 1]
+        let usage = CaclUsage(item1, item0)
+        data.push([
+          new Date(item1["timestamp"]),
+          usage
+        ])
+      }
     }
-
     let dom = document.querySelector(".graph.cpu-usage-mini"),
       myChart = echarts.getInstanceByDom(dom as HTMLElement) || echarts.init(dom as HTMLElement),
       options = {
@@ -1472,6 +1530,7 @@ export default {
           }
         ]
       }
+    myChart.clear()
     myChart.setOption(options)
   },
   GetDiskIOLine: (linuxId: number, start: number, end: number) => {
@@ -1486,9 +1545,12 @@ export default {
     })
   },
   RenderDiskWriteCounterLine: (resp: JsonResponse) => {
-    let data = resp.Data.map((value: any, index: number, array: any[]) => {
-      return [new Date(value.timestamp), value.writecount]
-    })
+    let data = [];
+    if (resp.Data && resp.Data != null) {
+      data = resp.Data.map((value: any, index: number, array: any[]) => {
+        return [new Date(value.timestamp), value.writecount]
+      })
+    }
     let dom = document.querySelector(".graph.disk-write-counter-mini"),
       myChart = echarts.getInstanceByDom(dom as HTMLElement) || echarts.init(dom as HTMLElement),
       options = {
@@ -1518,12 +1580,16 @@ export default {
           }
         ]
       }
+    myChart.clear()
     myChart.setOption(options)
   },
   RenderDiskReadCounterLine: (resp: JsonResponse) => {
-    let data = resp.Data.map((value: any, index: number, array: any[]) => {
-      return [new Date(value.timestamp), value.readcount]
-    })
+    let data = [];
+    if (resp.Data && resp.Data != null) {
+      data = resp.Data.map((value: any, index: number, array: any[]) => {
+        return [new Date(value.timestamp), value.readcount]
+      })
+    }
     let dom = document.querySelector(".graph.disk-read-counter-mini"),
       myChart = echarts.getInstanceByDom(dom as HTMLElement) || echarts.init(dom as HTMLElement),
       options = {
@@ -1553,6 +1619,7 @@ export default {
           }
         ]
       }
+    myChart.clear()
     myChart.setOption(options)
   },
   RenderDiskIOCounterLine: function (resp: JsonResponse) {
@@ -1571,9 +1638,12 @@ export default {
     })
   },
   RenderIfRecvCounterLine: (resp: JsonResponse) => {
-    let data = resp.Data.map((value: any, index: number, array: any[]) => {
-      return [new Date(value.timestamp), value.bytesrecv]
-    })
+    let data = []
+    if (resp.Data && resp.Data != null) {
+      data = resp.Data.map((value: any, index: number, array: any[]) => {
+        return [new Date(value.timestamp), value.bytesrecv]
+      })
+    }
     let dom = document.querySelector(".graph.if-recv-mini"),
       myChart = echarts.getInstanceByDom(dom as HTMLElement) || echarts.init(dom as HTMLElement),
       options = {
@@ -1603,12 +1673,16 @@ export default {
           }
         ]
       }
+    myChart.clear()
     myChart.setOption(options)
   },
   RenderIfSentCounterLine: (resp: JsonResponse) => {
-    let data = resp.Data.map((value: any, index: number, array: any[]) => {
-      return [new Date(value.timestamp), value.bytessent]
-    })
+    let data = []
+    if (resp.Data && resp.Data != null) {
+      data = resp.Data.map((value: any, index: number, array: any[]) => {
+        return [new Date(value.timestamp), value.bytessent]
+      })
+    }
     let dom = document.querySelector(".graph.if-sent-mini"),
       myChart = echarts.getInstanceByDom(dom as HTMLElement) || echarts.init(dom as HTMLElement),
       options = {
@@ -1629,7 +1703,6 @@ export default {
         animation: false,
         series: [
           {
-            name: 'Load 1',
             type: 'line',
             smooth: true,
             symbol: 'none',
@@ -1638,6 +1711,7 @@ export default {
           }
         ]
       }
+    myChart.clear()
     myChart.setOption(options)
   },
   RenderIfIOCounterLine: function (resp: JsonResponse) {

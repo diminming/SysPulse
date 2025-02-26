@@ -63,5 +63,5 @@ func Upload2FileServer(bucketName, objectName, filePath, contentType string) {
 		zap.L().Error("error upload to fileserver.", zap.Error(err))
 	}
 
-	zap.L().Info("Successfully uploaded %s of size %d\n", zap.String("target name", objectName), zap.Int64("size", info.Size))
+	zap.L().Info("Successfully uploaded result file.", zap.String("target name", objectName), zap.Int64("size", info.Size))
 }

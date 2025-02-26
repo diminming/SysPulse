@@ -1,9 +1,9 @@
 USE `syspulse`
--- MySQL dump 10.13  Distrib 8.4.0, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 8.4.3, for Linux (x86_64)
 --
 -- Host: 127.0.0.1    Database: syspulse
 -- ------------------------------------------------------
--- Server version	8.4.2
+-- Server version	8.4.3
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -31,11 +31,13 @@ CREATE TABLE `alarm` (
   `biz_id` bigint NOT NULL,
   `trigger_id` varchar(100) NOT NULL,
   `trigger` varchar(500) NOT NULL,
+  `level` varchar(45) NOT NULL,
   `ack` tinyint(1) NOT NULL,
+  `source` varchar(45) NOT NULL,
   `msg` varchar(200) NOT NULL,
   `create_timestamp` bigint NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=368 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=620 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -53,7 +55,7 @@ CREATE TABLE `biz` (
   `create_timestamp` bigint NOT NULL,
   `update_timestamp` bigint NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=77 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1256 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -202,7 +204,7 @@ CREATE TABLE `job` (
   `create_timestamp` bigint NOT NULL,
   `update_timestamp` bigint NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -214,14 +216,71 @@ DROP TABLE IF EXISTS `linux`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `linux` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `hostname` varchar(20) NOT NULL,
+  `hostname` varchar(200) NOT NULL,
   `linux_id` varchar(200) NOT NULL,
   `biz_id` int NOT NULL,
   `agent_conn` varchar(200) DEFAULT NULL,
+  `ext_id` varchar(20) DEFAULT NULL,
   `create_timestamp` bigint NOT NULL,
   `update_timestamp` bigint NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1738 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `menu`
+--
+
+DROP TABLE IF EXISTS `menu`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `menu` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL,
+  `identity` varchar(200) NOT NULL,
+  `type` varchar(45) NOT NULL,
+  `url` varchar(500) NOT NULL,
+  `index` int NOT NULL,
+  `parent` bigint NOT NULL,
+  `createTimestamp` bigint NOT NULL,
+  `updateTimestamp` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_unique_user_identity` (`identity`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `menu_permission`
+--
+
+DROP TABLE IF EXISTS `menu_permission`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `menu_permission` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `menu_id` bigint NOT NULL,
+  `permission_id` bigint NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `nmon`
+--
+
+DROP TABLE IF EXISTS `nmon`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `nmon` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `hostname` varchar(200) NOT NULL,
+  `from` bigint NOT NULL,
+  `to` bigint NOT NULL,
+  `path` varchar(1000) DEFAULT NULL,
+  `source` varchar(100) NOT NULL,
+  `createTimestamp` bigint NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -246,8 +305,9 @@ CREATE TABLE `perf_cpu` (
   `guest` double NOT NULL,
   `guestnice` double NOT NULL,
   `timestamp` bigint NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=700933 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`id`),
+  KEY `idx_perf_cpu_linux_id_timestamp` (`linux_id`,`timestamp`)
+) ENGINE=InnoDB AUTO_INCREMENT=1064610 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -275,8 +335,9 @@ CREATE TABLE `perf_disk_io` (
   `serialnumber` varchar(200) NOT NULL,
   `label` varchar(200) NOT NULL,
   `timestamp` bigint NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1661429 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`id`),
+  KEY `idx_perf_disk_io_linux_id_timestamp` (`linux_id`,`timestamp`)
+) ENGINE=InnoDB AUTO_INCREMENT=2750922 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -300,8 +361,9 @@ CREATE TABLE `perf_fs_usage` (
   `inodesfree` bigint NOT NULL,
   `inodesusedpercent` double NOT NULL,
   `timestamp` bigint NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=801955 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`id`),
+  KEY `idx_perf_fs_usage_linux_id_timestamp` (`linux_id`,`timestamp`)
+) ENGINE=InnoDB AUTO_INCREMENT=1401785 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -326,8 +388,9 @@ CREATE TABLE `perf_if_io` (
   `fifoin` bigint NOT NULL,
   `fifoout` bigint NOT NULL,
   `timestamp` bigint NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1260142 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`id`),
+  KEY `idx_perf_if_io_linux_id_timestamp` (`linux_id`,`timestamp`)
+) ENGINE=InnoDB AUTO_INCREMENT=3789282 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -344,8 +407,9 @@ CREATE TABLE `perf_load` (
   `load5` double NOT NULL,
   `load15` double NOT NULL,
   `timestamp` bigint NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=156370 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`id`),
+  KEY `idx_perf_load_linux_id_timestamp` (`linux_id`,`timestamp`)
+) ENGINE=InnoDB AUTO_INCREMENT=516382 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -397,8 +461,9 @@ CREATE TABLE `perf_mem` (
   `hugepagesize` bigint NOT NULL,
   `anonhugepages` bigint NOT NULL,
   `timestamp` bigint NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=407179 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`id`),
+  KEY `idx_perf_mem_linux_id_timestamp` (`linux_id`,`timestamp`)
+) ENGINE=InnoDB AUTO_INCREMENT=769850 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -422,8 +487,61 @@ CREATE TABLE `perf_swap` (
   `pgfault` bigint NOT NULL,
   `pgmajfault` bigint NOT NULL,
   `timestamp` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_perf_swap_linux_id_timestamp` (`linux_id`,`timestamp`)
+) ENGINE=InnoDB AUTO_INCREMENT=497090 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `permission`
+--
+
+DROP TABLE IF EXISTS `permission`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `permission` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `identity` varchar(200) NOT NULL,
+  `name` varchar(200) NOT NULL,
+  `method` varchar(45) NOT NULL,
+  `url` varchar(200) NOT NULL,
+  `createTimestamp` bigint NOT NULL,
+  `updateTimestamp` bigint NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=138645 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `role`
+--
+
+DROP TABLE IF EXISTS `role`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `role` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `identity` varchar(20) NOT NULL,
+  `name` varchar(200) NOT NULL,
+  `createTimestamp` bigint NOT NULL,
+  `updateTimestamp` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_unique_role_identity` (`identity`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `role_permission`
+--
+
+DROP TABLE IF EXISTS `role_permission`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `role_permission` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `role_id` bigint NOT NULL,
+  `permission_id` bigint NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=70 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -440,8 +558,25 @@ CREATE TABLE `user` (
   `is_active` int NOT NULL,
   `createTimestamp` bigint NOT NULL,
   `updateTimestamp` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_unique_user_username` (`username`) /*!80000 INVISIBLE */,
+  KEY `idx_user_username_passwd_is_active` (`username`,`passwd`,`is_active`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `user_role`
+--
+
+DROP TABLE IF EXISTS `user_role`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_role` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `role_id` bigint NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -453,4 +588,4 @@ CREATE TABLE `user` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-10-15 17:17:36
+-- Dump completed on 2025-02-25 13:46:29

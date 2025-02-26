@@ -17,13 +17,10 @@ export default defineConfig({
     }
   },
   server: {
-    open: false,
-    proxy: {
-      "/api": {
-        target: "http://localhost:24162",
-        changeOrigin: true,
-        // rewrite: (path) => path.replace(/^\/api/, ""),
-      },
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      port: 5173,
     },
   },
 })

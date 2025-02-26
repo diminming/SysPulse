@@ -1,17 +1,23 @@
 package handler
 
 import (
+	"encoding/json"
+	"errors"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/syspulse/component"
 	"github.com/syspulse/model"
 	"github.com/syspulse/restful/server/response"
+	"go.uber.org/zap"
 )
 
-func genSqlWhere(status string, from, util int64, targetLst []int64) ([]string, []any) {
+func genSqlWhere(status string, from, util int64, targetLst []int64, bizId int64) ([]string, []any) {
 	conditionLst := make([]string, 0)
 	args := make([]any, 0)
 
@@ -44,16 +50,21 @@ func genSqlWhere(status string, from, util int64, targetLst []int64) ([]string, 
 		conditionLst = append(conditionLst, condition_in.String())
 	}
 
+	if bizId > 0 {
+		conditionLst = append(conditionLst, "biz_id = ?")
+		args = append(args, bizId)
+	}
+
 	return conditionLst, args
 }
 
-func GetAlarmByPage(status string, from, util int64, targetLst []int64, page int, pageSize int) []model.Alarm {
+func GetAlarmByPage(status string, from, util int64, targetLst []int64, bizId int64, page int, pageSize int) []model.Alarm {
 	first := page * pageSize
 	result := make([]model.Alarm, 0)
 
 	sqlArgs := make([]any, 0)
 	sqlstr := new(strings.Builder)
-	sqlstr.WriteString("SELECT a.id, a.timestamp, linux.hostname, a.ack, a.`msg`, a.create_timestamp ")
+	sqlstr.WriteString("SELECT a.id, a.timestamp, linux.hostname, a.ack, a.source, a.`msg`, a.create_timestamp, b.id as bizid, b.biz_name ")
 	sqlstr.WriteString("FROM ")
 	sqlstr.WriteString("(SELECT  ")
 	sqlstr.WriteString("`id`, ")
@@ -61,11 +72,12 @@ func GetAlarmByPage(status string, from, util int64, targetLst []int64, page int
 	sqlstr.WriteString("`linux_id`, ")
 	sqlstr.WriteString("`msg`, ")
 	sqlstr.WriteString("`ack`, ")
+	sqlstr.WriteString("`source`, ")
 	sqlstr.WriteString("`create_timestamp` ")
 	sqlstr.WriteString("FROM ")
 	sqlstr.WriteString("alarm ")
 
-	conditionLst, args := genSqlWhere(status, from, util, targetLst)
+	conditionLst, args := genSqlWhere(status, from, util, targetLst, bizId)
 	if len(conditionLst) > 0 {
 		sqlstr.WriteString("WHERE ")
 		sqlstr.WriteString(strings.Join(conditionLst, " and "))
@@ -73,36 +85,50 @@ func GetAlarmByPage(status string, from, util int64, targetLst []int64, page int
 		sqlArgs = append(sqlArgs, args...)
 	}
 
-	sqlstr.WriteString("ORDER BY `timestamp` DESC ")
+	sqlstr.WriteString("ORDER BY `timestamp` DESC, `id` DESC ")
 	sqlstr.WriteString("LIMIT ? , ?) a ")
 	sqlArgs = append(sqlArgs, first)
 	sqlArgs = append(sqlArgs, pageSize)
 	sqlstr.WriteString("INNER JOIN ")
-	sqlstr.WriteString("linux ON a.linux_id = linux.id;")
+	sqlstr.WriteString("linux ON a.linux_id = linux.id left join biz b on linux.biz_id = b.id;")
 
 	lst := model.DBSelect(sqlstr.String(), sqlArgs...)
 	for _, item := range lst {
 
-		result = append(result, model.Alarm{
+		alarm := model.Alarm{
 			Id:              item["id"].(int64),
 			Timestamp:       item["timestamp"].(int64),
 			CreateTimestamp: item["create_timestamp"].(int64),
 			Msg:             string(item["msg"].([]uint8)),
 			Ack:             item["ack"].(int64) == 1,
+			Source:          string(item["source"].([]uint8)),
 			Linux: model.Linux{
 				Hostname: string(item["hostname"].([]uint8)),
 			},
-		})
+		}
+
+		bizId, exsits := item["bizid"]
+		if exsits && bizId != nil {
+			bizIdInt := bizId.(int64)
+			if bizIdInt > 0 {
+				alarm.Biz = model.Business{
+					Id:      bizId.(int64),
+					BizName: string(item["biz_name"].([]uint8)),
+				}
+			}
+		}
+
+		result = append(result, alarm)
 
 	}
 	return result
 }
 
-func GetTotalofAlarm(status string, from, util int64, targetLst []int64) int64 {
+func GetTotalofAlarm(status string, from, util int64, targetLst []int64, bizId int64) int64 {
 	sqlstr := new(strings.Builder)
 	sqlstr.WriteString("select count(id) as total from alarm ")
 	sqlArgs := make([]any, 0)
-	conditionLst, args := genSqlWhere(status, from, util, targetLst)
+	conditionLst, args := genSqlWhere(status, from, util, targetLst, bizId)
 	if len(conditionLst) > 0 {
 		sqlstr.WriteString("WHERE ")
 		sqlstr.WriteString(strings.Join(conditionLst, " and "))
@@ -164,10 +190,22 @@ func GetAlarmLstByPage(ctx *gin.Context) {
 			targetLst = append(targetLst, id)
 		}
 	}
-	result := GetAlarmByPage(status, from, util, targetLst, page, pageSize)
+
+	bizId := int64(0)
+
+	if values.Has("bizId") {
+		bizId, err = strconv.ParseInt(values.Get("bizId"), 10, 64)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "biz id is not a number."})
+			return
+		}
+	}
+
+	result := GetAlarmByPage(status, from, util, targetLst, bizId, page, pageSize)
+
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: map[string]interface{}{
 		"lst":   result,
-		"total": GetTotalofAlarm(status, from, util, targetLst),
+		"total": GetTotalofAlarm(status, from, util, targetLst, bizId),
 	}, Msg: "success"})
 }
 
@@ -221,7 +259,6 @@ func GetData4AlarmHeatMap(from, to int64) []map[string]any {
 		} else {
 			bizName = string(item["biz_name"].([]uint8))
 		}
-
 		total, _ := item["total"].(int64)
 
 		result = append(result, map[string]any{
@@ -268,24 +305,27 @@ func UpdateAlarmStatusInDB(id int64, status bool) {
 	sqlstr := "update alarm set ack = ? where id = ?"
 	_, err := model.DBUpdate(sqlstr, status, id)
 	if err != nil {
-		log.Default().Panicln("error disable alarm, id: ", id, err)
+		zap.L().Panic("error disable alarm, id: ", zap.Int64("id", id), zap.Error(err))
 	}
 }
 
-func UpdateAlarmStatusInCache(alarmInfo map[string]any) {
+func UpdateAlarmStatusInCache(alarmInfo map[string]any) bool {
 	linux := alarmInfo["linux"].(map[string]any)
 	identity := linux["linuxId"].(string)
 	triggerId := alarmInfo["triggerId"].(string)
 	key := "alarm_" + identity
 
-	model.CacheHSet(key, triggerId, "false")
+	return model.CacheHDel(key, triggerId)
 }
 
 func UpdateAlarmStatus(id int64, status bool) {
 	alarmInfo := GetAlarmById(id)
 
-	UpdateAlarmStatusInCache(alarmInfo)
-	UpdateAlarmStatusInDB(id, status)
+	success := UpdateAlarmStatusInCache(alarmInfo)
+	if success {
+		UpdateAlarmStatusInDB(id, status)
+	}
+
 }
 
 func DisableAlarm(ctx *gin.Context) {
@@ -295,4 +335,39 @@ func DisableAlarm(ctx *gin.Context) {
 	}
 	UpdateAlarmStatus(alarmId, true)
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "OK"})
+}
+
+func FormatData(alarm *model.Alarm) error {
+	alarm.CreateTimestamp = time.Now().UnixMilli()
+	linux := model.LoadLinuxByIdentity(alarm.Linux.LinuxId)
+	if linux == nil {
+		zap.L().Error("can't get linux by linux identity.", zap.String("identity", alarm.Linux.LinuxId))
+		return errors.New("can't get linux by linux identity: ")
+	}
+	alarm.Linux = *linux
+	return nil
+}
+
+func NewAlarmRecord(ctx *gin.Context) {
+	body, err := io.ReadAll(ctx.Request.Body)
+	if err != nil {
+		zap.L().Error("error read from request body", zap.Error(err))
+		return
+	}
+	zap.L().Info("the alarm string from outside.", zap.String("alarm string", string(body)))
+	var alarm = new(model.Alarm)
+	err = json.Unmarshal(body, alarm)
+	if err != nil {
+		zap.L().Error("error unmarshal alarm from webhook", zap.Error(err))
+		return
+	}
+
+	err = FormatData(alarm)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: err.Error()})
+		return
+	}
+
+	component.CreateAlarmRecord(alarm.Timestamp*1000, &alarm.Linux, alarm.TriggerId, alarm.Trigger, alarm.Msg, alarm.Source, alarm.Level)
+	zap.L().Info("the alarm obj from outside.", zap.String("alarm info", string(body)))
 }

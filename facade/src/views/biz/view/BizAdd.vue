@@ -5,7 +5,7 @@
     margin: 0,
     minHeight: '800px',
   }">
-    <div class="systemPage ">
+    <div class="systemPage">
       <a-form ref="formRef" :model="bizObj" :rules="rules" :label-col="labelCol" :wrapper-col="wrapperCol">
         <a-form-item label="业务名称">
           <a-input v-model:value="bizObj.bizName" placeholder="请输入业务名称" />
@@ -95,19 +95,19 @@ const saveBizInfo = () => {
 onMounted(() => {
   if (route.query.bizId) {
     let id = parseInt(route.query.bizId as string)
-    bizObj.id = id
+    if (id > 0) {
+      request({
+        url: `/biz/${id}`,
+        method: "get",
+      }).then(resp => {
+        const data = resp["data"]
+        bizObj.id = data['id']
+        bizObj.bizId = data['bizId']
+        bizObj.bizName = data['bizName']
+        bizObj.bizDesc = data['bizDesc']
+      })
+    }
   }
-
-  request({
-    url: `/biz/${bizObj.id}`,
-    method: "get",
-  }).then(resp=>{
-    const data = resp["data"]
-    bizObj.id = data['id']
-    bizObj.bizId = data['bizId']
-    bizObj.bizName = data['bizName']
-    bizObj.bizDesc = data['bizDesc']
-  })
 
 })
 

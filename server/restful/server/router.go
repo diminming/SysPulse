@@ -13,6 +13,8 @@ func (ws *WebServer) SetupRoutes() {
 	ws.Register4Api(http.MethodDelete, "/biz", handler.DeleteBizRecord)
 	ws.Register4Api(http.MethodGet, "/biz/count", handler.GetBizCount)
 	ws.Register4Api(http.MethodGet, "/biz/:bizId", handler.GetBizById)
+	ws.Register4Api(http.MethodPost, "/biz/:bizId/topo", handler.QueryBizTopo)
+	ws.Register4Api(http.MethodGet, "/biz/:bizId/count_inst", handler.CountInst)
 
 	ws.Register4Api(http.MethodGet, "/linux/:id", handler.GetLinuxInfoById)
 	ws.Register4Api(http.MethodGet, "/linux/page", handler.GetLinuxLstByPage)
@@ -30,13 +32,12 @@ func (ws *WebServer) SetupRoutes() {
 	ws.Register4Api(http.MethodGet, "/job/:jobId/result", handler.GetJobResult)
 	ws.Register4Api(http.MethodGet, "/job/traffic/page", handler.GetTrafficJobLst)
 	ws.Register4Api(http.MethodGet, "/job/count", handler.GetJobCount)
+	ws.Register4Api(http.MethodDelete, "/job/:jobId", handler.DeleteJob)
 
 	ws.Register4Api(http.MethodGet, "/cache/page", handler.GetCacheRecordLstByPage)
 	ws.Register4Api(http.MethodPost, "/cache", handler.NewCacheRecord)
 	ws.Register4Api(http.MethodPut, "/cache", handler.UpdateCacheRecord)
 	ws.Register4Api(http.MethodDelete, "/cache", handler.DeleteCacheRecord)
-
-	ws.Register4Api(http.MethodPost, "/login", handler.UserLogin)
 
 	ws.Register4Api(http.MethodGet, "/db/page", handler.GetDBRecordLstByPage)
 	ws.Register4Api(http.MethodPost, "/db", handler.NewDBRecord)
@@ -67,4 +68,30 @@ func (ws *WebServer) SetupRoutes() {
 	ws.Register4Api(http.MethodGet, "/alarm/stat_heat", handler.Stat4HeatMap)
 	ws.Register4Api(http.MethodGet, "/alarm/stat_trend", handler.Stat4Trend)
 
+	ws.Register4Api(http.MethodPost, "/alarm", handler.NewAlarmRecord)
+
+	// 权限相关
+	ws.Register4Api(http.MethodPost, "/login", handler.UserLogin)
+
+	ws.Register4Api(http.MethodPost, "/user", handler.CreateUser)
+	ws.Register4Api(http.MethodGet, "/user/page", handler.GetUserPage)
+	ws.Register4Api(http.MethodDelete, "/user/:userId", handler.DeleteUser)
+
+	ws.Register4Api(http.MethodPost, "/role", handler.CreateRole)
+	ws.Register4Api(http.MethodGet, "/role/page", handler.GetRoleByPage)
+	ws.Register4Api(http.MethodDelete, "/role/:roleId", handler.DeleteRole)
+
+	ws.Register4Api(http.MethodGet, "/permission/page", handler.GetPermissionLst)
+	ws.Register4Api(http.MethodPost, "/permission", handler.CreatePermission)
+	ws.Register4Api(http.MethodDelete, "/permission/:prmId", handler.DeletePermission)
+
+	ws.Register4Api(http.MethodPost, "/menu", handler.CreateMenu)
+	ws.Register4Api(http.MethodDelete, "/menu/:menuId", handler.DeleteMenu)
+	ws.Register4Api(http.MethodGet, "/menu/page", handler.GetMenuByPage)
+
+	ws.Register4Api(http.MethodPost, "/nmon", handler.NewNMONRecord)
+	ws.Register4Api(http.MethodGet, "/nmon/:id", handler.GetNMONRecordById)
+	ws.Register4Api(http.MethodGet, "/nmon/page", handler.GetNMONRecordByPage)
+
+	ws.Register4Api(http.MethodGet, "/linuxGraph", handler.GetLinuxGraph)
 }

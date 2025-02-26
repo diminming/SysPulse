@@ -1,7 +1,7 @@
 package component
 
 import (
-	"fmt"
+	"errors"
 	"log"
 	"os"
 	"reflect"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/syspulse/common"
 	"github.com/syspulse/model"
+	"go.uber.org/zap"
 
 	"github.com/expr-lang/expr"
 	"github.com/expr-lang/expr/vm"
@@ -25,6 +26,7 @@ type Trigger struct {
 	Id    string `yaml:"id"`
 	Msg   string `yaml:"message"`
 	Expre string `yaml:"expression"`
+	Level string `yaml:"level"`
 }
 
 type TriggerSetting struct {
@@ -37,28 +39,29 @@ var TriggerConfig struct {
 	TriggerSettingLst []*TriggerSetting `yaml:"trigger_setting"`
 }
 
-var TriggerCache map[string]map[string]map[string]any
+type TriggerItem map[string]any
+
+var TriggerCache map[string]map[string]TriggerItem
+var DefaultSetting map[string]TriggerItem
 
 func init() {
-
 	yamlFile, err := os.ReadFile(common.SysArgs.TriggerCfg)
 	if err != nil {
-		log.Default().Fatalf("can't open config file: %v", err)
+		zap.L().Fatal("can't open config file.", zap.Error(err))
 	}
 	err = yaml.Unmarshal(yamlFile, &TriggerConfig)
 	if err != nil {
-		log.Fatalf("can't read config file: %v", err)
+		zap.L().Fatal("can't read config file.", zap.Error(err))
 	}
 
-	TriggerCache = make(map[string]map[string]map[string]any)
+	TriggerCache = make(map[string]map[string]TriggerItem)
 
 	buildTrigger()
-
 }
 
 func getData(key, field string, length int64) []float64 {
 	listKey := key + ":" + field
-	lst := model.CacheLRange(listKey, 0, length)
+	lst := model.CacheLRange(listKey, 0, length-1)
 	result := make([]float64, 0, len(lst))
 	for _, item := range lst {
 		val, err := strconv.ParseFloat(item, 64)
@@ -72,159 +75,185 @@ func getData(key, field string, length int64) []float64 {
 	return result
 }
 
-func getFunctions() []expr.Option {
-	return []expr.Option{
-		expr.Env(model.PerfData{}),
-		expr.Function(
-			"endmost",
-			func(params ...any) (any, error) {
-				size := params[0].(int)
-				target := params[1].(string)
-				item := params[2].(string)
+var TriggerFunctions []expr.Option = []expr.Option{
+	expr.Env(model.PerfData{}),
+	expr.Function(
+		"tail",
+		func(params ...any) (any, error) {
+			size := params[2].(int)
+			target := params[0].(string)
+			item := params[1].(string)
 
-				return getData(target, item, int64(size)), nil
-			},
-		),
-		expr.Function(
-			"average",
-			func(params ...any) (any, error) {
-				array := params[0].([]any)
+			return getData(target, item, int64(size)), nil
+		},
+	),
+	expr.Function(
+		"average",
+		func(params ...any) (any, error) {
+			switch array := params[0].(type) {
+			case []int:
 				total := float64(0)
 				length := float64(len(array))
 				for _, item := range array {
-					switch val := item.(type) {
-					case int:
-						item1 := float64(val)
-						total += item1
-					case int32:
-						item1 := float64(val)
-						total += item1
-					case int64:
-						item1 := float64(val)
-						total += item1
-					case float32:
-						item1 := float64(val)
-						total += item1
-					case float64:
-						total += val
-					}
+					total += float64(item)
 				}
 				return total / length, nil
-			},
-		),
-		expr.Function(
-			"maxItem",
-			func(params ...any) (any, error) {
-				array := params[0].([]any)
-				max := float64(-1)
+			case []int16:
+				total := float64(0)
+				length := float64(len(array))
 				for _, item := range array {
-					switch val := item.(type) {
-					case int:
-						item1 := float64(val)
-						if item1 > max {
-							max = item1
-						}
-					case int32:
-						item1 := float64(val)
-						if item1 > max {
-							max = item1
-						}
-					case int64:
-						item1 := float64(val)
-						if item1 > max {
-							max = item1
-						}
-					case float32:
-						item1 := float64(val)
-						if item1 > max {
-							max = item1
-						}
-					case float64:
-						if val > max {
-							max = val
-						}
+					total += float64(item)
+				}
+				return total / length, nil
+			case []int32:
+				total := float64(0)
+				length := float64(len(array))
+				for _, item := range array {
+					total += float64(item)
+				}
+				return total / length, nil
+			case []int64:
+				total := float64(0)
+				length := float64(len(array))
+				for _, item := range array {
+					total += float64(item)
+				}
+				return total / length, nil
+			case []float32:
+				total := float64(0)
+				length := float64(len(array))
+				for _, item := range array {
+					total += float64(item)
+				}
+				return total / length, nil
+			case []float64:
+				total := float64(0)
+				length := float64(len(array))
+				for _, item := range array {
+					total += item
+				}
+				avg := total / length
+				zap.L().Debug("got the average value", zap.Float64("avg", avg))
+				return avg, nil
+			}
+
+			return nil, errors.New("first param is not a numeric array")
+		},
+	),
+	expr.Function(
+		"maxItem",
+		func(params ...any) (any, error) {
+			array := params[0].([]any)
+			max := float64(-1)
+			for _, item := range array {
+				switch val := item.(type) {
+				case int:
+					item1 := float64(val)
+					if item1 > max {
+						max = item1
+					}
+				case int32:
+					item1 := float64(val)
+					if item1 > max {
+						max = item1
+					}
+				case int64:
+					item1 := float64(val)
+					if item1 > max {
+						max = item1
+					}
+				case float32:
+					item1 := float64(val)
+					if item1 > max {
+						max = item1
+					}
+				case float64:
+					if val > max {
+						max = val
 					}
 				}
-				return max, nil
-			},
-		), expr.Function(
-			"minItem",
-			func(params ...any) (any, error) {
-				array := params[0].([]any)
-				min := float64(-1)
-				for _, item := range array {
-					switch val := item.(type) {
-					case int:
-						item1 := float64(val)
-						if item1 < min {
-							min = item1
-						}
-					case int32:
-						item1 := float64(val)
-						if item1 < min {
-							min = item1
-						}
-					case int64:
-						item1 := float64(val)
-						if item1 < min {
-							min = item1
-						}
-					case float32:
-						item1 := float64(val)
-						if item1 < min {
-							min = item1
-						}
-					case float64:
-						item1 := float64(val)
-						if item1 < min {
-							min = item1
-						}
+			}
+			return max, nil
+		},
+	), expr.Function(
+		"minItem",
+		func(params ...any) (any, error) {
+			array := params[0].([]any)
+			min := float64(-1)
+			for _, item := range array {
+				switch val := item.(type) {
+				case int:
+					item1 := float64(val)
+					if item1 < min {
+						min = item1
+					}
+				case int32:
+					item1 := float64(val)
+					if item1 < min {
+						min = item1
+					}
+				case int64:
+					item1 := float64(val)
+					if item1 < min {
+						min = item1
+					}
+				case float32:
+					item1 := float64(val)
+					if item1 < min {
+						min = item1
+					}
+				case float64:
+					item1 := float64(val)
+					if item1 < min {
+						min = item1
 					}
 				}
-				return min, nil
-			},
-		),
-		expr.AsBool(),
-	}
+			}
+			return min, nil
+		},
+	),
+	expr.AsBool(),
 }
 
-func CreateCacheItem(trigger *Trigger) (string, map[string]any) {
+func CreateCacheItem(trigger *Trigger) (string, TriggerItem) {
 	id := trigger.Id
 	express := trigger.Expre
-	expObj, err := expr.Compile(express, getFunctions()...)
+	expObj, err := expr.Compile(express, TriggerFunctions...)
 
 	if err != nil {
-		log.Default().Fatalf("can't create expression by %s.\n%v\n", express, err)
+		log.Default().Fatalf("can't create expression, express: %s, error: %v", express, err)
 	}
 
-	return id, map[string]any{
+	return id, TriggerItem{
 		"id":     id,
 		"exp":    express,
 		"expObj": expObj,
 		"msg":    trigger.Msg,
+		"level":  trigger.Level,
 	}
 
 }
 
-func copyDefaultTriggerSetting(defaultTriggerSetting map[string]map[string]any) map[string]map[string]any {
-	copyMap := make(map[string]map[string]any)
+func copyDefaultTriggerSetting(defaultTriggerSetting map[string]TriggerItem) map[string]TriggerItem {
+	copyed := make(map[string]TriggerItem)
 	for key, value := range defaultTriggerSetting {
-		copyMap[key] = value
+		copyed[key] = value
 	}
-	return copyMap
+	return copyed
 }
 
 func buildTrigger() {
 	// 初始化默认全局级别trigger设置
-	defaultTriggerSetting := map[string]map[string]any{}
+	defaultTriggerSetting := make(map[string]TriggerItem)
 	for _, trigger := range TriggerConfig.Default {
 		id, cacheItem := CreateCacheItem(trigger)
 		defaultTriggerSetting[id] = cacheItem
 	}
 
+	DefaultSetting = defaultTriggerSetting
+
 	// 初始化主机级别trigger设置
 	for _, item := range TriggerConfig.TriggerSettingLst {
-
 		identity := item.Identity
 		triggerLst := item.TriggerLst
 		// copy from global trigger setting
@@ -236,8 +265,8 @@ func buildTrigger() {
 		}
 
 		TriggerCache[identity] = defaultCopy
-
 	}
+
 	log.Default().Println("init trigger finished.")
 }
 
@@ -245,21 +274,19 @@ func timestamp2timeTag(timestmap int64) string {
 	return time.UnixMilli(timestmap).Format("2006010215")
 }
 
-func CreateAlarmRecord(timestamp int64, linux *model.Linux, trigger_id, trigger, msg string) {
+func CreateAlarmRecord(timestamp int64, linux *model.Linux, trigger_id, trigger, msg, source, level string) {
 
-	sql := "insert into alarm(`timestamp`, `time_tag`, `linux_id`, `biz_id`, `trigger_id`, `trigger`,`ack`,`msg`,`create_timestamp`) value(?,?,?,?,?,?,?,?,?)"
+	sql := "insert into alarm(`timestamp`, `time_tag`, `linux_id`, `biz_id`, `trigger_id`, `trigger`, `level`, `ack`,`source`,`msg`,`create_timestamp`) value(?,?,?,?,?,?,?,?,?,?,?)"
 	timeTag := timestamp2timeTag(timestamp)
-	model.DBInsert(sql, timestamp, timeTag, linux.Id, linux.Biz.Id, trigger_id, trigger, false, msg, time.Now().UnixMilli())
-	key := fmt.Sprintf("alarm_%s", linux.LinuxId)
-	model.CacheHSet(key, trigger_id, "true")
+	model.DBInsert(sql, timestamp, timeTag, linux.Id, linux.Biz.Id, trigger_id, trigger, level, false, source, msg, time.Now().UnixMilli())
 
 }
 
 func CheckTargetIsActive(identity, triggerId string) bool {
 
-	key := fmt.Sprintf("alarm_%s", identity)
-	value := model.CacheHGet(key, triggerId)
-	return value == "true"
+	key := "alarm_" + identity
+	value := model.CacheAdd2HSetNX(key, triggerId, true)
+	return value
 
 }
 
@@ -337,7 +364,11 @@ func PutValue2Cache(data any, parentField string, identity string) {
 }
 
 func TriggerCheck(identity string, data model.PerfData, dataType model.PerformenceDataType, timestamp int64) {
-	triggerSettings := TriggerCache[identity]
+	triggerSettings, exist := TriggerCache[identity]
+
+	if !exist {
+		triggerSettings = DefaultSetting
+	}
 
 	// 使用反射将对象的值放入缓存
 	PutValue2Cache(data, "", identity)
@@ -349,14 +380,18 @@ func TriggerCheck(identity string, data model.PerfData, dataType model.Performen
 		result, err := expr.Run(program, data)
 
 		if err != nil {
-			log.Default().Panicf("error calc at target: %s, exp: %s, data: %s. \n%v", identity, program.Source().String(), common.ToString(data), err)
+			zap.L().Error("error calc trigger with data.", zap.String("identity", identity), zap.String("exp", program.Source().String()), zap.String("data", common.Stringfy(data)), zap.Error(err))
 		}
 
-		if result.(bool) && !CheckTargetIsActive(identity, triggerId) {
+		zap.L().Debug("trigger is evaluated.", zap.String("exp", program.Source().String()), zap.Bool("result", result.(bool)))
+
+		if result.(bool) && CheckTargetIsActive(identity, triggerId) {
 			linux := model.LoadLinuxByIdentity(identity)
 
 			msg := CreateMessage(trigger, linux)
-			CreateAlarmRecord(timestamp, linux, triggerId, express, msg)
+			level := trigger["level"].(string)
+
+			CreateAlarmRecord(timestamp, linux, triggerId, express, msg, "self", level)
 		}
 
 	}

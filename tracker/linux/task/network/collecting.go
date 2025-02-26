@@ -2,7 +2,6 @@ package network
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"github.com/google/gopacket/pcap"
 	"github.com/google/gopacket/pcapgo"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 
 	"github.com/syspulse/tracker/linux/common"
 	"github.com/syspulse/tracker/linux/task"
@@ -29,7 +29,8 @@ func GetPacket(ifName string, limit int64, filterSetting map[string]interface{},
 
 	handle, err := pcap.OpenLive(ifName, 65536, true, pcap.BlockForever)
 	if err != nil {
-		log.Fatal(err)
+		zap.L().Error("error opening net device: ", zap.Error(err))
+		return
 	}
 	defer handle.Close()
 	cdtLst := make([]string, 0)
@@ -53,7 +54,8 @@ func GetPacket(ifName string, limit int64, filterSetting map[string]interface{},
 
 	err = handle.SetBPFFilter(strings.Join(cdtLst, " and "))
 	if err != nil {
-		log.Fatal(err)
+		zap.L().Error("error setting filter: ", zap.Error(err))
+		return
 	}
 
 	successNotification()

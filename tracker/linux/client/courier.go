@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"log"
 	"net"
 	"time"
 
 	"github.com/syspulse/tracker/linux/common"
+	"go.uber.org/zap"
 )
 
 type OnConnected func()
@@ -39,7 +39,7 @@ func (c *Courier) Connect() bool {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", c.SrvAddr, c.SrvPort))
 	// conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", c.SrvAddr, c.SrvPort), 30*time.Second)
 	if err != nil {
-		log.Default().Println("Error connecting:", err)
+		zap.L().Error("Error connecting:", zap.Error(err))
 		return false
 	}
 	conn.(*net.TCPConn).SetWriteBuffer(1024 * 1024 * 10)
@@ -53,12 +53,13 @@ func (c *Courier) Close() {
 }
 
 func (c *Courier) Write(payload []byte) {
-	length := uint32(len(payload))
-	// log.Default().Printf("length of payload: %d", length)
 
 	buffer := bytes.NewBuffer([]byte{})
 	buffer.WriteByte('S')
+
+	length := uint32(len(payload))
 	binary.Write(buffer, binary.LittleEndian, length)
+
 	buffer.Write(payload)
 
 	data := buffer.Bytes()
@@ -68,7 +69,7 @@ func (c *Courier) Write(payload []byte) {
 		_, err := c.conn.Write(data)
 		// log.Default().Printf("payload: %s - Done.", md5)
 		if err != nil {
-			log.Default().Println(err)
+			zap.L().Error("error write data to connection: ", zap.Error(err))
 			reConnected := c.Connect()
 			if reConnected {
 				break

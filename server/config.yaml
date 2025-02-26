@@ -1,10 +1,16 @@
 server:
   hub:
     addr: "tcp://0.0.0.0:24160"
+    batch_size: 10
+    queue_size: 1000
   restful:
     addr: "0.0.0.0:24162"
     base_path: "/api"
     base_path_callback: "/callback"
+    white_list:
+      - "post:/api/login"
+      - "post:/api/alarm"
+      - "post:/api/nmon"
 session:
   expiration: 30
 logging:
@@ -29,8 +35,8 @@ storage:
     db_name: "syspulse"
   file_server:
     endpoint: "localhost:9001"
-    access_key: "8VQtYwI69LQWFILvlIwr"
-    secret_key: "I67hoY6kegwwe2GcePmRO26kfkZscdZyLahiaeER"
+    access_key: "er84iy1wjjqTCg5Fwkm9"
+    secret_key: "uEoAWGTpdhcVHstDa7tVRLzx3rxWkEk2kvlgguG2"
     bucket: "syspulse"
     useSSL: false
   file:

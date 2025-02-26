@@ -1,9 +1,13 @@
+# tail(<identity>, <item>, <size>)
+
 _default:
   - id: "cpu_utilization"
-    expression: "cpu.util > 10"
+    expression: 'average(tail(_subject, "cpu.util", 5)) > 50'
+    level: "high"
     message: "Linux: [<!hostname>] CPU使用率过高。"
   - id: "memory_utilization"
     expression: "memory.free / memory.total < 0.6"
+    level: "high"
     message: "Linux: [<!hostname>] 内存使用率过高。"
 
 trigger_setting:
@@ -11,4 +15,5 @@ trigger_setting:
     triggers:
     - id: "cpu_utilization"
       expression: "cpu.util > 20"
+      level: "high"
       message: "Linux: [<!hostname>] CPU使用率过高。"

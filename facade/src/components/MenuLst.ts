@@ -2,6 +2,11 @@ import {
     DashboardOutlined,
     GroupOutlined,
     DesktopOutlined,
+    UnorderedListOutlined,
+    BellOutlined,
+    TeamOutlined,
+    SkinOutlined,
+    LockOutlined,
 } from "@ant-design/icons-vue";
 
 
@@ -24,31 +29,12 @@ export default [
                 icon: GroupOutlined
             },
             {
-                name: "Linux",
-                text: "Linux",
+                name: "主机",
+                text: "主机",
                 href: "/main/linux",
                 icon: DesktopOutlined
             },]
     },
-
-    // {
-    //     name: "Database",
-    //     text: "数据库",
-    //     href: "/main/database",
-    //     icon: DesktopOutlined
-    // },
-    // {
-    //     name: "Cache",
-    //     text: "缓存",
-    //     href: "/main/cache",
-    //     icon: DesktopOutlined
-    // },
-    // {
-    //     name: "Queue",
-    //     text: "队列",
-    //     href: "/main/queue",
-    //     icon: DesktopOutlined
-    // },
     {
         name: "Notification",
         text: "消息中心",
@@ -58,21 +44,39 @@ export default [
                 name: "Alarm",
                 text: "事件告警",
                 href: "/main/notification",
-                icon: DesktopOutlined
+                icon: BellOutlined
             },
         ]
     },
-    
-    // {
-    //     name: "Users",
-    //     text: "用户管理",
-    //     href: "/main/users",
-    //     icon: DesktopOutlined
-    // },
-    // {
-    //     name: "Setting",
-    //     text: "系统设置",
-    //     href: "/main/setting",
-    //     icon: DesktopOutlined
-    // }
+    {
+        name: "Setting",
+        text: "系统设置",
+        type: "group",
+        children: [
+            {
+                name: "Menu",
+                text: "菜单管理",
+                href: "/main/menu",
+                icon: UnorderedListOutlined 
+            },
+            {
+                name: "User",
+                text: "用户管理",
+                href: "/main/user",
+                icon: TeamOutlined
+            },
+            {
+                name: "Role",
+                text: "角色管理",
+                href: "/main/role",
+                icon: SkinOutlined
+            },
+            {
+                name: "Permission",
+                text: "权限管理",
+                href: "/main/permission",
+                icon: LockOutlined
+            },
+        ]
+    }
 ]

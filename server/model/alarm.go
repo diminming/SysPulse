@@ -140,6 +140,7 @@ type PerfData struct {
 	Disk        DiskPerfData        `expr:"disk"`
 	DiskIO      DiskIOPerfData      `expr:"diskio"`
 	NetDeviceIO NetDeviceIOPerfData `expr:"netio"`
+	Subject     string              `expr:"_subject"`
 }
 
 type Alarm struct {
@@ -151,7 +152,10 @@ type Alarm struct {
 	Ack             bool     `json:"ack"`
 	Msg             string   `json:"msg"`
 	Linux           Linux    `json:"linux"`
+	Biz             Business `json:"biz"`
 	PerfData        PerfData `json:"perfData"`
+	Source          string   `json:"source"`
+	Level           string   `json:"level"`
 }
 
 func GetTotalofActiveAlarm() uint32 {

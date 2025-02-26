@@ -2,7 +2,6 @@ package component
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"path"
@@ -85,7 +84,7 @@ func Upload2FileServer(bucketName, objectName, filePath, contentType string) {
 }
 
 func DownloadFromFileServer(bucketName, objectName string) string {
-	tmpPath := path.Join(fmt.Sprintf(common.SysArgs.Storage.File.Path), uuid.NewString())
+	tmpPath := path.Join(common.SysArgs.Storage.File.Path, uuid.NewString())
 	client.FGetObject(ctx, bucketName, objectName, tmpPath, minio.GetObjectOptions{})
 	return tmpPath
 }

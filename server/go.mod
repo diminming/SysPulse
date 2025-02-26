@@ -24,9 +24,9 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.27.0 // indirect
+	go.uber.org/zap v1.27.0
 	golang.org/x/sync v0.8.0 // indirect
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (
@@ -54,7 +54,7 @@ require (
 	github.com/panjf2000/gnet/v2 v2.5.7
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/shirou/gopsutil v2.21.11+incompatible
-	github.com/shirou/gopsutil/v3 v3.24.2
+	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/syspulse/mutual v0.0.0
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect

@@ -97,7 +97,7 @@ func CreateAnalJob(job *model.Job) (*model.Job, error) {
 }
 
 func CreateTrafficJob(job *model.Job) (*model.Job, error) {
-	log.Default().Println(common.ToString(job))
+	log.Default().Println(common.Stringfy(job))
 	if job.LinuxId == 0 {
 		panic("error input: linux id is 0")
 	}
@@ -587,4 +587,14 @@ func GetJobResult(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "ok", Data: data})
 	}
 
+}
+
+func DeleteJob(ctx *gin.Context) {
+	jobId, err := strconv.ParseInt(ctx.Param("jobId"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.JsonResponse{Status: http.StatusBadRequest, Msg: "job id is not a number."})
+		return
+	}
+	count := model.DeleteJob(jobId)
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Msg: "ok", Data: count})
 }
