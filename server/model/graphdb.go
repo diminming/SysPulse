@@ -222,7 +222,7 @@ FOR proc IN process
   LET tcp_set = (
 	for tcp in conn_tcp
 	  filter tcp._from == proc._id || tcp._to == proc._id
-	  remove tcp in conn_tcp
+	  remove tcp in conn_tcp options { ignoreErrors: true }
 	  return OLD._id
   )
   
@@ -627,7 +627,7 @@ func UpdateLinuxInGraphDB(origin, linux *Linux) {
       UPDATE {
         "_from": biz._id, 
         "timestamp": @timestamp,
-      }  
+      }
       IN res_consumption`
 
 	cursor, err := GraphDB.Query(ctx, aql, map[string]any{
@@ -831,14 +831,14 @@ func GetLinuxGraph(limit int) []map[string]interface{} {
 	aql := `
 for h in host
   for v, e, p in 3 any h graph graph_demployment
-  for e1 in p.edges
-    filter is_same_collection("conn_tcp", e1)
-    filter is_same_collection("host", v) && h._key != v._key
-		limit @limit
-        return {
-          "from": {"name": h.name, "identity": h.host_identity, "key": h._key, "_id": h._id},
-          "to": {"name": v.name, "identity": v.host_identity, "key": v._key, "_id": v._id},
-        }
+	filter is_same_collection("host", v) && h._key != v._key
+		for e1 in p.edges
+			filter is_same_collection("conn_tcp", e1)
+				limit @limit
+				return {
+					"from": {"name": h.name, "identity": h.host_identity, "key": h._key, "_id": h._id},
+					"to": {"name": v.name, "identity": v.host_identity, "key": v._key, "_id": v._id},
+				}
 `
 	cursor, err := GraphDB.Query(ctx, aql, map[string]any{
 		"limit": limit,
