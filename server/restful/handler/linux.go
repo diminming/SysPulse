@@ -19,7 +19,8 @@ import (
 )
 
 func GetLinuxCount(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: model.GetLinuxTotal(), Msg: "success"})
+	keyword := ctx.Query("kw")
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: model.GetLinuxTotal(keyword), Msg: "success"})
 }
 
 func GetInterfaceLst(ctx *gin.Context) {
@@ -91,7 +92,7 @@ func GetLinuxLstByPage(ctx *gin.Context) {
 	}
 	keyword := values.Get("kw")
 	lst := GetLinuxByPage(page, pageSize, keyword)
-	total := GetLinuxTotal()
+	total := GetLinuxTotal(keyword)
 	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: map[string]interface{}{
 		"lst":   lst,
 		"total": total,
@@ -341,8 +342,8 @@ FROM
 	return result
 }
 
-func GetLinuxTotal() int64 {
-	return model.GetLinuxTotal()
+func GetLinuxTotal(keyword string) int64 {
+	return model.GetLinuxTotal(keyword)
 }
 
 func DeleteLinuxInSqlDB(linux *model.Linux, inTransaction func(linux *model.Linux) bool) bool {

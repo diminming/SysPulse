@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"strconv"
+	"strings"
 
 	driver "github.com/arangodb/go-driver"
 	"go.uber.org/zap"
@@ -45,11 +46,19 @@ func LoadLinuxByIdentity(identity string) *Linux {
 	return linux
 }
 
-func GetLinuxTotal() int64 {
-	s := "select count(id) from linux"
+func GetLinuxTotal(keyword string) int64 {
+	sqlbuf := new(strings.Builder)
+	sqlArgs := make([]any, 0)
+	sqlbuf.WriteString("select count(id) from linux ")
+	if keyword != "" && !(strings.TrimSpace(keyword) == "") {
+		sqlbuf.WriteString("where hostname like ? or linux_id like ?\n")
+		likeArg := "%" + keyword + "%"
+		sqlArgs = append(sqlArgs, likeArg)
+		sqlArgs = append(sqlArgs, likeArg)
+	}
 	var row *sql.Row
 	var count int64
-	row = SqlDB.QueryRow(s)
+	row = SqlDB.QueryRow(sqlbuf.String(), sqlArgs...)
 	err := row.Scan(&count)
 	if err != nil {
 		log.Default().Println(err)
