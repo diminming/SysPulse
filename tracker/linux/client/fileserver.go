@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"log"
 
 	"github.com/syspulse/tracker/linux/common"
 	"go.uber.org/zap"
@@ -11,52 +10,57 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-var (
-	ctx             context.Context = context.Background()
-	endpoint        string          = common.SysArgs.Storage.FileServer.Endpoint
-	accessKeyID     string          = common.SysArgs.Storage.FileServer.AccessKey
-	secretAccessKey string          = common.SysArgs.Storage.FileServer.SecretKey
-	useSSL          bool            = common.SysArgs.Storage.FileServer.UseSSL
-	bucketName      string          = common.SysArgs.Storage.FileServer.BucketName
-	client          *minio.Client
-)
+var client *minio.Client
 
-func init() {
+func InitFileServer() {
+	var (
+		endpoint        string = common.SysArgs.Storage.FileServer.Endpoint
+		accessKeyID     string = common.SysArgs.Storage.FileServer.AccessKey
+		secretAccessKey string = common.SysArgs.Storage.FileServer.SecretKey
+		useSSL          bool   = common.SysArgs.Storage.FileServer.UseSSL
+		bucketName      string = common.SysArgs.Storage.FileServer.BucketName
+	)
 	// Initialize minio client object.
 	minioClient, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
 		Secure: useSSL,
 	})
 	if err != nil {
-		log.Default().Fatalln(err)
+		zap.L().Fatal("error init minio client.", zap.Error(err))
 	}
 	client = minioClient
 	exists, err := minioClient.BucketExists(context.Background(), bucketName)
 	if err != nil {
-		log.Fatalln("Failed to check bucket existence:", err)
+		zap.L().Fatal("Failed to check bucket existence.", zap.Error(err))
 	}
 
 	if !exists {
-		log.Fatalf("target bucket '%s' is not exists.", bucketName)
+		zap.L().Fatal("target bucket is not exists.", zap.String("bucket", bucketName))
 	}
 }
 
 func CreateBucket(bucketName string) {
-	err := client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
-	if err != nil {
-		// Check to see if we already own this bucket (which happens if you run this twice)
-		exists, errBucketExists := client.BucketExists(ctx, bucketName)
-		if errBucketExists == nil && exists {
-			log.Printf("We already own %s\n", bucketName)
-		} else {
-			log.Fatalln(err)
-		}
+
+	ctx := context.Background()
+
+	// Check to see if we already own this bucket (which happens if you run this twice)
+	exists, errBucketExists := client.BucketExists(ctx, bucketName)
+	if errBucketExists == nil && exists {
+		zap.L().Info("We already own the bucket.", zap.String("bucket", bucketName))
+	} else if errBucketExists != nil {
+		zap.L().Fatal("Failed to check bucket existence.", zap.Error(errBucketExists))
 	} else {
-		log.Printf("Successfully created %s\n", bucketName)
+		err := client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
+		if err != nil {
+			zap.L().Fatal("Failed to create bucket.", zap.Error(err))
+		}
+		zap.L().Info("Successfully created bucket.", zap.String("bucket", bucketName))
 	}
 }
 
 func Upload2FileServer(bucketName, objectName, filePath, contentType string) {
+
+	ctx := context.Background()
 	// Upload the test file with FPutObject
 	info, err := client.FPutObject(ctx, bucketName, objectName, filePath, minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {

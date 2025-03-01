@@ -19,8 +19,6 @@ import (
 
 var Logger *zap.Logger
 
-var LoggingSetting = common.SysArgs.Logging
-
 type LogConfig struct {
 	Level      string `json:"level"`
 	Filename   string `json:"filename"`
@@ -40,19 +38,19 @@ func getEncoder() zapcore.Encoder {
 }
 
 func getLogWriter() zapcore.WriteSyncer {
-	switch LoggingSetting.Redirect {
+	switch common.SysArgs.Logging.Redirect {
 	case "stdout":
 		return zapcore.AddSync(os.Stdout)
 	case "file":
 		lumberJackLogger := &lumberjack.Logger{
-			Filename:   LoggingSetting.Output,
-			MaxSize:    LoggingSetting.MaxSize,
-			MaxBackups: LoggingSetting.MaxBackups,
-			MaxAge:     LoggingSetting.MaxAge,
+			Filename:   common.SysArgs.Logging.Output,
+			MaxSize:    common.SysArgs.Logging.MaxSize,
+			MaxBackups: common.SysArgs.Logging.MaxBackups,
+			MaxAge:     common.SysArgs.Logging.MaxAge,
 		}
 		return zapcore.AddSync(lumberJackLogger)
 	default:
-		panic(fmt.Sprintf("Don't understand the option '%s' for setting 'logging.redirect'\n", LoggingSetting.Redirect))
+		panic(fmt.Sprintf("Don't understand the option '%s' for setting 'logging.redirect'\n", common.SysArgs.Logging.Redirect))
 	}
 }
 
@@ -127,7 +125,7 @@ func InitLogger() (err error) {
 	writeSyncer := getLogWriter()
 	encoder := getEncoder()
 	var l = new(zapcore.Level)
-	err = l.UnmarshalText([]byte(LoggingSetting.Level))
+	err = l.UnmarshalText([]byte(common.SysArgs.Logging.Level))
 	if err != nil {
 		return
 	}

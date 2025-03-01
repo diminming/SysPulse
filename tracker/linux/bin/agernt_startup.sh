@@ -11,4 +11,4 @@ SYSPULSE=$CURR_DIR/syspulse
 CONF_FILE=$CURR_DIR/config.yaml
 LOG_PATH=/tmp/syspulse.log
 
-nohup $SYSPULSE --conf $CONF_FILE > $LOG_PATH 2>&1 &
+nohup $SYSPULSE -config $CONF_FILE > $LOG_PATH 2>&1 &

@@ -48,6 +48,37 @@ type Monitor struct {
 	stopChan chan bool
 }
 
+func GetProcessSnapshot() *mutual.ProcessSnapshot {
+	procLst0, _ := process.Processes()
+	procLst1 := make([]mutual.ProcessInfo, 0, len(procLst0))
+
+	for _, proc := range procLst0 {
+
+		ppid, _ := proc.Ppid()
+		procName, _ := proc.Name()
+		exe, _ := proc.Exe()
+		cmd, _ := proc.Cmdline()
+		createTime, _ := proc.CreateTime()
+
+		procInfo := mutual.ProcessInfo{
+			Pid:        proc.Pid,
+			Name:       procName,
+			Ppid:       ppid,
+			CreateTime: createTime,
+			Exe:        exe,
+			Cmd:        cmd,
+		}
+		procLst1 = append(procLst1, procInfo)
+	}
+
+	connLst, _ := net.Connections("all")
+
+	return &mutual.ProcessSnapshot{
+		ProcessLst: procLst1,
+		ConnLst:    connLst,
+	}
+}
+
 func NewMonitor(client *client.Courier, cb Callback) (*Monitor, error) {
 	monitor := Monitor{
 		client:   client,
@@ -107,35 +138,8 @@ func (m *Monitor) Run() {
 			ifStatLst, _ := net.Interfaces()
 			m.Send(ifStatLst)
 		case <-tickerRuntime.C:
-
-			procLst0, _ := process.Processes()
-			procLst1 := make([]mutual.ProcessInfo, 0, len(procLst0))
-
-			for _, proc := range procLst0 {
-
-				ppid, _ := proc.Ppid()
-				procName, _ := proc.Name()
-				exe, _ := proc.Exe()
-				cmd, _ := proc.Cmdline()
-				createTime, _ := proc.CreateTime()
-
-				procInfo := mutual.ProcessInfo{
-					Pid:        proc.Pid,
-					Name:       procName,
-					Ppid:       ppid,
-					CreateTime: createTime,
-					Exe:        exe,
-					Cmd:        cmd,
-				}
-				procLst1 = append(procLst1, procInfo)
-			}
-
-			connLst, _ := net.Connections("all")
-
-			m.Send(mutual.ProcessSnapshot{
-				ProcessLst: procLst1,
-				ConnLst:    connLst,
-			})
+			snapshot := GetProcessSnapshot()
+			m.Send(snapshot)
 
 		case <-tickerPerfCpu.C:
 			timeStat1, _ := cpu.Times(false)

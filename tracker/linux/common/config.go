@@ -1,7 +1,7 @@
 package common
 
 import (
-	"log"
+	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v2"
@@ -72,22 +72,15 @@ type Config struct {
 
 var SysArgs Config
 
-func init() {
-	args := os.Args
+func LoadCfgFile(filePath string) {
 
-	for i := 1; i < len(args); i = i + 2 {
-		arg := args[i]
-		val := args[i+1]
-		if arg == "--conf" {
-			yamlFile, err := os.ReadFile(val)
-			if err != nil {
-				log.Fatalf("can't open config file: %v", err)
-			}
-			err = yaml.Unmarshal(yamlFile, &SysArgs)
-			if err != nil {
-				log.Fatalf("can't read config file: %v", err)
-			}
-		}
+	yamlFile, err := os.ReadFile(filePath)
+	if err != nil {
+		panic(fmt.Sprintf("can't open config file: %s, error: %v\n", filePath, err))
+	}
+	err = yaml.Unmarshal(yamlFile, &SysArgs)
+	if err != nil {
+		panic(fmt.Sprintf("can't unmarshal config file: %s, error: %v\n", filePath, err))
 	}
 
 }

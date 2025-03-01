@@ -11,8 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type OnConnected func()
-
 type Courier struct {
 	SrvAddr string
 	SrvPort int
@@ -52,8 +50,7 @@ func (c *Courier) Close() {
 	c.conn.Close()
 }
 
-func (c *Courier) Write(payload []byte) {
-
+func Pack(payload []byte) []byte {
 	buffer := bytes.NewBuffer([]byte{})
 	buffer.WriteByte('S')
 
@@ -62,7 +59,13 @@ func (c *Courier) Write(payload []byte) {
 
 	buffer.Write(payload)
 
-	data := buffer.Bytes()
+	return buffer.Bytes()
+
+}
+
+func (c *Courier) Write(payload []byte) {
+	data := Pack(payload)
+
 	// md5 := mutual_common.MD5Calc(payload)
 	// log.Default().Printf("the md5 of payload: %s", md5)
 	for {
