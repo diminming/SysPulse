@@ -37,15 +37,15 @@ func init() {
 	zap.L().Info("mysql conn pool has initiated.")
 }
 
-func DBSelectRow(sql string, args ...interface{}) map[string]interface{} {
+func DBSelectRow(sql string, args ...any) map[string]any {
 	lst := DBSelect(sql, args...)
 	length := len(lst)
 	if length == 1 {
 		return lst[0]
 	} else if length == 0 {
-		zap.L().Error("no result...")
+		zap.L().Panic("no result...")
 	} else {
-		zap.L().Error("got more than 1 record...")
+		zap.L().Panic("got more than 1 record...")
 	}
 	return nil
 }
@@ -82,7 +82,7 @@ func DBSelectWithConstructor(sql string, constructor Constructor, args ...interf
 	return lst
 }
 
-func DBSelect(sql string, args ...interface{}) []map[string]interface{} {
+func DBSelect(sql string, args ...any) []map[string]any {
 
 	rows, err := SqlDB.Query(sql, args...)
 	if err != nil {
@@ -93,7 +93,7 @@ func DBSelect(sql string, args ...interface{}) []map[string]interface{} {
 
 	cols, _ := rows.Columns()
 	lenCol := len(cols)
-	values := make([]interface{}, lenCol)
+	values := make([]any, lenCol)
 	for idx := range values {
 		var val interface{}
 		values[idx] = &val

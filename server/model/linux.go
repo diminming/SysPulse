@@ -22,6 +22,7 @@ type Linux struct {
 	LinuxId         string   `json:"linux_id"`
 	Biz             Business `json:"biz"`
 	AgentConn       string   `json:"agent_conn"`
+	Source          string   `json:"source"`
 	ExtId           string   `json:"ext_id"`
 	CreateTimestamp int64    `json:"create_timestamp"`
 	UpdateTimestamp int64    `json:"update_timestamp"`

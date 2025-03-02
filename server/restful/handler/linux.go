@@ -100,12 +100,12 @@ func GetLinuxLstByPage(ctx *gin.Context) {
 }
 
 func Insert2SqlDB(linux *model.Linux) {
-	sql := "insert into linux(`hostname`, `linux_id`, `biz_id`, `agent_conn`, `ext_id`, create_timestamp, update_timestamp) value(?, ?, ?, ?, ?, ?, ?)"
+	sql := "insert into linux(`hostname`, `linux_id`, `biz_id`, `agent_conn`, `source`, `ext_id`, create_timestamp, update_timestamp) value(?, ?, ?, ?, ?, ?, ?, ?)"
 
 	if linux.ExtId == "" {
-		linux.Id = model.DBInsert(sql, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, nil, linux.CreateTimestamp, linux.UpdateTimestamp)
+		linux.Id = model.DBInsert(sql, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, linux.Source, nil, linux.CreateTimestamp, linux.UpdateTimestamp)
 	} else {
-		linux.Id = model.DBInsert(sql, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, linux.ExtId, linux.CreateTimestamp, linux.UpdateTimestamp)
+		linux.Id = model.DBInsert(sql, linux.Hostname, linux.LinuxId, linux.Biz.Id, linux.AgentConn, linux.Source, linux.ExtId, linux.CreateTimestamp, linux.UpdateTimestamp)
 	}
 
 }
@@ -139,6 +139,9 @@ func CreateLinuxRecord(ctx *gin.Context) {
 	}
 	linux.CreateTimestamp = time.Now().UnixMilli()
 	linux.UpdateTimestamp = time.Now().UnixMilli()
+	if linux.Source == "" {
+		linux.Source = "self"
+	}
 
 	InsertLinuxRecord(linux)
 	model.SetIdentityAndIdMappingInCache(linux)
@@ -286,6 +289,7 @@ func GetLinuxByPage(page int, pageSize int, keyword string) []model.Linux {
     a.id, 
     a.hostname, 
     a.linux_id, 
+	a.source,
     b.id as biz_id,
     b.biz_name, 
     a.create_timestamp, 
@@ -296,6 +300,7 @@ FROM
             hostname,
             linux_id,
             biz_id,
+			source,
             create_timestamp,
             update_timestamp
     FROM
@@ -333,6 +338,7 @@ FROM
 			Id:              o["id"].(int64),
 			Hostname:        string(o["hostname"].([]uint8)),
 			LinuxId:         string(o["linux_id"].([]uint8)),
+			Source:          string(o["source"].([]uint8)),
 			Biz:             biz,
 			CreateTimestamp: o["create_timestamp"].(int64),
 			UpdateTimestamp: o["update_timestamp"].(int64),
