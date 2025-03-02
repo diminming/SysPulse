@@ -42,3 +42,11 @@ type User struct {
 	CreateTimestamp int64   `json:"createTimestamp"`
 	UpdateTimestamp int64   `json:"updateTimestamp"`
 }
+
+func GetTotalOfPermission() int64 {
+	total := int64(0)
+	sqlstr := "select count(id) as total from permission"
+	result := SqlDB.QueryRow(sqlstr)
+	result.Scan(&total)
+	return total
+}
