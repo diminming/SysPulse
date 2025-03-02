@@ -157,7 +157,9 @@ const onSelect = (record: any) => {
 onMounted(() => {
   Permission.loadPage(pgSetting).then((resp) => {
     const data = resp.data
-    tabData.value = data
+    const lstData = data.lst
+    pgSetting.total = data.total
+    tabData.value = lstData
   })
 })
 
