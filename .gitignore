@@ -23,7 +23,8 @@ go.work.sum
 
 **/dist/
 
-facade/.env.prod
+facade/.env*
+facade/public/logo-*.png
 /facade/node_modules/*
 *.sql
 !docker/syspulse_sqldb/*.sql
