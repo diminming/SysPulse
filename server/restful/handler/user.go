@@ -334,7 +334,11 @@ func GetPermissionLst(ctx *gin.Context) {
 		return
 	}
 	permissionLst := ListPermissionByPage(page, pageSize)
-	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: permissionLst, Msg: "success"})
+	total := model.GetTotalOfPermission()
+	ctx.JSON(http.StatusOK, response.JsonResponse{Status: http.StatusOK, Data: map[string]any{
+		"lst":   permissionLst,
+		"total": total,
+	}, Msg: "success"})
 }
 
 func savePermission(p *model.Permission) int64 {
