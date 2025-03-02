@@ -2,18 +2,30 @@
   <a-layout-content :style="style">
     <div class="opBar">
       <a-button v-if="stage === 'edition'" type="primary" class="op-item" @click="pathTo1" size="small">添加</a-button>
-      <a-input-search class="op-item keyword" v-model:value="keyword" placeholder="请输入检索内容" enter-button @search="onSearch" size="small"/>
+      <a-input-search class="op-item keyword" v-model:value="keyword" placeholder="请输入检索内容" enter-button
+        @search="onSearch" size="small" />
     </div>
 
-    <a-table :data-source="tabData" :columns="columns" size="small" @change="onChange" :pagination="pgSetting" :row-selection=rowSelection>
+    <a-table :data-source="tabData" :columns="columns" size="small" @change="onChange" :pagination="pgSetting"
+      :row-selection=rowSelection>
       <template #bodyCell="{ text, column, record }">
-        <template v-if="column.key === 'hostname' && stage==='edition'">
+        <template v-if="column.key === 'hostname' && stage === 'edition'">
           <a @click="gotoLinuxDetail(record)">
             {{ record.hostname }}
           </a>
         </template>
         <template v-else-if="column.key === 'bizName'">
           {{ record.biz.bizName }}
+        </template>
+        <template v-else-if="column.key === 'source' && text === 'zbx'">
+          <a-tag color="red">
+            Zabbix
+          </a-tag>
+        </template>
+        <template v-else-if="column.key === 'source' && text === 'self'">
+          <a-tag color="blue">
+            SysPulse
+          </a-tag>
         </template>
         <template v-else-if="column.dataIndex === 'operation'">
           <span>
@@ -48,14 +60,14 @@ const style = reactive<{
   background: String,
   padding: String,
   margin: number,
-  minHeight: string|number|undefined
+  minHeight: string | number | undefined
 }>({
-    background: '#fff',
-    padding: '24px',
-    margin: 0,
-    minHeight: undefined
-  })
-if(props.stage === "edition"){
+  background: '#fff',
+  padding: '24px',
+  margin: 0,
+  minHeight: undefined
+})
+if (props.stage === "edition") {
   style.minHeight = '800px'
 }
 
@@ -63,7 +75,7 @@ const emit = defineEmits(["select"])
 const selected = ref<number[]>()
 const onSelectChange = (selectedRowKeys: number[], selectedRows: any[]) => {
   selected.value = selectedRowKeys
-  if(props.stage === "select") {
+  if (props.stage === "select") {
     emit("select", selectedRows.map(linux => {
       return new Linux(linux.id, linux.hostname)
     }))
@@ -113,6 +125,12 @@ const columns: TableColumnType<Linux>[] = [
     key: "bizName",
     width: 300,
   },
+  {
+    title: "来源",
+    dataIndex: "source",
+    key: "source",
+    width: 100
+  }
 ];
 
 if (props.stage === 'edition') {
